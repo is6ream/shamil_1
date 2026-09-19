@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вайрфрейм главной · мечеть «Шамиль» · день 2</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+         background: #eceef1; color: #1a1d21; -webkit-font-smoothing: antialiased; }
+
+  /* ---------- инструментальная шапка (не часть макета) ---------- */
+  .tool { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 12px;
+          align-items: center; padding: 10px 16px; background: #1a1d21; color: #fff; }
+  .tool h1 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+  .tool .sub { font-size: 12px; opacity: .6; }
+  .tool .spacer { flex: 1; }
+  .seg { display: flex; border: 1px solid #4a5058; border-radius: 6px; overflow: hidden; }
+  .seg button { appearance: none; border: 0; background: transparent; color: #cfd4da;
+                font: inherit; font-size: 12px; padding: 6px 12px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: #fff; color: #1a1d21; font-weight: 600; }
+  .tool .toggle { font-size: 12px; color: #cfd4da; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+  .stage { padding: 24px 16px 80px; overflow-x: auto; }
+
+  /* ---------- рамка устройства ---------- */
+  .frame { width: 390px; margin: 0 auto; background: #fff; border: 1px solid #c3c8cf;
+           border-radius: 14px; overflow: hidden; }
+  .frame[data-view="desktop"] { width: 1200px; border-radius: 8px; }
+
+  /* ---------- лоу-фай примитивы ---------- */
+  .b { padding: 28px 20px; border-bottom: 1px dashed #c9ced5; position: relative; }
+  .frame[data-view="desktop"] .b { padding: 52px 80px; }
+  .b > .inner { }
+  .frame[data-view="desktop"] .b > .inner { max-width: 720px; margin: 0 auto; }
+  .frame[data-view="desktop"] .b.wide > .inner { max-width: none; }
+
+  .tag { position: absolute; top: 0; left: 0; font-size: 10px; letter-spacing: .06em;
+         text-transform: uppercase; background: #1a1d21; color: #fff; padding: 3px 8px;
+         border-bottom-right-radius: 6px; font-weight: 600; }
+  .tag.add { background: #7a5c00; }
+
+  h2.t { font-size: 19px; line-height: 1.25; margin: 14px 0 12px; font-weight: 700; }
+  .frame[data-view="desktop"] h2.t { font-size: 27px; margin-top: 8px; }
+  p { margin: 0 0 10px; }
+  .muted { color: #6b727b; font-size: 13px; }
+
+  /* серая «рыба» — текст, которого ещё нет */
+  .fish { display: block; height: 10px; background: #d7dbe0; border-radius: 3px; margin: 7px 0; }
+  .fish.w90 { width: 90%; } .fish.w75 { width: 75%; } .fish.w60 { width: 60%; } .fish.w45 { width: 45%; }
+
+  .box { background: #dfe3e8; border: 1px solid #c9ced5; border-radius: 6px;
+         display: flex; align-items: center; justify-content: center; text-align: center;
+         color: #6b727b; font-size: 12px; padding: 10px; }
+
+  .btn { display: flex; align-items: center; justify-content: center; height: 48px;
+         border-radius: 8px; background: #2e3238; color: #fff; font-weight: 600; font-size: 15px;
+         margin: 10px 0; }
+  .btn.ghost { background: transparent; border: 1.5px solid #2e3238; color: #2e3238; }
+  .btn.sm { height: 36px; font-size: 13px; padding: 0 14px; margin: 0; display: inline-flex; }
+
+  .field { height: 46px; border: 1px solid #b6bcc4; border-radius: 8px; background: #fff;
+           display: flex; align-items: center; padding: 0 12px; color: #868d96; font-size: 14px;
+           margin: 8px 0; }
+  .field.disabled { background: #f0f2f4; color: #b0b6bd; }
+
+  .row { display: flex; gap: 8px; align-items: center; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+  .chip { border: 1px solid #b6bcc4; border-radius: 999px; padding: 8px 14px; font-size: 14px; background: #fff; }
+  .chip.on { background: #2e3238; color: #fff; border-color: #2e3238; font-weight: 600; }
+
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* заглушка религиозного текста */
+  .stub { border: 2px dashed #b08900; background: #fffaf0; border-radius: 8px; padding: 12px 14px; margin: 12px 0; }
+  .stub .lbl { font-size: 11px; font-weight: 700; color: #8a6d00; text-transform: uppercase;
+               letter-spacing: .05em; margin-bottom: 8px; }
+  .stub .gist { font-size: 12px; color: #8a6d00; margin-top: 8px; font-style: italic; }
+
+  /* аннотация «почему так» */
+  .note { background: #f4f6f8; border-left: 3px solid #8b939c; padding: 10px 12px; margin: 14px 0 0;
+          font-size: 12.5px; line-height: 1.5; color: #4a5058; border-radius: 0 6px 6px 0; }
+  .note b { color: #1a1d21; }
+  body.notes-off .note { display: none; }
+
+  /* прогресс */
+  .bar { height: 12px; background: #dfe3e8; border-radius: 999px; overflow: hidden; margin: 8px 0 4px; }
+  .bar > i { display: block; height: 100%; background: #2e3238; border-radius: 999px; }
+  .bar.thin { height: 6px; }
+  .bar.thin > i { background: #868d96; }
+
+  /* списки рейтинга */
+  .rank { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #e6e9ed; }
+  .rank .pos { width: 22px; font-weight: 700; color: #868d96; font-size: 13px; }
+  .rank .flag { width: 26px; height: 18px; background: #d7dbe0; border: 1px solid #c3c8cf; border-radius: 2px; flex: none; }
+  .rank .body { flex: 1; min-width: 0; }
+  .rank .name { font-size: 14px; font-weight: 600; }
+  .rank .sum { font-size: 13px; color: #6b727b; }
+  .rank.me { background: #f4f6f8; margin: 0 -8px; padding: 10px 8px; border-radius: 6px; border-bottom: 0; }
+
+  .scroller { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+  .scroller .shot { flex: none; width: 140px; }
+  .scroller .shot .box { height: 100px; }
+  .scroller .shot .cap { font-size: 11px; color: #868d96; margin-top: 4px; }
+
+  /* десктопные переопределения */
+  .frame[data-view="desktop"] .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+  .frame[data-view="desktop"] .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; }
+  .frame[data-view="desktop"] .gal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .frame[data-view="desktop"] .gal-grid .shot { width: auto; }
+  .frame[data-view="desktop"] .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .frame[data-view="desktop"] .btn { max-width: 320px; }
+  .frame[data-view="mobile"] .desk-only { display: none; }
+  .frame[data-view="desktop"] .mob-only { display: none; }
+
+  /* hero */
+  .hero { background: #3a4048; color: #fff; }
+  .hero .tag { background: #fff; color: #1a1d21; }
+  .hero h2.t { font-size: 30px; line-height: 1.18; }
+  .frame[data-view="desktop"] .hero h2.t { font-size: 46px; }
+  .hero .btn { background: #fff; color: #1a1d21; }
+  .hero .btn.ghost { background: transparent; border-color: rgba(255,255,255,.7); color: #fff; }
+  .hero .muted { color: rgba(255,255,255,.7); }
+  .hero .box { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.3); color: rgba(255,255,255,.75); }
+  .hero .note { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); border-left-color: rgba(255,255,255,.5); }
+  .hero .note b { color: #fff; }
+
+  .dark { background: #3a4048; color: #fff; }
+  .dark .tag { background: #fff; color: #1a1d21; }
+  .dark .muted { color: rgba(255,255,255,.7); }
+  .dark .btn { background: #fff; color: #1a1d21; }
+  .dark .btn.ghost { background: transparent; border-color: rgba(255,255,255,.7); color: #fff; }
+  .dark .fish { background: rgba(255,255,255,.25); }
+  .dark .note { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); border-left-color: rgba(255,255,255,.5); }
+  .dark .note b { color: #fff; }
+  .dark .stub { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.5); }
+  .dark .stub .lbl, .dark .stub .gist { color: rgba(255,255,255,.8); }
+  .dark .box { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.3); color: rgba(255,255,255,.75); }
+
+  /* шапка макета */
+  .appbar { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 16px;
+            border-bottom: 1px solid #e6e9ed; position: relative; }
+  .frame[data-view="desktop"] .appbar { height: 64px; padding: 0 80px; }
+  .appbar .logo { width: 32px; height: 32px; border-radius: 50%; background: #dfe3e8; border: 1px solid #c3c8cf; flex: none; }
+  .appbar .ttl { font-size: 14px; font-weight: 700; line-height: 1.15; }
+  .appbar .ttl span { display: block; font-size: 11px; font-weight: 400; color: #868d96; }
+
+  .footer { background: #2a2e34; color: #b6bcc4; font-size: 12px; padding: 24px 20px 40px; }
+  .frame[data-view="desktop"] .footer { padding: 40px 80px; }
+  .footer .docs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .footer .doc { border: 1px solid #4a5058; border-radius: 6px; padding: 7px 10px; font-size: 11px; }
+
+  .screens { max-width: 820px; margin: 32px auto 0; }
+  .screens h3 { font-size: 15px; margin: 0 0 12px; }
+  .screen { background: #fff; border: 1px solid #c3c8cf; border-radius: 10px; padding: 20px; margin-bottom: 14px; }
+
+  @media (max-width: 460px) { .stage { padding: 16px 8px 60px; } }
+</style>
+</head>
+<body>
+
+<div class="tool">
+  <h1>Вайрфрейм главной · мечеть «Шамиль»</h1>
+  <span class="sub">день 2 · лоу-фай, без палитры и типографики</span>
+  <span class="spacer"></span>
+  <div class="seg" role="group" aria-label="Вид">
+    <button id="mob" aria-pressed="true">Мобайл 390</button>
+    <button id="desk" aria-pressed="false">Десктоп 1200</button>
+  </div>
+  <label class="toggle"><input type="checkbox" id="notes" checked> пояснения</label>
+</div>
+
+<div class="stage">
+<div class="frame" data-view="mobile" id="frame">
+
+  <!-- 0 ШАПКА -->
+  <div class="appbar">
+    <span class="tag">0 · шапка</span>
+    <div class="logo"></div>
+    <div class="ttl">Мечеть «Шамиль»<span>Уфа</span></div>
+    <span style="flex:1"></span>
+    <div class="btn sm">Помочь</div>
+  </div>
+  <div class="b" style="padding-top:12px;padding-bottom:12px;border-bottom:0">
+    <div class="inner">
+      <div class="note"><b>Sticky, появляется после hero.</b> Меню нет — одностраничник, бургер лишний.
+      Телефона в шапке нет (у референса есть): он съедает место под CTA, а звонить сюда незачем.</div>
+    </div>
+  </div>
+
+  <!-- 1 HERO -->
+  <div class="b hero wide">
+    <span class="tag">1 · hero</span>
+    <div class="inner">
+      <div class="hero-grid">
+        <div>
+          <h2 class="t">Мы поможем вам построить себе дом в раю за 100 ₽</h2>
+          <p class="muted">Мечеть «Шамиль» в Уфе, на 500 человек</p>
+          <div class="btn">Пожертвовать от 100 ₽</div>
+          <div class="btn ghost">Поделиться сбором</div>
+          <p class="muted num" style="margin-top:14px">Уже собрано 12 840 000 ₽ от 1 204 человек</p>
+          <p class="muted" style="text-align:center;margin:18px 0 0">⌄</p>
+        </div>
+        <div class="box" style="height:220px">ладони / чаша с мечетью<br>белая линейная графика<br>статика + лёгкий CSS-эффект</div>
+      </div>
+      <div class="note"><b>Слоган и CTA, не информация.</b> Главная ошибка референса — H1 «Сбор на
+      строительство мечети…»: подпись к фотографии вместо обещания. Название мечети и город у нас
+      ниже и мельче. Высота <b>88svh</b>, не 100: край следующего блока должен выглядывать, иначе
+      часть людей не понимает, что страница продолжается. Микро-строка с суммой скрывается целиком,
+      пока собрано 0 ₽.</div>
+    </div>
+  </div>
+
+  <!-- 2 ЦЕЛЬ -->
+  <div class="b">
+    <span class="tag">2 · цель сбора</span>
+    <div class="inner">
+      <h2 class="t">Цель на сентябрь</h2>
+      <p class="num" style="font-size:17px;font-weight:700">4 300 000 <span class="muted" style="font-weight:400">из 6 000 000 ₽</span></p>
+      <div class="bar"><i style="width:72%"></i></div>
+      <p class="muted num">72% · осталось 1 700 000 ₽</p>
+
+      <div style="height:1px;background:#e6e9ed;margin:20px 0"></div>
+
+      <p class="muted" style="margin-bottom:2px">Общая цель</p>
+      <p class="num" style="font-size:15px;font-weight:600">12 840 000 <span class="muted" style="font-weight:400">из 240 000 000 ₽</span></p>
+      <div class="bar thin"><i style="width:5.3%"></i></div>
+      <p class="muted num">5,3%</p>
+
+      <p class="muted num" style="margin-top:16px">1 204 пожертвования · 23 региона · обновлено 5 минут назад</p>
+      <div class="btn">Внести свой вклад</div>
+
+      <div class="note"><b>Двойная шкала — самое ценное заимствование.</b> Месячная стоит сверху и
+      крупнее: при цели 240 млн общая на старте показывает доли процента и читается как провал.
+      Месячная заполняется — «не хватает именно тебя». Перевыполнение месячной не обрезаем на 100%:
+      «собираем сверх цели» — сильный сигнал. <b>Блокер:</b> сумма и период месячной цели от заказчика.</div>
+    </div>
+  </div>
+
+  <!-- 3 ПОДЕЛИТЬСЯ -->
+  <div class="b dark">
+    <span class="tag">3 · поделиться</span>
+    <div class="inner">
+      <h2 class="t">Расскажите о сборе</h2>
+      <div class="stub">
+        <div class="lbl">⟨заглушка⟩ хадис о награде за указание на благое — ожидает выверки имамом</div>
+        <span class="fish w90"></span><span class="fish"></span><span class="fish w60"></span>
+        <div class="gist">Смысл по пересказу заказчика: указавшему на благое дело — такая же награда,
+        как совершившему его. Дословная формулировка и источник — от имама, до этого не публикуем.</div>
+      </div>
+      <div class="btn ghost" style="justify-content:space-between;padding:0 16px">WhatsApp <span class="num">462</span></div>
+      <div class="btn ghost" style="justify-content:space-between;padding:0 16px">Telegram <span class="num">218</span></div>
+      <div class="btn ghost" style="justify-content:space-between;padding:0 16px">ВКонтакте <span class="num">58</span></div>
+      <div class="btn ghost">Скопировать ссылку</div>
+      <div class="note"><b>WhatsApp первый и с отрывом</b> — у референса 462 против 218 у Telegram.
+      Для Башкортостана, Кавказа и Средней Азии это главный канал. Отсюда же приоритет
+      <b>og:image</b>: WhatsApp рендерит превью. Счётчик меньше 10 не показываем — «3 репоста»
+      работает против нас. Web Share API на мобайле, явные ссылки как резерв.</div>
+    </div>
+  </div>
+
+  <!-- 4 РЕГИОНЫ -->
+  <div class="b wide">
+    <span class="tag">4 · топ регионов</span>
+    <div class="inner">
+      <h2 class="t">Откуда помогают</h2>
+      <div class="rank me">
+        <div class="body"><div class="name">Ваш регион: Башкортостан — 1 место</div>
+        <div class="sum muted">подсвечен, если известен из ссылки или выбран в форме</div></div>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="rank"><div class="pos">1</div><div class="flag"></div><div class="body">
+            <div class="name">Башкортостан</div><div class="sum num">735 890 ₽ · 412 пожертвований</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:100%"></i></div></div></div>
+          <div class="rank"><div class="pos">2</div><div class="flag"></div><div class="body">
+            <div class="name">Казахстан</div><div class="sum num">180 400 ₽ · 96</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:25%"></i></div></div></div>
+          <div class="rank"><div class="pos">3</div><div class="flag"></div><div class="body">
+            <div class="name">Москва</div><div class="sum num">142 100 ₽ · 88</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:19%"></i></div></div></div>
+          <div class="rank"><div class="pos">4</div><div class="flag"></div><div class="body">
+            <div class="name">Татарстан</div><div class="sum num">96 500 ₽ · 61</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:13%"></i></div></div></div>
+          <div class="rank"><div class="pos">5</div><div class="flag"></div><div class="body">
+            <div class="name">Кыргызстан</div><div class="sum num">74 200 ₽ · 55</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:10%"></i></div></div></div>
+        </div>
+        <div class="desk-only">
+          <div class="rank"><div class="pos">6</div><div class="flag"></div><div class="body">
+            <div class="name">Чечня</div><div class="sum num">61 300 ₽ · 40</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:8%"></i></div></div></div>
+          <div class="rank"><div class="pos">7</div><div class="flag"></div><div class="body">
+            <div class="name">Дагестан</div><div class="sum num">55 900 ₽ · 37</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:7%"></i></div></div></div>
+          <div class="rank"><div class="pos">8</div><div class="flag"></div><div class="body">
+            <div class="name">Санкт-Петербург</div><div class="sum num">40 100 ₽ · 29</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:5%"></i></div></div></div>
+          <div class="rank"><div class="pos">9</div><div class="flag"></div><div class="body">
+            <div class="name">Челябинская обл.</div><div class="sum num">33 700 ₽ · 24</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:4%"></i></div></div></div>
+          <div class="rank"><div class="pos">10</div><div class="flag"></div><div class="body">
+            <div class="name">Свердловская обл.</div><div class="sum num">28 400 ₽ · 21</div>
+            <div class="bar thin" style="margin-top:6px"><i style="width:3%"></i></div></div></div>
+        </div>
+        <p class="mob-only muted" style="padding:10px 0">… строки 6–10 …</p>
+      </div>
+      <p class="muted" style="margin-top:14px">⌄ Ещё 64 региона ждут первого пожертвования</p>
+      <div class="btn">Поддержать за свой регион</div>
+      <div class="btn ghost">🔗 Скопировать ссылку для Башкортостана</div>
+      <div class="note"><b>Место, где референс провалился: 93% его денег не попали ни в одну строку
+      рейтинга.</b> Единственный способ туда попасть у него — прийти по региональной ссылке.
+      У нас <b>два канала</b>: ссылка <code>/{код}/</code> и селектор «Откуда вы?» в форме,
+      предзаполненный из ссылки. Один лишний клик поднимает атрибуцию с ~7% до почти 100%.
+      <b>Регион по IP не определяем</b> — VPN и роуминг ломают это в первый день, а ошибочная
+      строка в публичном рейтинге хуже пустой. Пустые регионы прячем в сворачиваемый список:
+      пустая строка — вызов, 64 нуля подряд — «блок сломан». Ненулевых меньше трёх — блок скрыт
+      целиком, вместо него «Станьте первым регионом».</div>
+    </div>
+  </div>
+
+  <!-- 5 ДОНАТЕРЫ -->
+  <div class="b">
+    <span class="tag">5 · топ донатеров</span>
+    <div class="inner">
+      <h2 class="t">Спасибо тем, кто разрешил себя назвать</h2>
+      <div class="rank"><div class="pos">1</div><div class="body"><div class="name">Наиль Х.</div></div><div class="sum num">50 000 ₽</div></div>
+      <div class="rank"><div class="pos">2</div><div class="body"><div class="name">Аноним</div></div><div class="sum num">32 000 ₽</div></div>
+      <div class="rank"><div class="pos">3</div><div class="body"><div class="name">Руслан А.</div></div><div class="sum num">25 000 ₽</div></div>
+      <div class="rank"><div class="pos">4</div><div class="body"><div class="name">Аноним</div></div><div class="sum num">20 000 ₽</div></div>
+      <p class="muted" style="margin-top:14px">Большинство жертвует анонимно — и это лучшая форма
+      садака. В список попадают только те, кто сам снял галочку.</p>
+      <div class="note"><b>Блок требует заказчик, у референса его нет — и он конфликтует с блоком 9
+      («садака — скрытое поклонение»).</b> Конфликт снимается прямо здесь, текстом: чекбокс
+      «анонимно» включён по умолчанию, а подпись превращает пустоту рейтинга из бага в достоинство.
+      Аноним занимает место, но без имени. Публикуем имя и первую букву фамилии — полное ФИО
+      в публичном списке это лишние ПДн. <b>Блокер:</b> подтвердить анонимность по умолчанию.</div>
+    </div>
+  </div>
+
+  <!-- 6 ГАЛЕРЕЯ -->
+  <div class="b wide">
+    <span class="tag add">6 · галерея + [+] ход стройки</span>
+    <div class="inner">
+      <h2 class="t">Ход строительства</h2>
+      <p class="muted">обновлено 18 сентября</p>
+      <div class="three-col">
+        <div class="rank"><div class="body"><div class="name">✓ Выполнено</div><div class="sum muted">свайное поле, фундамент…</div></div><div class="sum num">13</div></div>
+        <div class="rank"><div class="body"><div class="name">⏳ Сейчас в работе</div><div class="sum muted">кладка стен…</div></div><div class="sum num">8</div></div>
+        <div class="rank"><div class="body"><div class="name">○ Предстоит</div><div class="sum muted">купол, минарет…</div></div><div class="sum num">9</div></div>
+      </div>
+
+      <h2 class="t" style="margin-top:24px">От первой сваи до купола</h2>
+      <div class="scroller gal-grid">
+        <div class="shot"><div class="box">фото</div><div class="cap">июнь 2026 · фундамент</div></div>
+        <div class="shot"><div class="box">фото</div><div class="cap">июль 2026 · сваи</div></div>
+        <div class="shot"><div class="box">фото</div><div class="cap">август 2026 · стены</div></div>
+        <div class="shot"><div class="box">фото</div><div class="cap">сентябрь 2026</div></div>
+      </div>
+      <div class="btn ghost">Все 32 фото</div>
+      <div class="note"><b>Текстовый чек-лист — добавка сверх ТЗ.</b> Он отвечает на немой вопрос
+      «деньги точно на стройку?» лучше фотографий и, в отличие от них, индексируется поисковиками.
+      Порядок фото хронологический <b>с самых первых этапов</b> — прямое требование ТЗ: заливка
+      фундамента вызывает доверие сильнее готовых стен. Мобайл — горизонтальная лента, десктоп —
+      сетка 4 колонки. Лайтбокс на нативном <code>&lt;dialog&gt;</code>, fancybox не тащим.
+      <b>Блокер:</b> фото от заказчика.</div>
+    </div>
+  </div>
+
+  <!-- 7 ПОЧЕМУ МЕЧЕТЬ -->
+  <div class="b">
+    <span class="tag">7 · почему мечеть, а не больница</span>
+    <div class="inner">
+      <h2 class="t">Почему мечеть, а не больница?</h2>
+      <span class="fish"></span><span class="fish w90"></span><span class="fish w75"></span>
+      <div class="stub">
+        <div class="lbl">⟨заглушка⟩ довод про мечеть Куба — формулировка к имаму</div>
+        <span class="fish w90"></span><span class="fish w60"></span>
+        <div class="gist">Смысл: первая постройка Пророка ﷺ после хиджры — мечеть Куба. Исторический
+        тезис, не хадис, но формулировку всё равно выверяет имам.</div>
+      </div>
+      <span class="fish"></span><span class="fish w75"></span><span class="fish w45"></span>
+      <div class="note"><b>Заголовок вопросом, не утверждением</b> — так человек узнаёт собственное
+      возражение и читает дальше. Иллюстрации здесь нет специально: текстовый блок между двумя
+      визуальными (галерея / «цени время») даёт ритму передышку.</div>
+    </div>
+  </div>
+
+  <!-- 8 ВРЕМЯ -->
+  <div class="b">
+    <span class="tag">8 · ценность времени</span>
+    <div class="inner">
+      <div class="box" style="height:180px">AI-иллюстрация «цени, пока не потерял»<br>генерится на дне 4, концепцию утверждает заказчик</div>
+      <h2 class="t">Цени, пока не потерял</h2>
+      <div class="stub">
+        <div class="lbl">⟨заглушка⟩ хадис о ценности времени, молодости и здоровья — ожидает выверки</div>
+        <span class="fish w90"></span><span class="fish"></span><span class="fish w60"></span>
+        <div class="gist">На записи разговора участники сами восстанавливали текст по памяти и не были
+        уверены — это прямая причина правила «не придумывать и не восстанавливать».</div>
+      </div>
+      <div class="chips"><span class="chip">время</span><span class="chip">молодость</span><span class="chip">здоровье</span></div>
+    </div>
+  </div>
+
+  <!-- 9 САДАКА -->
+  <div class="b">
+    <span class="tag">9 · ценность садака</span>
+    <div class="inner">
+      <h2 class="t">Почему садака особенная</h2>
+      <div class="three-col">
+        <div style="border:1px solid #e6e9ed;border-radius:8px;padding:14px;margin-bottom:10px">
+          <div class="name" style="font-weight:700;margin-bottom:6px">🤲 Скрытое поклонение</div>
+          <span class="fish w90"></span><span class="fish w60"></span>
+          <p class="muted" style="margin-top:8px;font-size:12px">Намаз и пост видны другим, садака — нет</p>
+        </div>
+        <div style="border:1px solid #e6e9ed;border-radius:8px;padding:14px;margin-bottom:10px">
+          <div class="name" style="font-weight:700;margin-bottom:6px">⏳ Продлевает жизнь</div>
+          <span class="fish w90"></span><span class="fish w60"></span>
+          <p class="muted" style="margin-top:8px;font-size:12px">⟨заглушка, к имаму⟩</p>
+        </div>
+        <div style="border:1px solid #e6e9ed;border-radius:8px;padding:14px;margin-bottom:10px">
+          <div class="name" style="font-weight:700;margin-bottom:6px">🏠 Баракат в семье</div>
+          <span class="fish w90"></span><span class="fish w60"></span>
+          <p class="muted" style="margin-top:8px;font-size:12px">⟨заглушка, к имаму⟩</p>
+        </div>
+      </div>
+      <div class="stub">
+        <div class="lbl">⟨заглушка⟩ аят (Бакара 2:261) — перевод и оформление к имаму</div>
+        <span class="fish w75"></span><span class="fish w45"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 ФИНАЛЬНЫЙ CTA -->
+  <div class="b dark">
+    <span class="tag">10 · финальный призыв</span>
+    <div class="inner">
+      <h2 class="t">Мы призываем вас принять участие в благословенном деле строительства мечети.
+      Помогите другим людям и своим близким тоже попасть в рай и построить себе дворцы в раю</h2>
+      <div class="btn">Пожертвовать от 100 ₽</div>
+      <p class="muted" style="margin-top:18px">Не можете сейчас? Расскажите другим.</p>
+      <div class="stub">
+        <div class="lbl">⟨заглушка⟩ тот же хадис об указавшем на благое, короткой строкой</div>
+        <span class="fish w75"></span>
+      </div>
+      <div class="btn ghost">Поделиться</div>
+      <div class="note"><b>Текст заголовка — слова заказчика почти дословно</b>, это не религиозная
+      цитата: его можно ставить в вёрстку сразу, выверка не нужна. Альтернативный призыв поделиться
+      требует ТЗ §5.10 — он ловит тех, кто дочитал, но не готов платить. Это не потерянный
+      пользователь, а бесплатный канал.</div>
+    </div>
+  </div>
+
+  <!-- 11 ОПЛАТА -->
+  <div class="b wide">
+    <span class="tag add">11 · способы оплаты + форма + [+] лента</span>
+    <div class="inner">
+      <div class="chips"><span class="chip on">Онлайн</span><span class="chip">По реквизитам</span></div>
+
+      <div class="two-col">
+        <div>
+          <p class="muted" style="margin-top:12px">Сумма</p>
+          <div class="chips">
+            <span class="chip on">100 ₽</span><span class="chip">500 ₽</span>
+            <span class="chip">1 000 ₽</span><span class="chip">Своя</span>
+          </div>
+          <div class="field">100 ₽</div>
+
+          <p class="muted" style="margin-top:16px">Способ оплаты</p>
+          <div class="field"><b style="color:#1a1d21">◉ СБП</b> <span style="flex:1"></span> без комиссии</div>
+          <div class="field">○ Картой онлайн</div>
+          <div class="field">○ SberPay</div>
+          <div class="field">○ T-Pay</div>
+          <p class="muted" style="margin:14px 0 4px">Из других стран</p>
+          <div class="field">○ Kaspi Bank · Казахстан</div>
+          <div class="field">○ Mbank · Кыргызстан</div>
+        </div>
+        <div>
+          <p class="muted" style="margin-top:12px">Откуда вы?</p>
+          <div class="field">Башкортостан ⌄</div>
+          <p class="muted" style="font-size:12px">предзаполнено из региональной ссылки</p>
+
+          <div class="row" style="margin-top:16px"><span>☑</span><span>Анонимное пожертвование</span></div>
+          <div class="field disabled">Ваше имя — активируется снятием галочки</div>
+
+          <div class="row" style="margin-top:14px;align-items:flex-start">
+            <span>☐</span>
+            <span style="font-size:13px">Согласен на обработку персональных данных и условия оплаты</span>
+          </div>
+
+          <div class="box" style="margin-top:12px;font-size:11px">невидимое honeypot-поле <code>antispam</code></div>
+
+          <div class="btn">Внести свой вклад</div>
+          <p class="muted" style="font-size:12px">Комиссия платёжных агентов уже включена в сумму.
+          Дополнительных списаний не производится.</p>
+        </div>
+      </div>
+
+      <div class="note"><b>СБП первым.</b> В живой ленте референса он лидирует — нулевая комиссия
+      плательщику и оплата в два тапа. Референс ставит первой карту; это его ошибка, не копируем.
+      <b>Пресеты сумм</b> у референса отсутствуют вообще, только ручной ввод — 100 ₽ обязателен,
+      он совпадает со слоганом. <b>Телефон не спрашиваем:</b> он нужен только для кабинета
+      и автоплатежа, которых в MVP нет — меньше полей, выше конверсия, меньше ПДн под 152-ФЗ.
+      Чекбокс согласия <b>не предзаполнен</b> (в отличие от анонимности). Клиент валидирует только
+      формат: сумму для списания формирует сервер, клиентской не доверяем никогда.
+      <b>Блокеры:</b> агрегатор и мерчант-аккаунт, placeholder суммы (100 ₽ или 1 000 ₽),
+      формулировка про комиссию.</div>
+
+      <h2 class="t" style="margin-top:28px">Последние поступления</h2>
+      <div class="rank"><div class="body"><div class="name num">14:32 · 100 ₽ · СБП</div><div class="sum muted">Аноним</div></div></div>
+      <div class="rank"><div class="body"><div class="name num">14:19 · 1 000 ₽ · SberPay</div><div class="sum muted">Наиль Х.</div></div></div>
+      <div class="rank"><div class="body"><div class="name num">14:02 · 10 ₽ · СБП</div><div class="sum muted">Аноним</div></div></div>
+      <div class="rank"><div class="body"><div class="name num">13:47 · 500 ₽ · Kaspi</div><div class="sum muted">Аноним</div></div></div>
+      <div class="btn ghost">Показать ещё</div>
+      <div class="note"><b>Лента — добавка сверх ТЗ, и она работает на слоган.</b> Две функции:
+      доказывает, что сайт живой, и <b>нормализует малые суммы</b> — видно, что жертвуют по 10–100 ₽
+      и это нормально. Пагинацию на 2388 страниц не копируем: «Показать ещё», keyset, не OFFSET.</div>
+    </div>
+  </div>
+
+  <!-- ФУТЕР -->
+  <div class="footer">
+    <div style="font-size:13px;color:#e6e9ed;font-weight:600;margin-bottom:6px">Полное юридическое наименование</div>
+    <p class="num">ИНН 0000000000 · ОГРН 0000000000000 · юридический адрес</p>
+    <div class="docs">
+      <span class="doc">Устав · PDF</span><span class="doc">Свидетельство о регистрации</span>
+      <span class="doc">Свидетельство ФНС</span><span class="doc">Регистрация юрлица</span>
+      <span class="doc">Агентский договор</span>
+    </div>
+    <p>Телефон · адрес мечети · Telegram</p>
+    <p>Политика конфиденциальности · Согласие на обработку ПДн · Условия оплаты</p>
+    <div class="note" style="background:rgba(255,255,255,.08);color:#cfd4da;border-left-color:#6b727b">
+      <b style="color:#fff">Футер здесь не декоративный.</b> Сбор на 240 млн без уставных документов
+      на виду — красный флаг для всякого, кто читал про мошеннические сборы, и требование
+      законодательства о благотворительности. У референса 5 PDF плюс ИНН и полное наименование.
+      <b style="color:#fff">Блокер:</b> документы, реквизиты, телефон и адрес от заказчика.
+    </div>
+  </div>
+
+</div><!-- /frame -->
+
+<!-- СЛУЖЕБНЫЕ ЭКРАНЫ -->
+<div class="screens">
+  <h3>Служебные экраны — не блоки главной, но без них платёж не закрывается</h3>
+
+  <div class="screen">
+    <div style="font-weight:700;margin-bottom:8px">/thanks?order_id=… — «Спасибо»</div>
+    <div class="box" style="height:60px">⟳ Проверяем ваш платёж…</div>
+    <p class="muted" style="margin-top:10px">Опрос статуса заказа: каждые <b>3 секунды, максимум
+    10 попыток (30 с)</b>. Лоадер прокручивает фразы («Проверяем ваш платёж…», «Убеждаемся,
+    что ваш взнос дошёл…»), чтобы 30 секунд не читались как зависание.</p>
+    <div class="note"><b>По истечении 30 секунд донат не считается неуспешным.</b> Вебхук провайдера
+    регулярно приходит позже пользовательского редиректа — это два независимых канала, и редирект
+    почти всегда быстрее. Текст на экране: «Мы ещё проверяем, деньги не потеряны», <b>не</b>
+    «платёж не прошёл». У референса честной формулировки здесь нет — это место, где мы обязаны
+    быть лучше. При успехе — сумма, благодарность и <b>сразу кнопка «Поделиться»</b>: момент после
+    пожертвования это пик готовности рассказать о нём.</div>
+  </div>
+
+  <div class="screen">
+    <div style="font-weight:700;margin-bottom:8px">/{код}/ — региональная страница</div>
+    <p class="muted">Та же главная: регион предвыбран в форме, его строка в рейтинге подсвечена.</p>
+    <div class="note"><b>OG-превью своё</b> — заголовок и картинка с суммой региона. У референса
+    на <code>/2/</code> теги остались общими от главной: репост региональной ссылки неотличим
+    от репоста главной. При ставке на «поделиться» это наша бесплатная конверсия. Короткий URL
+    можно продиктовать голосом — активист берёт «ссылку за свой регион» и кидает в земляческий чат.</div>
+  </div>
+
+  <div class="screen">
+    <div style="font-weight:700;margin-bottom:8px">Форма как bottom-sheet / модалка</div>
+    <p class="muted">Любая кнопка «Пожертвовать» открывает ту же форму поверх страницы.</p>
+    <div class="note"><b>ТЗ ставит оплату 11-м блоком — правильно по смыслу, плохо по конверсии.</b>
+    Человек, готовый пожертвовать на первом экране, не должен скроллить всю страницу. Порядок блоков
+    не трогаем, а CTA открывает форму с любой высоты скролла. Одна форма, два места рендера —
+    инлайн в блоке 11 (для дочитавших и для SEO) и оверлей.</div>
+  </div>
+</div>
+
+</div><!-- /stage -->
+
+<script>
+  var frame = document.getElementById('frame');
+  var mob = document.getElementById('mob'), desk = document.getElementById('desk');
+  function setView(v) {
+    frame.dataset.view = v;
+    mob.setAttribute('aria-pressed', String(v === 'mobile'));
+    desk.setAttribute('aria-pressed', String(v === 'desktop'));
+  }
+  mob.onclick = function () { setView('mobile'); };
+  desk.onclick = function () { setView('desktop'); };
+  document.getElementById('notes').onchange = function (e) {
+    document.body.classList.toggle('notes-off', !e.target.checked);
+  };
+</script>
+</body>
+</html>

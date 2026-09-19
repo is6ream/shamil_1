@@ -1,0 +1,45 @@
+# зависимости
+node_modules/
+.pnp
+.pnp.js
+
+# сборка
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# окружение — секреты только через env, в репозиторий не попадают
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# логи
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# тесты и покрытие
+coverage/
+.nyc_output/
+
+# редакторы и ОС
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# данные БД и загрузки (том Docker и файлы админки)
+.docker-data/
+uploads/
+
+# временное
+*.tmp
+.cache/
