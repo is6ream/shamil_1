@@ -1,0 +1,31 @@
+# Локальная разработка: в контейнере живёт только база.
+# Бэкенд и фронтенд запускаются через npm, чтобы сохранить быстрый hot reload.
+# Боевая сборка (Nginx + HTTPS + контейнеры приложений) — день 15 роудмапа.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: shamil-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-shamil}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+      POSTGRES_DB: ${POSTGRES_DB:-shamil}
+      # Таймзона фиксирована: время поступления в живой ленте сравнивается
+      # между сервером и клиентом, расхождение сразу видно пользователю.
+      TZ: Europe/Moscow
+      PGTZ: Europe/Moscow
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-shamil} -d ${POSTGRES_DB:-shamil}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres-data:
+    name: shamil-postgres-data

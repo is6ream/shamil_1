@@ -1,0 +1,81 @@
+/*
+ * Базовые стили документа. Токены — в tokens.css, он импортируется первым,
+ * как и предписано в docs/design/tokens.css: файл копируется из docs/design
+ * без изменений, правки вносятся там, а не здесь.
+ */
+
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-strong);
+  font-family: var(--font-text);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  /* Суммы сбора не должны «прыгать» при обновлении счётчика. */
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+}
+
+h1 {
+  font-size: var(--fs-display);
+}
+
+h2 {
+  font-size: var(--fs-h2);
+}
+
+h3 {
+  font-size: var(--fs-h3);
+}
+
+p {
+  margin: 0 0 var(--sp-3);
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}
+
+/* Анимации — украшение, а не содержание: по системной настройке выключаются. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

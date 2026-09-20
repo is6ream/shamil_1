@@ -1,0 +1,26 @@
+{
+  "name": "@shamil/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Лендинг сбора на строительство мечети «Шамиль»",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "next": "16.3.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.12.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.5",
+    "typescript": "^6.0.3"
+  }
+}

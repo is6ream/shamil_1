@@ -1,0 +1,26 @@
+{
+  "name": "mechet-shamil",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Сайт сбора пожертвований на строительство мечети «Шамиль» в Уфе",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "overrides": {
+    "multer": "^2.4.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run start:dev --workspace @shamil/api",
+    "dev:web": "npm run dev --workspace @shamil/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down"
+  }
+}

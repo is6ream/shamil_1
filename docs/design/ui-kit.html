@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="ru" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мечеть «Шамиль» · UI-кит</title>
+<script>document.documentElement.classList.remove('no-js')</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Golos+Text:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="kit.css">
+<link rel="stylesheet" href="scene.css">
+<style>
+/* Служебное оформление самого каталога — в прод не едет */
+body { padding-bottom: 80px; }
+.kit-head { padding: clamp(36px, 5vw, 64px) 0 0; }
+.kit-head h1 { font-size: clamp(30px, 4vw, 46px); }
+.kit-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; }
+.kit-nav a { padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--r-pill);
+  font-size: 13.5px; text-decoration: none; color: var(--ink-soft); background: var(--white); }
+.kit-nav a:hover { border-color: var(--blue); color: var(--blue); }
+
+.sec { padding: clamp(40px, 5vw, 66px) 0 0; }
+.sec > h2 { padding-bottom: 8px; }
+.sec-note { max-width: 44em; color: var(--ink-soft); margin: 12px 0 28px; }
+
+.spec { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.slot { border: 1px dashed var(--line); border-radius: var(--r-md); padding: 20px; background: var(--white); }
+.slot.dark { background: var(--grad-panel); border-color: rgba(255,255,255,.22); }
+.slot > .tag { display: block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 14px; }
+.slot.dark > .tag { color: rgba(255,255,255,.6); }
+.row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+
+.sw { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); background: var(--white); }
+.sw .chip-color { height: 82px; }
+.sw .meta { padding: 12px 14px; font-size: 13px; line-height: 1.45; }
+.sw .meta b { display: block; font-family: var(--font-text); font-size: 13.5px; }
+.sw .meta code { font-size: 12px; color: var(--ink-soft); }
+.sw .meta span { display: block; color: var(--ink-soft); margin-top: 4px; }
+
+table.t { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+table.t th, table.t td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+table.t th { font-size: 12.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
+table.t code { font-size: 13px; color: var(--blue); }
+
+.kbd { display: inline-block; padding: 2px 7px; border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 6px; background: var(--white); font-size: 12.5px; font-family: ui-monospace, monospace; }
+.callout { border-left: 3px solid var(--blue); background: var(--white); border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 16px 20px; margin: 22px 0; font-size: 15px; }
+.callout b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="wrap kit-head">
+  <div class="eyebrow"><span class="dot"></span> День 3 роудмапа · 21.09.2026</div>
+  <h1>UI-кит</h1>
+  <p class="lede">Каталог всего, из чего собрана страница. Три файла — <code>tokens.css</code>,
+  <code>kit.css</code>, <code>scene.css</code> — подключены сюда так же, как в прототип.
+  Что видно здесь, то и на сайте: отдельной «дизайнерской» копии стилей не существует.</p>
+  <nav class="kit-nav">
+    <a href="#color">Цвет</a><a href="#type">Типографика</a><a href="#buttons">Кнопки</a>
+    <a href="#surfaces">Поверхности</a><a href="#progress">Прогресс-бары</a><a href="#forms">Поля формы</a>
+    <a href="#rank">Рейтинги</a><a href="#stub">Заглушки</a><a href="#hero">Hero</a>
+    <a href="#goal">Блок цели</a><a href="#a11y">Фокус и движение</a>
+  </nav>
+</div>
+
+<!-- ══ ЦВЕТ ══════════════════════════════════════════════════════════════ -->
+<section class="sec" id="color">
+  <div class="wrap">
+    <h2>Цвет</h2>
+    <p class="sec-note">Три цвета из ТЗ плюс кремовая основа. Зелёного нет нигде — это цвет
+    забракованного референса и самый затасканный «исламский» цвет в рунете; синий отличит нас
+    и в выдаче, и в ленте репостов.</p>
+
+    <div class="spec">
+      <div class="sw"><div class="chip-color" style="background:#FAF6F0"></div>
+        <div class="meta"><b>Кремовый</b><code>--cream · #FAF6F0</code><span>Фон всей страницы. Не белый — белый читается как «сервис», а не «фонд»</span></div></div>
+      <div class="sw"><div class="chip-color" style="background:#F3ECE2"></div>
+        <div class="meta"><b>Кремовый глубокий</b><code>--cream-deep · #F3ECE2</code><span>Дорожки шкал, вложенные плашки</span></div></div>
+      <div class="sw"><div class="chip-color" style="background:#FFFFFF;box-shadow:inset 0 0 0 1px #E7DFD4"></div>
+        <div class="meta"><b>Белый</b><code>--white · #FFFFFF</code><span>Карточки поверх кремового — так они «поднимаются»</span></div></div>
+      <div class="sw"><div class="chip-color" style="background:#0A3367"></div>
+        <div class="meta"><b>Тёмно-синий</b><code>--ink · #0A3367</code><span>Текст, тёмный конец градиента, футер. Контраст на кремовом <b style="display:inline">11.59</b> — AAA</span></div></div>
+      <div class="sw"><div class="chip-color" style="background:#026AA9"></div>
+        <div class="meta"><b>Синий</b><code>--blue · #026AA9</code><span>Кнопки, ссылки, проценты. <b style="display:inline">5.36</b> — AA, не мельче 14&nbsp;px</span></div></div>
+      <div class="sw"><div class="chip-color" style="background:#4A6285"></div>
+        <div class="meta"><b>Приглушённый</b><code>--ink-soft · #4A6285</code><span>Подзаголовки и подписи. <b style="display:inline">5.78</b> — AA</span></div></div>
+      <div class="sw"><div class="chip-color" style="background:#E7DFD4"></div>
+        <div class="meta"><b>Тёплая граница</b><code>--line · #E7DFD4</code><span>Разделители. Тёплая, не серая: серая линия на кремовом выглядит грязной</span></div></div>
+      <div class="sw"><div class="chip-color" style="background:radial-gradient(120% 110% at 50% 0%,#0E4A8C 0%,#0A3367 45%,#062244 100%)"></div>
+        <div class="meta"><b>Градиент панели</b><code>--grad-panel</code><span>Только внутри скруглённой панели. Три панели на страницу: hero, финальный CTA, футер</span></div></div>
+    </div>
+
+    <div class="callout"><b>Компоненты не знают собственного цвета.</b> Они обращаются к ролям —
+    <code>--surface</code>, <code>--text-strong</code>, <code>--accent</code>, <code>--border</code>.
+    Роли переопределяются один раз на <code>.panel</code> и <code>footer</code>, и любой блок,
+    положенный внутрь, инвертируется сам. В прототипе дня 2 на это уходило семь ручных правил
+    вида <code>.panel .btn-primary</code>, и каждый новый компонент требовал восьмого.</div>
+
+    <div class="spec" style="margin-top:22px">
+      <div class="slot"><span class="tag">Роли на кремовом</span>
+        <a class="btn btn-primary" href="#color">Пожертвовать</a>
+        <p class="micro">accent #026AA9 · on-accent белый · border #E7DFD4</p>
+      </div>
+      <div class="slot dark"><span class="tag">Те же роли внутри .panel</span>
+        <a class="btn btn-primary" href="#color">Пожертвовать</a>
+        <p class="micro">accent белый · on-accent #0A3367 · border белый 28%</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ТИПОГРАФИКА ═══════════════════════════════════════════════════════ -->
+<section class="sec" id="type">
+  <div class="wrap">
+    <h2>Типографика</h2>
+    <p class="sec-note">Lora в заголовках и суммах, Golos Text во всём остальном. Сериф —
+    главный носитель «дорогого» ощущения: гротеск на кремовом даст аккуратный лендинг,
+    сериф даёт «фонд, которому пятнадцать лет». Отбор и отказы — в
+    <a href="typography.md">typography.md</a>.</p>
+
+    <div class="card">
+      <h1 style="font-size:clamp(32px,4.6vw,56px)">Мы поможем вам построить себе дом в раю за 100 ₽</h1>
+      <p class="micro">display · Lora 600 · clamp(35→68px) · трекинг −0.02em</p>
+      <hr style="border:0;border-top:1px solid var(--line);margin:26px 0">
+      <h2>Цель на сентябрь</h2>
+      <p class="micro">h2 · Lora 600 · clamp(25→38px)</p>
+      <hr style="border:0;border-top:1px solid var(--line);margin:26px 0">
+      <div class="amount amount-lg">12 840 000 <small style="font-family:var(--font-text);font-size:15px;font-weight:400;color:var(--ink-soft)">из 240 000 000 ₽</small></div>
+      <p class="micro">amount-lg · Lora 600 · tabular-nums · узкий неразрывный пробел U+202F в разрядах</p>
+      <hr style="border:0;border-top:1px solid var(--line);margin:26px 0">
+      <p style="max-width:var(--measure)">Основной текст 17 px. Поднят с 16: на кремовом фоне
+      и рядом с крупными серифными заголовками 16 px выглядит мелко, а аудитория сбора —
+      не только двадцатилетние.</p>
+      <p class="small">small 14 px — подписи</p>
+      <p class="micro">micro 12.5 px — комиссия, согласие на обработку персональных данных</p>
+    </div>
+
+    <div class="spec" style="margin-top:20px">
+      <div class="slot"><span class="tag">Проверка кириллицы</span>
+        <p style="font-family:var(--font-display);font-size:26px;font-weight:600;margin:0 0 6px">Ғәлимә · Әлихан · Ҙ Ҡ Ҫ Ң Ү Һ</p>
+        <p style="margin:0">Ғәлимә Н. · Әлихан С. · Ҡотлоболаҡ</p>
+        <p class="micro">Башкирский и казахский набор. Playfair Display, Literata и Spectral
+        на этих буквах ломались — поэтому и не взяты. <code>cyrillic-ext</code> обязателен.</p>
+      </div>
+      <div class="slot"><span class="tag">Проверка знака рубля</span>
+        <p style="font-family:var(--font-display);font-size:38px;font-weight:600;margin:0">100 ₽ · 240 000 000 ₽</p>
+        <p class="micro">В Lora знак есть — проверено. В Playfair Display его НЕТ, а это самый
+        крупный кегль на странице: символ подставился бы из системного фоллбэка,
+        то есть другим шрифтом внутри главной цифры сбора.</p>
+      </div>
+      <div class="slot"><span class="tag">Символ ﷺ — решено на дне 3</span>
+        <p style="font-size:22px;margin:0">Первым, что построил Пророк ﷺ, была мечеть Куба</p>
+        <p class="micro">Глифа U+FDFA нет ни в Lora, ни в Golos Text. Подключаем узкий
+        <code>@font-face</code> Amiri с <code>unicode-range: U+FDFA</code> — 1–2 КБ ради одного
+        символа. Писать формулу словами не стали: сокращение привычно аудитории и не разрывает
+        строку. <b>К имаму:</b> допустимо ли сокращение в вёрстке.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ КНОПКИ ════════════════════════════════════════════════════════════ -->
+<section class="sec" id="buttons">
+  <div class="wrap">
+    <h2>Кнопки</h2>
+    <p class="sec-note">Один класс <code>.btn</code> работает и на <code>&lt;a&gt;</code>,
+    и на <code>&lt;button&gt;</code>. Разметку выбираем по смыслу: переход — ссылка,
+    действие — кнопка. Высота 52 px основная, 44 px в шапке (минимум для пальца).</p>
+
+    <div class="spec">
+      <div class="slot"><span class="tag">Primary · обычная и наведение</span>
+        <div class="row"><button class="btn btn-primary" type="button">Пожертвовать от 100 ₽</button></div>
+        <p class="micro">Подъём на 1 px и усиление тени, 180 мс. Тень — только у синих кнопок
+        и sticky-шапки: три уровня теней никто не различает.</p>
+      </div>
+      <div class="slot"><span class="tag">Ghost</span>
+        <div class="row"><button class="btn btn-ghost" type="button">Поделиться сбором</button></div>
+        <p class="micro">Граница 1.5 px, на наведении синеет. Тени нет.</p>
+      </div>
+      <div class="slot"><span class="tag">Малая · в шапке</span>
+        <div class="row"><button class="btn btn-primary btn-sm" type="button">Помочь</button>
+        <button class="btn btn-ghost btn-sm" type="button">Все 32 фото</button></div>
+      </div>
+      <div class="slot"><span class="tag">Недоступна</span>
+        <div class="row"><button class="btn btn-primary" type="button" disabled>Внести свой вклад</button></div>
+        <p class="micro">Так выглядит сабмит, пока не отмечено согласие на обработку ПДн.</p>
+      </div>
+      <div class="slot"><span class="tag">Отправка</span>
+        <div class="row"><button class="btn btn-primary" type="button" aria-busy="true"><span class="spinner"></span> Переходим к оплате</button></div>
+        <p class="micro">Ширина не меняется: платёжная форма не должна «прыгать» в момент сабмита.</p>
+      </div>
+      <div class="slot"><span class="tag">Во всю ширину</span>
+        <button class="btn btn-primary btn-block" type="button">Внести свой вклад</button>
+        <p class="micro">На экранах уже 420 px все кнопки в <code>.cta</code> становятся такими сами.</p>
+      </div>
+      <div class="slot dark"><span class="tag">На градиентной панели</span>
+        <div class="row"><button class="btn btn-primary" type="button">Пожертвовать</button>
+        <button class="btn btn-ghost" type="button">Поделиться</button></div>
+        <p class="micro">Ни одного отдельного правила: роли переопределены на <code>.panel</code>.</p>
+      </div>
+      <div class="slot"><span class="tag">Фокус с клавиатуры</span>
+        <div class="row"><button class="btn btn-primary" type="button" autofocus>Нажмите Tab</button></div>
+        <p class="micro">Кольцо 3 px с отступом 2 px. В прототипе дня 2 фокуса не было нигде —
+        человек с клавиатуры не видел, где находится, прямо в платёжной форме.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ПОВЕРХНОСТИ ═══════════════════════════════════════════════════════ -->
+<section class="sec" id="surfaces">
+  <div class="wrap">
+    <h2>Поверхности</h2>
+    <p class="sec-note">Ритм страницы держится чередованием «кремовый ↔ белая карточка»,
+    без единой лишней краски. Градиент выходит дважды, и оба раза это событие: начало и призыв.</p>
+
+    <div class="card">
+      <h3>Карточка</h3>
+      <p class="muted" style="margin:10px 0 0">Белая на кремовом, тёплая граница, скругление 22 px,
+      без тени: на тёплом фоне граница работает лучше тени.</p>
+    </div>
+
+    <div class="panel" style="margin-top:18px">
+      <div class="pattern"></div>
+      <h3>Панель</h3>
+      <p class="sub" style="margin:10px 0 0">Скругление 28 px, радиальный градиент, гирих белой
+      линией на 5%. Как только узор становится читаемым, он превращается в «восточный шаблон» —
+      ровно та безликость, от которой уходим.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ПРОГРЕСС ══════════════════════════════════════════════════════════ -->
+<section class="sec" id="progress">
+  <div class="wrap">
+    <h2>Прогресс-бары</h2>
+    <p class="sec-note">Единственная анимация, которая прямо работает на конверсию: шкала
+    на глазах растёт. Заполняются от нуля при первом появлении в экране, 1.6 с.</p>
+
+    <div class="callout"><b>Заполнение через <code>transform</code>, а не <code>width</code>.</b>
+    Ширина каждый кадр гоняет layout; трансформация уезжает на композитор. Приём: заливка
+    во всю ширину дорожки, сдвинутая влево на <code>100% − p</code>. Тогда её правый торец
+    остаётся круглым, а левый обрезается скруглением дорожки — при <code>scaleX()</code> торец
+    сплющило бы в вертикальную грань. Значение приходит из <code>--p</code>, посчитанного
+    и обрезанного по 100% на сервере; <b>без JS шкала статична и показывает верное значение</b>,
+    класс <code>.in</code> лишь добавляет прокрутку.</div>
+
+    <div class="spec">
+      <div class="slot"><span class="tag">Месячная цель · 13 px</span>
+        <div class="track in" role="progressbar" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Собрано за месяц" style="--p:72%"><i class="fill"></i></div>
+        <p class="micro">72% — месячная шкала всегда крупнее общей.</p>
+      </div>
+      <div class="slot"><span class="tag">Общая цель · 7 px</span>
+        <div class="track thin in" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Собрано всего" style="--p:5.3%"><i class="fill"></i></div>
+        <p class="micro">5,3% — вот почему месячная шкала вообще появилась.</p>
+      </div>
+      <div class="slot"><span class="tag">Первый день сбора</span>
+        <div class="track in" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Собрано за месяц" style="--p:0%"><i class="fill"></i></div>
+        <p class="micro">Дорожка видна, заливки нет. Шкала в нуле честнее, чем спрятанный блок:
+        сбор только открылся, и это нормально.</p>
+      </div>
+      <div class="slot"><span class="tag">Перевыполнение</span>
+        <div class="track in" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Собрано за месяц" style="--p:100%"><i class="fill"></i></div>
+        <p class="micro">Шкалу не обрезаем и не прячем: 118% — сильный сигнал, а не ошибка данных.
+        Подпись меняется на «Цель месяца достигнута, собираем сверх».</p>
+      </div>
+      <div class="slot"><span class="tag">В строке рейтинга</span>
+        <div class="track thin in" style="--p:100%"><i class="fill"></i></div>
+        <div class="track thin in" style="--p:25%;margin-top:10px"><i class="fill"></i></div>
+        <p class="micro">Здесь шкала относительна лидеру, а не цели: 100% у первой строки
+        не значит «собрано всё».</p>
+      </div>
+      <div class="slot dark"><span class="tag">На панели</span>
+        <div class="track in" style="--p:72%"><i class="fill"></i></div>
+        <p class="micro">Градиент заливки переворачивается в белый автоматически.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ПОЛЯ ФОРМЫ ════════════════════════════════════════════════════════ -->
+<section class="sec" id="forms">
+  <div class="wrap">
+    <h2>Поля формы</h2>
+    <p class="sec-note">Каждый элемент — настоящий <code>input</code> под <code>.sr-only</code>
+    внутри <code>&lt;label&gt;</code>. В прототипе дня 2 это были <code>span</code> и <code>div</code>:
+    мышью выглядело правильно, с клавиатуры форма была непроходима, а скринридер не объявлял
+    выбранную сумму и способ оплаты. На платёжной форме это не косметика.</p>
+
+    <div class="card" style="max-width:640px">
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend class="field-label" style="padding:0">Сумма пожертвования</legend>
+        <div class="chips">
+          <label class="chip"><input class="sr-only" type="radio" name="amt" checked> 100 ₽</label>
+          <label class="chip"><input class="sr-only" type="radio" name="amt"> 500 ₽</label>
+          <label class="chip"><input class="sr-only" type="radio" name="amt"> 1 000 ₽</label>
+          <label class="chip"><input class="sr-only" type="radio" name="amt"> Своя</label>
+        </div>
+      </fieldset>
+      <label class="field-label" for="kit-sum">Своя сумма</label>
+      <input class="input big" id="kit-sum" type="text" inputmode="numeric" value="100 ₽">
+      <p class="micro">Пресет 100 ₽ обязателен: он совпадает со слоганом. У референса пресетов
+      нет вообще, только ручной ввод — упущение.</p>
+
+      <fieldset style="border:0;padding:0;margin:22px 0 0">
+        <legend class="field-label" style="padding:0">Способ оплаты</legend>
+        <label class="pay"><input class="sr-only" type="radio" name="m" checked><span class="dot"></span> СБП <span class="tag">без комиссии</span></label>
+        <label class="pay"><input class="sr-only" type="radio" name="m"><span class="dot"></span> Картой онлайн</label>
+        <div class="divider-label">Из других стран</div>
+        <label class="pay"><input class="sr-only" type="radio" name="m"><span class="dot"></span> Kaspi Bank <span class="tag">Казахстан</span></label>
+        <label class="pay"><input class="sr-only" type="radio" name="m"><span class="dot"></span> Mbank <span class="tag">Кыргызстан</span></label>
+      </fieldset>
+      <p class="micro">СБП первым: нулевая комиссия плательщику и оплата в два тапа. Референс
+      ставит первой карту — это его ошибка, в его же ленте лидирует СБП.</p>
+
+      <label class="field-label" for="kit-region">Откуда вы?</label>
+      <select class="input" id="kit-region">
+        <option>Башкортостан</option><option>Казахстан</option><option>Кыргызстан</option>
+        <option>Не указывать</option>
+      </select>
+      <p class="micro">Второй канал атрибуции рядом с региональной ссылкой. Один лишний клик
+      поднимает попадание в рейтинг с ~7% (столько у референса) почти до 100%.
+      Регион по IP не определяем: VPN и роуминг ломают это в первый же день.</p>
+
+      <label class="check"><input class="sr-only" type="checkbox" checked>
+        <span class="bx"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 6.5 12 13 4.5"/></svg></span>
+        <span>Анонимное пожертвование
+          <span class="micro" style="display:block;margin-top:2px">включено по умолчанию — садака лучше всего, когда о ней не знают</span></span>
+      </label>
+
+      <label class="field-label" for="kit-name">Ваше имя</label>
+      <input class="input" id="kit-name" type="text" placeholder="Активируется снятием галочки" disabled>
+
+      <label class="check"><input class="sr-only" type="checkbox">
+        <span class="bx"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4"
+          stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 6.5 12 13 4.5"/></svg></span>
+        <span>Согласен на обработку персональных данных и условия оплаты</span>
+      </label>
+      <p class="micro">Чекбокс согласия <b>не предзаполнен</b> — в отличие от анонимности.</p>
+
+      <label class="field-label" for="kit-err">Состояние ошибки</label>
+      <input class="input" id="kit-err" type="text" value="50" aria-invalid="true" aria-describedby="kit-err-msg">
+      <p class="field-error" id="kit-err-msg">Минимальная сумма — 100 ₽</p>
+      <p class="micro">Клиент проверяет <b>только формат</b>. Сумму для списания формирует сервер:
+      клиентской не доверяем никогда.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ РЕЙТИНГИ ══════════════════════════════════════════════════════════ -->
+<section class="sec" id="rank">
+  <div class="wrap">
+    <h2>Строка рейтинга</h2>
+    <p class="sec-note">Один компонент на три блока: регионы, донатеры и живая лента поступлений.</p>
+    <div class="card">
+      <div class="rank me"><div class="body"><div class="name">Ваш регион: Башкортостан — 1 место</div>
+        <div class="sum">подсвечивается, если вы пришли по региональной ссылке или выбрали регион в форме</div></div></div>
+      <div class="rank"><div class="pos">1</div><div class="flag" style="background:linear-gradient(160deg,#C9DCEB,#7FA8C9)"></div>
+        <div class="body"><div class="name">Башкортостан</div><div class="sum">412 пожертвований</div>
+        <div class="track thin in" style="--p:100%"><i class="fill"></i></div></div><div class="amt">735 890 ₽</div></div>
+      <div class="rank"><div class="pos">2</div><div class="flag" style="background:linear-gradient(160deg,#C9DCEB,#7FA8C9)"></div>
+        <div class="body"><div class="name">Казахстан</div><div class="sum">96 пожертвований</div>
+        <div class="track thin in" style="--p:25%"><i class="fill"></i></div></div><div class="amt">180 400 ₽</div></div>
+      <div class="rank"><div class="pos">3</div><div class="body"><div class="name muted">Аноним</div>
+        <div class="sum">Татарстан</div></div><div class="amt">20 000 ₽</div></div>
+      <div class="rank"><div class="body"><div class="name">14:02 · СБП</div><div class="sum">Аноним</div></div>
+        <div class="amt">10 ₽</div></div>
+      <details class="more"><summary>Ещё 64 региона ждут первого пожертвования</summary>
+        <div class="grid"><span>Адыгея</span><span>Алтай</span><span>Амурская обл.</span>
+        <span>Архангельская обл.</span><span>Астраханская обл.</span><span>…</span></div></details>
+    </div>
+    <p class="micro" style="max-width:44em">Строка на 10 ₽ в ленте стоит здесь не случайно: лента
+    <b>нормализует малые суммы</b>. Видно, что жертвуют по 10–100 ₽ и это нормально — прямая
+    поддержка слогана.</p>
+  </div>
+</section>
+
+<!-- ══ ЗАГЛУШКИ ══════════════════════════════════════════════════════════ -->
+<section class="sec" id="stub">
+  <div class="wrap">
+    <h2>Заглушка религиозного текста</h2>
+    <p class="sec-note">Заказчик пересказывал хадисы по памяти и сам был не уверен в формулировках.
+    Видимая рамка обязательна: она не даёт случайно выпустить в прод невыверенный текст.
+    Придумывать или «восстанавливать» хадис нельзя даже при горящем сроке.</p>
+    <div class="spec">
+      <div class="slot"><span class="tag">На светлом</span>
+        <div class="stub"><div class="lbl">⟨заглушка⟩ хадис о награде за указание на благое — ожидает выверки имамом</div>
+          <q>Здесь будет точная формулировка с источником</q>
+          <p class="gist">Смысл по пересказу заказчика: указавшему на благое дело — такая же награда,
+          как совершившему его.</p></div>
+      </div>
+      <div class="slot dark"><span class="tag">На панели</span>
+        <div class="stub"><div class="lbl">⟨заглушка⟩ аят Бакара 2:261 — перевод и оформление к имаму</div>
+          <q>Здесь будет выверенный перевод</q></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+<section class="sec" id="hero">
+  <div class="wrap">
+    <h2>Hero</h2>
+    <p class="sec-note">Первый экран — слоган и CTA, а не информация. Это прямое требование ТЗ
+    и главное отличие от референса, у которого H1 — подпись к фотографии. Высота 88svh:
+    нижний край следующего блока должен выглядывать, иначе часть людей не понимает,
+    что страница продолжается.</p>
+
+    <div class="card" style="padding:clamp(20px,3vw,34px)">
+      <div style="display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(24px,4vw,54px);align-items:center"
+           class="kit-hero">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> Сбор идёт · 1 204 человека уже помогли</div>
+          <h1 style="font-size:clamp(30px,4.4vw,52px)">Мы поможем вам построить себе дом в раю
+            <em style="font-style:normal;color:var(--blue);white-space:nowrap">за 100 ₽</em></h1>
+          <p class="lede">Мечеть «Шамиль» в Уфе на 500 человек. Каждый вклад остаётся садака джария —
+          тем, что продолжает приносить награду и после нас.</p>
+          <div class="cta">
+            <a class="btn btn-primary" href="#hero">Пожертвовать от 100 ₽</a>
+            <a class="btn btn-ghost" href="#hero">Поделиться сбором</a>
+          </div>
+          <p class="small" style="margin-top:26px">Уже собрано <b style="color:var(--ink)">12 840 000 ₽</b> из 23 регионов и стран</p>
+        </div>
+        <div class="stage" style="max-width:380px">
+          <div class="pattern"></div><div class="glow"></div>
+          <svg class="art" viewBox="0 0 400 400" aria-hidden="true">
+            <g class="coin"><circle class="stroke" cx="200" cy="150" r="26"/>
+              <text x="200" y="156" text-anchor="middle">100 ₽</text></g>
+            <g class="mosque">
+              <path class="stroke" style="--len:340" d="M150 268 v-52 a50 50 0 0 1 100 0 v52"/>
+              <path class="stroke fillfade" d="M186 268 v-34 a14 14 0 0 1 28 0 v34"/>
+              <path class="stroke" style="--len:150" d="M128 268 v-46"/>
+              <path class="stroke" style="--len:150" d="M272 268 v-46"/>
+              <path class="stroke fillfade" d="M128 222 l0 -10 M272 222 l0 -10"/>
+              <circle class="stroke fillfade" cx="128" cy="208" r="5"/>
+              <circle class="stroke fillfade" cx="272" cy="208" r="5"/>
+              <path class="stroke" style="--len:160" d="M140 268 h120"/>
+              <g class="crescent"><path class="stroke" d="M200 152 a15 15 0 1 0 11 25 a12 12 0 1 1 -11 -25"/></g>
+            </g>
+            <g class="hands">
+              <path class="stroke" d="M96 272 c0 -26 14 -42 38 -46 c18 -3 40 -2 66 -2 c26 0 48 -1 66 2
+                c24 4 38 20 38 46 c0 34 -46 62 -104 62 c-58 0 -104 -28 -104 -62 z"/>
+              <path class="stroke" d="M96 272 c-16 -6 -28 -20 -30 -38 c-1 -10 6 -16 13 -12 c9 5 15 16 17 28"/>
+              <path class="stroke" d="M304 272 c16 -6 28 -20 30 -38 c1 -10 -6 -16 -13 -12 c-9 5 -15 16 -17 28"/>
+              <path class="stroke" d="M138 300 c22 10 50 14 62 14 c12 0 40 -4 62 -14" opacity=".5"/>
+            </g>
+            <circle class="stroke spark" cx="150" cy="200" r="2.5"/>
+            <circle class="stroke spark" cx="255" cy="185" r="2"/>
+            <circle class="stroke spark" cx="205" cy="120" r="2.5"/>
+          </svg>
+          <div class="caption">Ваши 100 ₽ — это купол, который простоит дольше нас</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spec" style="margin-top:20px">
+      <div class="slot"><span class="tag">Состояние: первый день сбора</span>
+        <div class="eyebrow" style="margin-bottom:12px">Сбор открыт</div>
+        <p style="font-family:var(--font-display);font-size:24px;font-weight:600;line-height:1.15;margin:0 0 12px">
+          Мы поможем вам построить себе дом в раю <span style="color:var(--blue)">за 100 ₽</span></p>
+        <a class="btn btn-primary btn-sm" href="#hero">Пожертвовать от 100 ₽</a>
+        <p class="micro"><b>Строка «уже собрано» исчезает целиком.</b> «Собрано 0 ₽» убивает доверие
+        сильнее, чем её отсутствие. Надзаголовок при этом меняется со «Сбор идёт · N человек»
+        на «Сбор открыт» — врать про несуществующих доноров мы не будем.</p>
+      </div>
+      <div class="slot"><span class="tag">Состояние: prefers-reduced-motion</span>
+        <p class="micro" style="margin-top:0">Сцена показывает финальный кадр: мечеть, ладони,
+        полумесяц и подпись стоят на месте. Исчезает только монета — её единственная роль
+        в том, чтобы упасть. Экран не пустой и не «сломанный».</p>
+      </div>
+      <div class="slot"><span class="tag">Порядок на телефоне</span>
+        <p class="micro" style="margin-top:0">Сцена идёт <b>над</b> заголовком, а не под ним.
+        В первой версии сетка просто схлопывалась в одну колонку, и анимация уезжала под текст —
+        то есть на телефоне её не было видно без скролла. Трафик из WhatsApp почти весь мобильный,
+        так что ровно та вещь, ради которой анимацию вернули в MVP, не показывалась основной
+        аудитории. Сцена уменьшена до 76 vw, подпись под ней скрыта: её работу делает заголовок
+        строкой ниже.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ БЛОК ЦЕЛИ ═════════════════════════════════════════════════════════ -->
+<section class="sec" id="goal">
+  <div class="wrap">
+    <h2>Блок цели</h2>
+    <p class="sec-note">Главное заимствование у референса — двойная шкала. Месячная стоит сверху
+    и крупнее общей: при цели 240 млн общая на старте показывает доли процента и читается
+    как провал. Месячная цель — единственное, что спасает первый экран сбора.</p>
+
+    <div class="card" style="max-width:760px">
+      <h2>Цель на сентябрь</h2>
+      <p class="sub">Каждый месяц мы ставим планку, которую реально взять всем вместе</p>
+      <div class="meter">
+        <div class="head"><span class="lbl">Собрано за месяц</span><span class="pct">72%</span></div>
+        <div class="val">4 300 000 <small>из 6 000 000 ₽</small></div>
+        <div class="track in" role="progressbar" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Собрано за месяц" style="--p:72%"><i class="fill"></i></div>
+        <p class="rest">Осталось 1 700 000 ₽ — это 17 000 пожертвований по 100 ₽</p>
+      </div>
+      <div class="meter">
+        <div class="head"><span class="lbl">Общая цель</span><span class="pct">5,3%</span></div>
+        <div class="val">12 840 000 <small>из 240 000 000 ₽</small></div>
+        <div class="track thin in" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Собрано всего" style="--p:5.3%"><i class="fill"></i></div>
+      </div>
+      <div class="stats">
+        <div><b>1 204</b><span>пожертвования</span></div>
+        <div><b>23</b><span>региона и страны</span></div>
+        <div><b>5 мин</b><span>назад последнее</span></div>
+      </div>
+      <div class="cta"><a class="btn btn-primary" href="#goal">Внести свой вклад</a></div>
+    </div>
+
+    <div class="callout"><b>Остаток переведён в пожертвования по 100 ₽.</b> «17 000 человек
+    по сотне» звучит достижимо, «1 700 000 ₽» — нет. Та же цифра, другая единица измерения.</div>
+
+    <div class="spec">
+      <div class="slot"><span class="tag">Состояние: месячная цель не задана</span>
+        <div class="meter">
+          <div class="head"><span class="lbl">Общая цель</span><span class="pct">5,3%</span></div>
+          <div class="val" style="font-size:28px">12 840 000 <small>из 240 000 000 ₽</small></div>
+          <div class="track in" style="--p:5.3%"><i class="fill"></i></div>
+        </div>
+        <p class="micro">Блок схлопывается до одной шкалы, и она становится крупной.
+        <b>Это временное состояние, а не запасной вариант:</b> цель месяца — открытый блокер
+        на заказчике.</p>
+      </div>
+      <div class="slot"><span class="tag">Состояние: месяц перевыполнен</span>
+        <div class="meter done">
+          <div class="head"><span class="lbl">Собрано за месяц</span><span class="pct">118%</span></div>
+          <div class="val" style="font-size:28px">7 080 000 <small>из 6 000 000 ₽</small></div>
+          <div class="track in" style="--p:100%"><i class="fill"></i></div>
+          <p class="rest">Цель месяца достигнута — собираем сверх</p>
+        </div>
+        <p class="micro">Шкалу не обрезаем на 100% и не прячем: перевыполнение — сильный сигнал.
+        Процент показываем настоящий.</p>
+      </div>
+      <div class="slot"><span class="tag">Состояние: первый день</span>
+        <div class="meter">
+          <div class="head"><span class="lbl">Собрано за месяц</span><span class="pct">0%</span></div>
+          <div class="val" style="font-size:28px">0 <small>из 6 000 000 ₽</small></div>
+          <div class="track in" style="--p:0%"><i class="fill"></i></div>
+          <p class="rest">Сбор только открылся — ваш вклад будет первым</p>
+        </div>
+        <p class="micro">Здесь ноль не прячем, в отличие от hero: в блоке цели он читается как
+        «сбор на старте», а в первом экране — как «сюда никто не жертвует». Разница в том,
+        что рядом есть шкала и цель.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ФОКУС И ДВИЖЕНИЕ ══════════════════════════════════════════════════ -->
+<section class="sec" id="a11y">
+  <div class="wrap">
+    <h2>Фокус и движение</h2>
+    <p class="sec-note">Проверяется клавишей <span class="kbd">Tab</span> прямо на этой странице:
+    пройти всю форму выше, ни разу не тронув мышь.</p>
+
+    <table class="t">
+      <thead><tr><th>Приём</th><th>Параметры</th><th>Где</th></tr></thead>
+      <tbody>
+        <tr><td>Кольцо фокуса</td><td><code>outline 3px</code>, отступ 2px, цвет <code>--focus</code></td><td>всё интерактивное, включая <code>summary</code> и строки оплаты</td></tr>
+        <tr><td>Появление блока</td><td>сдвиг 12 px + прозрачность, 450 мс</td><td>один приём на весь сайт</td></tr>
+        <tr><td>Заполнение шкалы</td><td><code>transform</code>, 1.6 с, от нуля при появлении</td><td>обе шкалы цели, строки рейтинга</td></tr>
+        <tr><td>Кнопка</td><td>подъём 1 px + тень, 180 мс</td><td>только primary</td></tr>
+        <tr><td>Сцена первого экрана</td><td>SVG + CSS, ~5 с, один проход</td><td>hero, лоадер на <code>/thanks</code></td></tr>
+        <tr><td><code>prefers-reduced-motion</code></td><td>всё выключается, финальные кадры остаются</td><td>вся страница. Не опционально</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="margin-top:26px"><b>Без JavaScript страница остаётся рабочей.</b>
+    Шкалы показывают верные значения (анимации просто не будет), блоки <code>.rise</code> видны,
+    <code>details</code> раскрывается силами браузера, форма — обычный <code>&lt;form&gt;</code>
+    с серверным сабмитом. Это не идеологическая позиция: сайт принимает деньги, и платёжный путь
+    не должен зависеть от того, доехал ли бандл.</div>
+
+    <h3 style="margin-top:34px">Что кит намеренно не содержит</h3>
+    <table class="t">
+      <tbody>
+        <tr><td>Тёмная тема</td><td>Не в ТЗ и удваивает проверку контраста. <code>.on-dark</code> — это инверсия панели, а не тема</td></tr>
+        <tr><td>Вторая акцентная краска</td><td>Один акцент на весь сайт. Статусы ошибки — единственное исключение</td></tr>
+        <tr><td>Иконочный шрифт</td><td>Линейные иконки inline-SVG под ту же толщину штриха 2.1</td></tr>
+        <tr><td>Тени карточек</td><td>На тёплом фоне граница работает лучше. Тень — только у primary-кнопки и шапки</td></tr>
+        <tr><td>Сетка на 12 колонок</td><td>Одностраничник: хватает <code>.wrap</code>, <code>.two-col</code> и <code>.three</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <h3>UI-кит · день 3</h3>
+    <p>Файлы: <a href="tokens.css">tokens.css</a> · <a href="kit.css">kit.css</a> ·
+    <a href="scene.css">scene.css</a>. Спецификация — <a href="ui-kit.md">ui-kit.md</a>.
+    Собранная страница — <a href="prototype.html">prototype.html</a>.</p>
+    <p class="micro">На дне 10 три файла переезжают в <code>apps/web/app/</code> без изменений.
+    Дизайн замораживается после дня 4.</p>
+  </div>
+</footer>
+
+<script>
+  // Демонстрация прокрутки шкал: в проде тот же код живёт на IntersectionObserver.
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.track').forEach(function (n) { n.classList.remove('in'); io.observe(n); });
+</script>
+</body>
+</html>
