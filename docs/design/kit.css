@@ -1,0 +1,514 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Мечеть «Шамиль» — UI-кит. День 3 роудмапа.
+
+   Компоненты поверх tokens.css. Ни одного «сырого» цвета: только токены —
+   благодаря этому любой блок, положенный внутрь .panel или footer,
+   инвертируется сам (см. .on-dark в tokens.css).
+
+   Живой каталог всех состояний: ui-kit.html
+   На дне 10 файл переезжает в apps/web/app/kit.css.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ══ База ═══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-strong);
+  font-family: var(--font-text);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums; /* иначе счётчик суммы дёргается */
+}
+
+h1, h2, h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  text-wrap: balance;
+}
+h1 { font-size: var(--fs-display); }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); line-height: 1.25; }
+
+p { margin: 0 0 14px; text-wrap: pretty; }
+a { color: var(--accent-quiet); }
+
+img, svg { max-width: 100%; }
+
+/* Фокус — один раз на весь сайт. В прототипе дня 2 его не было нигде:
+   человек с клавиатуры не видел, где находится, прямо в платёжной форме. */
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+  border-radius: 6px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* Видно скринридеру, не видно глазу. Под ним живут настоящие
+   input[type=radio] и input[type=checkbox] внутри .chip / .pay / .check. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ══ Раскладка ══════════════════════════════════════════════════════════ */
+
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 var(--sp-6); width: 100%; }
+@media (max-width: 640px) { .wrap { padding: 0 18px; } }
+
+section { padding: var(--section-pad) 0; }
+
+.narrow { max-width: 38em; margin-inline: auto; }
+.measure { max-width: var(--measure); }   /* блоки 7–9 надо именно читать */
+.center { text-align: center; }
+.stack > * + * { margin-top: var(--sp-4); }
+
+/* ══ Поверхности ════════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: var(--card-pad);
+}
+
+/* Градиент живёт в панели со скруглением, а не заливкой секции: панель на
+   светлом фоне читается как окно, заливка — как обои. Три панели на всю
+   страницу: hero, финальный CTA, футер. */
+.panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-panel);
+  padding: var(--panel-pad);
+  background: var(--grad-panel);
+  color: var(--text-strong);
+}
+.panel > *:not(.pattern) { position: relative; } /* над гирихом */
+
+/* Гирих текстурой, не ковром: как только узор читается, он превращается
+   в «восточный шаблон» — ровно та безликость, от которой уходим. */
+.pattern {
+  position: absolute;
+  inset: -10%;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(45deg, #fff 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(-45deg, #fff 0 1px, transparent 1px 42px);
+}
+
+/* ══ Текстовые роли ═════════════════════════════════════════════════════ */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+.eyebrow .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-quiet);
+  animation: pulse 2.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
+
+.lede { margin: var(--sp-6) 0 0; max-width: var(--measure); font-size: var(--fs-lede); color: var(--text-soft); }
+.sub { margin: 10px 0 30px; max-width: 34em; color: var(--text-soft); }
+.muted { color: var(--text-soft); }
+.small { font-size: var(--fs-small); color: var(--text-soft); }
+.micro { margin-top: 14px; font-size: var(--fs-micro); line-height: 1.5; color: var(--text-soft); }
+.divider-label {
+  margin: var(--sp-5) 0 var(--sp-3);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+/* Суммы — серифом и табличными цифрами. Без tnum колонка сумм в рейтинге
+   не выравнивается по разряду, а счётчик прыгает по ширине на каждом кадре. */
+.amount { font-family: var(--font-display); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.amount-lg { font-size: var(--fs-amount-lg); }
+.amount-md { font-size: var(--fs-amount-md); }
+
+/* ══ Кнопки ═════════════════════════════════════════════════════════════
+   Один класс .btn работает и на <a>, и на <button> — разметка выбирается
+   по смыслу: переход это ссылка, действие это кнопка.                    */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: var(--control-h);
+  padding: 0 26px;
+  border: 0;
+  border-radius: var(--r-pill);
+  font-family: var(--font-text);
+  font-size: var(--fs-button);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease), box-shadow 250ms,
+              background 200ms, border-color 200ms, color 200ms;
+}
+.btn:focus-visible { outline-offset: 3px; }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-btn);
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-btn-hover); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-strong);
+  border: var(--stroke) solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--accent-quiet); color: var(--accent-quiet); }
+.on-dark .btn-ghost:hover, .panel .btn-ghost:hover { background: rgba(255, 255, 255, 0.08); }
+
+.btn-sm { height: var(--control-h-sm); padding: 0 20px; font-size: 15px; }
+.btn-block { width: 100%; }
+
+.btn[disabled], .btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* Кнопка в состоянии отправки: текст остаётся на месте, меняется только
+   индикатор — платёжная форма не должна «прыгать» в момент сабмита. */
+.btn[aria-busy="true"] { pointer-events: none; }
+.btn[aria-busy="true"] .spinner {
+  width: 17px; height: 17px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(1turn); } }
+
+.cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 30px; }
+@media (max-width: 420px) { .cta .btn { width: 100%; } }
+
+/* ══ Прогресс-бар ═══════════════════════════════════════════════════════
+   Заполнение через transform, а не width: width каждый кадр гоняет
+   layout, transform уезжает на композитор.
+
+   Приём: заливка во всю ширину дорожки, сдвинута влево на (100% − p).
+   Тогда её правый торец остаётся круглым, а левый обрезается скруглением
+   дорожки. При scaleX() торец сплющивался бы в вертикальную грань.
+
+   Значение приходит из --p (уже посчитано и обрезано по 100% на сервере).
+   Без JS шкала статична и показывает верное значение; класс .in,
+   который вешает IntersectionObserver, добавляет прокрутку от нуля.      */
+
+.track {
+  height: 13px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.track.thin { height: 7px; }
+.track > .fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--grad-bar);
+  transform: translateX(calc(-100% + var(--p, 0%)));
+}
+.track.in > .fill { animation: fill-in var(--dur-bar) var(--ease-bar) both; }
+@keyframes fill-in { from { transform: translateX(-100%); } }
+
+/* Шкала с подписями. Месячная — сверху и крупнее общей: при цели 240 млн
+   общая на старте показывает доли процента и читается как провал. */
+.meter + .meter { margin-top: 26px; padding-top: 26px; border-top: 1px solid var(--border); }
+.meter .head { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.meter .lbl { font-size: var(--fs-small); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-soft); }
+.meter .pct { font-family: var(--font-display); font-weight: 600; font-size: clamp(23px, 3vw, 32px); color: var(--accent-quiet); }
+.meter .val { margin: 8px 0 12px; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-amount-lg); line-height: 1; }
+.meter .val small { margin-left: 8px; font-family: var(--font-text); font-size: 15px; font-weight: 400; letter-spacing: 0; color: var(--text-soft); }
+.meter .rest { margin: 10px 0 0; font-size: 14.5px; color: var(--text-soft); }
+
+/* Перевыполнение не обрезаем: это сильный сигнал, а не ошибка данных. */
+.meter.done .pct { color: var(--accent-quiet); }
+.meter.done .rest { font-weight: 600; color: var(--text-strong); }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 28px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 560px) { .stats { grid-template-columns: 1fr 1fr; } }
+.stats b { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-amount-md); }
+.stats span { font-size: 13.5px; color: var(--text-soft); }
+
+/* ══ Поля формы ═════════════════════════════════════════════════════════
+   .chip, .pay и .check — это <label> с настоящим input внутри .sr-only.
+   В прототипе дня 2 они были <span> и <div>: мышью выглядело правильно,
+   с клавиатуры форма была непроходима, скринридер не объявлял выбор.     */
+
+/* Два столбца формы: сумма и способ слева, данные жертвователя справа. */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; }
+@media (max-width: 900px) { .form-grid { grid-template-columns: 1fr; gap: 26px; } }
+
+.field-label { display: block; margin: 22px 0 10px; font-size: var(--fs-small); font-weight: 500; color: var(--text-soft); }
+.field-label:first-child { margin-top: 0; }
+
+.input {
+  width: 100%;
+  height: var(--field-h);
+  margin-top: 10px;
+  padding: 0 16px;
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-field);
+  background: var(--surface);
+  color: var(--text-strong);
+  font-family: var(--font-text);
+  font-size: var(--fs-input);   /* 16px: ниже — Safari на iOS зумит форму */
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.input::placeholder { color: var(--text-soft); opacity: 0.75; }
+.input:hover { border-color: var(--accent-quiet); }
+.input:disabled { background: var(--surface-sunken); color: var(--text-soft); cursor: not-allowed; }
+.input.big { font-family: var(--font-display); font-size: 24px; font-weight: 600; }
+.input[aria-invalid="true"] { border-color: #B3261E; }
+.field-error { margin: 8px 0 0; font-size: var(--fs-small); color: #B3261E; }
+
+select.input { appearance: none; cursor: pointer; padding-right: 42px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 22px) calc(50% + 2px), calc(100% - 16px) calc(50% + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+/* Пресеты сумм. 100 ₽ обязателен: он совпадает со слоганом. */
+.chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip {
+  position: relative;   /* якорь для input.sr-only внутри */
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 20px;
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text-strong);
+  font-family: var(--font-text);
+  font-size: var(--fs-input);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--dur-fast);
+}
+.chip:hover { border-color: var(--accent-quiet); color: var(--accent-quiet); }
+.chip:has(:checked), .chip[aria-selected="true"], .chip.on {
+  background: var(--text-strong);
+  border-color: var(--text-strong);
+  color: var(--bg);
+}
+.chip:has(:focus-visible) { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+
+/* Способ оплаты. СБП ставим первым: нулевая комиссия плательщику и оплата
+   в два тапа — в живой ленте референса он лидирует. */
+.pay {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  margin-bottom: 10px;
+  padding: 0 16px;
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-field);
+  background: var(--surface);
+  font-size: var(--fs-input);
+  cursor: pointer;
+  transition: var(--dur-fast);
+}
+.pay:hover { border-color: var(--accent-quiet); }
+.pay .dot { flex: none; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 50%; transition: var(--dur-fast); }
+.pay:has(:checked) { border-color: var(--accent-quiet); box-shadow: 0 0 0 3px rgba(2, 106, 169, 0.12); }
+.pay:has(:checked) .dot { border-color: var(--accent-quiet); background: radial-gradient(circle, var(--accent-quiet) 0 5px, transparent 5px); }
+.pay:has(:focus-visible) { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+.pay .tag { margin-left: auto; font-size: var(--fs-eyebrow); font-weight: 600; color: var(--accent-quiet); }
+
+.check { position: relative; display: flex; align-items: flex-start; gap: 12px; margin: 16px 0; font-size: 15px; cursor: pointer; }
+.check .bx {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px; height: 22px;
+  margin-top: 2px;
+  border: var(--stroke) solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--on-accent);
+  font-size: 14px;
+  transition: var(--dur-fast);
+}
+.check .bx svg { width: 13px; height: 13px; opacity: 0; transition: opacity var(--dur-fast); }
+.check:has(:checked) .bx { background: var(--accent-quiet); border-color: var(--accent-quiet); color: #fff; }
+.check:has(:checked) .bx svg { opacity: 1; }
+.check:has(:focus-visible) .bx { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+
+.tabs { display: flex; gap: 10px; margin-bottom: 30px; }
+
+/* ══ Строка рейтинга ════════════════════════════════════════════════════ */
+
+.rank { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.rank:last-child { border-bottom: 0; }
+.rank .pos { flex: none; width: 26px; font-family: var(--font-display); font-weight: 600; font-size: 18px; color: var(--text-soft); }
+.rank .flag { flex: none; width: 30px; height: 21px; border: 1px solid var(--border); border-radius: 3px; object-fit: cover; }
+.rank .body { flex: 1; min-width: 0; }
+.rank .name { font-weight: 600; font-size: var(--fs-amount-sm); }
+.rank .sum { font-size: var(--fs-small); color: var(--text-soft); }
+.rank .amt { font-family: var(--font-display); font-weight: 600; font-size: 18px; white-space: nowrap; }
+.rank .track { margin-top: 8px; }
+/* Своя строка подсвечивается, если регион известен из ссылки или формы. */
+.rank.me { margin-bottom: 10px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--r-field); background: var(--bg); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 44px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Пустые регионы показываем, но не стеной: пустая строка — вызов,
+   64 нуля подряд читаются как «блок сломан». */
+details.more { margin-top: 18px; }
+details.more summary { list-style: none; cursor: pointer; color: var(--accent-quiet); font-weight: 600; font-size: 15px; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary::before { content: "⌄ "; font-size: 18px; }
+details.more summary:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+details.more .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-top: 14px; font-size: var(--fs-small); color: var(--text-soft); }
+
+/* ══ Заглушка религиозного текста ═══════════════════════════════════════
+   Видимая рамка обязательна: она не даёт случайно отправить в прод
+   невыверенный хадис. Правило из CLAUDE.md → «Правила по контенту».      */
+
+.stub { margin: 18px 0; padding: 16px 18px; border: 2px dashed #B08900; border-radius: var(--r-field); background: rgba(255, 248, 230, 0.75); }
+.stub .lbl { margin-bottom: 10px; font-size: 11px; font-weight: 600; letter-spacing: var(--ls-caps); text-transform: uppercase; color: #8A6D00; }
+.stub q { display: block; font-family: var(--font-display); font-size: clamp(18px, 2vw, 23px); font-style: italic; line-height: 1.4; }
+.stub .gist { margin: 12px 0 0; font-size: var(--fs-eyebrow); font-style: normal; color: #8A6D00; }
+.on-dark .stub, .panel .stub { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 220, 140, 0.6); }
+.on-dark .stub .lbl, .panel .stub .lbl { color: #F3D98A; }
+.on-dark .stub .gist, .panel .stub .gist { color: rgba(255, 255, 255, 0.65); }
+
+/* ══ Кнопки «поделиться» ════════════════════════════════════════════════
+   WhatsApp первый и с отрывом: для Башкортостана, Кавказа и Средней Азии
+   это главный канал, не Telegram. Счётчик меньше 10 не выводим вовсе.    */
+
+.share { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 28px; }
+@media (max-width: 760px) { .share { grid-template-columns: 1fr 1fr; } }
+.share a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: 54px;
+  padding: 0 18px;
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-pill);
+  color: var(--text-strong);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 200ms, border-color 200ms, transform var(--dur-fast);
+}
+.share a:hover { border-color: var(--text-strong); transform: translateY(-1px); }
+.on-dark .share a:hover, .panel .share a:hover { background: rgba(255, 255, 255, 0.1); }
+.share a b { font-weight: 600; font-size: var(--fs-small); color: var(--text-soft); }
+
+/* ══ Карточки-ценности, ход стройки, галерея ════════════════════════════ */
+
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 860px) { .three { grid-template-columns: 1fr; } }
+.vcard { padding: 26px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); }
+.vcard .ico { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 16px; border-radius: var(--r-field); background: var(--surface-sunken); font-size: 22px; }
+
+.progress-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; }
+@media (max-width: 760px) { .progress-cols { grid-template-columns: 1fr; } }
+.pcol { padding: 18px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg); }
+.pcol .n { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1; }
+.pcol .t { margin: 6px 0 8px; font-weight: 600; }
+.pcol ul { margin: 0; padding-left: 18px; font-size: var(--fs-small); color: var(--text-soft); }
+
+.gal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 26px; }
+@media (max-width: 900px) { .gal { grid-template-columns: repeat(2, 1fr); } }
+/* Прямые углы на тёплом фоне выглядят как вставка из другого макета. */
+.shot { position: relative; display: grid; place-items: center; aspect-ratio: 4/3; border-radius: var(--r-photo); overflow: hidden; background: linear-gradient(160deg, #DCE6EF, #A9C2D8); color: #43607E; font-size: var(--fs-eyebrow); }
+/* Дата — часть доказательства, а не подпись. */
+.shot span { position: absolute; left: 12px; bottom: 10px; padding: 4px 10px; border-radius: var(--r-pill); background: rgba(10, 51, 103, 0.72); color: #fff; font-size: 12px; }
+
+/* ══ Шапка и футер ══════════════════════════════════════════════════════ */
+
+.top { position: sticky; top: 0; z-index: var(--z-header); background: rgba(250, 246, 240, 0.86); backdrop-filter: blur(12px); border-bottom: 1px solid transparent; transition: border-color var(--dur); }
+.top.stuck { border-bottom-color: var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 20px; height: 76px; }
+@media (max-width: 640px) { .top .wrap { height: 62px; } }
+.top nav { margin-left: auto; display: flex; gap: 26px; font-size: 15px; }
+.top nav a { color: var(--text-soft); text-decoration: none; }
+.top nav a:hover { color: var(--accent-quiet); }
+@media (max-width: 980px) { .top nav { display: none; } }
+.top .btn { margin-left: auto; }
+@media (max-width: 400px) { .top .btn { padding: 0 15px; font-size: var(--fs-small); } }
+
+.brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.brand .mark { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(150deg, var(--blue), var(--ink)); }
+.brand .mark svg { width: 22px; height: 22px; }
+.brand b { display: block; font-family: var(--font-display); font-size: 19px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+.brand i { font-style: normal; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-soft); }
+
+/* Футер не декоративный: сбор на 240 млн без уставных документов на виду —
+   красный флаг и нарушение требований к благотворительным сборам. */
+footer { margin-top: var(--section-pad); padding: var(--section-pad) 0 60px; background: var(--ink); color: var(--text-soft); font-size: 14.5px; }
+footer h3 { margin-bottom: 14px; font-size: 19px; color: var(--text-strong); }
+footer a { color: #DCE7F2; }
+.fcols { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 34px; }
+@media (max-width: 860px) { .fcols { grid-template-columns: 1fr; gap: 28px; } }
+.docs { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.doc { padding: 11px 15px; border: 1px solid var(--border); border-radius: var(--r-field); color: var(--text-soft); text-decoration: none; font-size: 13.5px; transition: 200ms; }
+.doc:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.5); color: var(--text-strong); }
+
+/* ══ Появление блоков ═══════════════════════════════════════════════════
+   Один приём на весь сайт: сдвиг 12px + прозрачность.                    */
+
+.rise { opacity: 0; transform: translateY(12px); transition: opacity 450ms ease-out, transform 450ms ease-out; }
+.rise.in { opacity: 1; transform: none; }
+/* Без JS блок обязан быть виден: .no-js ставится инлайном в <head>. */
+.no-js .rise { opacity: 1; transform: none; }
+
+/* ══ Уважение к настройкам системы ══════════════════════════════════════
+   Не опционально. Страница без движения остаётся полной и читаемой:
+   прогресс-бары стоят на своём значении, блоки видны.                    */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+  .rise { opacity: 1; transform: none; }
+  .track.in > .fill { animation: none; }
+}
