@@ -12,6 +12,11 @@
     },
     "declaration": true,
     "sourceMap": true,
+    // Каждый файл компилируется сам по себе. Нужно ts-jest: с этим флагом он
+    // только транспилирует, не проверяя типы, и прогон тестов остаётся быстрым
+    // даже при большом сгенерированном клиенте Prisma.
+    // Проверка типов — отдельной командой `npm run typecheck` и при сборке.
+    "isolatedModules": true,
     "incremental": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,

@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { configuration } from './config/configuration';
 import type { AppConfig } from './config/configuration';
+import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { HealthModule } from './health/health.module';
         return [{ ttl: throttle.ttlMs, limit: throttle.limit }];
       },
     }),
+    DatabaseModule,
     HealthModule,
   ],
   providers: [

@@ -10,6 +10,10 @@ build/
 out/
 *.tsbuildinfo
 
+# клиент Prisma — генерируется из prisma/schema.prisma командой `prisma generate`
+# (её вызывают prebuild и pretest, так что после npm install собирается само)
+apps/api/src/generated/
+
 # окружение — секреты только через env, в репозиторий не попадают
 .env
 .env.local

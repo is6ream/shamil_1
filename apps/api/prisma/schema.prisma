@@ -1,0 +1,296 @@
+// Схема БД сбора на мечеть «Шамиль». День 5 роудмапа.
+//
+// Правила, которые задают вид этой схемы (CONTEXT.md §7, CLAUDE.md «Платежи»):
+//   • Все деньги — BigInt в копейках. Ни одного числа с плавающей точкой.
+//   • Донат живёт как pending → paid, paid финально; обратный переход запрещён
+//     триггером в БД, а не только кодом (см. migrations/…_guards_and_stats).
+//   • Идемпотентность вебхука — уникальный (provider, provider_event_id)
+//     в payment_event: агрегаторы ретраят колбэк до 200.
+//   • donation.region_id — nullable: платёж важнее статистики.
+//   • Витринные счётчики — отдельные таблицы campaign_stats / region_stats,
+//     а не SUM() по донатам.
+//   • Телефон — только в donation_contact, в публичные выборки не попадает (152-ФЗ).
+//
+// Всё, что Prisma выразить не умеет (CHECK, триггеры, EXCLUDE), лежит во второй
+// миграции обычным SQL. При генерации новых миграций их нельзя терять —
+// целостность сумм держится на них. Тест `schema-guards.spec.ts` это проверяет.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "cjs"
+}
+
+// Строка подключения — в prisma.config.ts: в Prisma 7 `url` в схеме не поддерживается.
+datasource db {
+  provider = "postgresql"
+}
+
+/// Уровень справочника регионов: страна (Казахстан) или субъект РФ (Башкортостан).
+enum RegionType {
+  country
+  subject
+
+  @@map("region_type")
+}
+
+/// Состояния доната. pending → paid (финально) или pending → failed.
+/// failed → paid разрешён: деньги могли дойти после отказного колбэка,
+/// и терять их нельзя. Обратно в pending не возвращается никогда.
+enum DonationStatus {
+  pending
+  paid
+  failed
+
+  @@map("donation_status")
+}
+
+/// Сбор. В MVP он один, но таблица — не singleton: заказчик может запустить
+/// второй сбор (например, на внутреннюю отделку), и переписывать схему не хочется.
+model Campaign {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug     String @unique @db.VarChar(64)
+  title    String @db.VarChar(200)
+  /// Общая цель сбора в копейках: 240 000 000 ₽ = 24 000 000 000 копеек.
+  /// Цель на месяц живёт отдельной сущностью — см. CampaignMonthlyGoal.
+  goalKopecks BigInt @map("goal_kopecks")
+  /// Валюта учёта. Все суммы сбора сводятся к ней; платёж в тенге или сомах
+  /// приходит в charged_currency доната.
+  currency           String   @default("RUB") @db.Char(3)
+  minDonationKopecks BigInt   @default(10000) @map("min_donation_kopecks")
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  stats        CampaignStats?
+  monthlyGoals CampaignMonthlyGoal[]
+  donations    Donation[]
+  galleryItems GalleryItem[]
+
+  @@map("campaign")
+}
+
+/// Витринные счётчики сбора. Отдельно от campaign: строка обновляется на каждом
+/// оплаченном донате, а конфиг сбора при этом не блокируется.
+/// Пересчёт — триггером donation_stats_sync, чтобы ручной донат из админки
+/// и сид считались так же, как вебхук.
+model CampaignStats {
+  campaignId       String    @id @map("campaign_id") @db.Uuid
+  paidTotalKopecks BigInt    @default(0) @map("paid_total_kopecks")
+  paidCount        Int       @default(0) @map("paid_count")
+  lastPaidAt       DateTime? @map("last_paid_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_stats")
+}
+
+/// Цель на месяц — отдельная сущность, а не колонка в campaign: без границ периода
+/// цифра ничего не значит, а историю месяцев затирать нельзя. Из неё собирается
+/// верхняя шкала двойного прогресс-бара (блок 2 ТЗ), та, что реально заполняется.
+/// Периоды одного сбора не пересекаются — EXCLUDE-ограничение в миграции.
+model CampaignMonthlyGoal {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId       String   @map("campaign_id") @db.Uuid
+  periodStart      DateTime @map("period_start") @db.Date
+  periodEnd        DateTime @map("period_end") @db.Date
+  goalKopecks      BigInt   @map("goal_kopecks")
+  collectedKopecks BigInt   @default(0) @map("collected_kopecks")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, periodStart])
+  @@index([campaignId, periodStart, periodEnd])
+  @@map("campaign_monthly_goal")
+}
+
+/// Справочник «откуда вы»: страны и субъекты РФ в одном списке — заказчик
+/// подтвердил, что в таблице показываем и регионы, и страны. Без стран
+/// донаты через Kaspi (KZ) и Mbank (KG) некуда класть.
+/// Регион никогда не определяется по IP (VPN и роуминг врут) — только выбор
+/// в форме или региональная ссылка /{slug}/.
+model Region {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type        RegionType
+  /// Субъект ссылается на свою страну; у страны parent_id пуст.
+  parentId    String?    @map("parent_id") @db.Uuid
+  countryCode String     @map("country_code") @db.Char(2)
+  /// Официальный код субъекта: '02' — Башкортостан, '95' — Чечня. У стран пуст.
+  code        String?    @db.VarChar(8)
+  /// Сегмент короткой ссылки: /02/, /kz/. Его диктуют голосом — держим коротким.
+  slug        String     @unique @db.VarChar(32)
+  name        String     @db.VarChar(120)
+  flagUrl     String?    @map("flag_url") @db.VarChar(500)
+  sortOrder   Int        @default(100) @map("sort_order")
+  isActive    Boolean    @default(true) @map("is_active")
+  /// Участвует ли строка в рейтинге. «Россия» выбирается в форме, но в таблице
+  /// землячеств не соревнуется с субъектами — иначе она всегда первая.
+  isRanked    Boolean    @default(true) @map("is_ranked")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  parent    Region?      @relation("RegionHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Region[]     @relation("RegionHierarchy")
+  stats     RegionStats?
+  donations Donation[]
+
+  @@unique([countryCode, code])
+  @@index([type, sortOrder, name])
+  @@index([parentId])
+  @@map("region")
+}
+
+/// Счётчики региона для блока 4 ТЗ. Строка создаётся триггером на каждый регион
+/// сразу, с нулями: «ещё N регионов ждут первого пожертвования» — это запрос
+/// к этой таблице, а не вычисление разницы с донатами.
+model RegionStats {
+  regionId         String    @id @map("region_id") @db.Uuid
+  paidTotalKopecks BigInt    @default(0) @map("paid_total_kopecks")
+  paidCount        Int       @default(0) @map("paid_count")
+  lastPaidAt       DateTime? @map("last_paid_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  region Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@index([paidTotalKopecks(sort: Desc)])
+  @@map("region_stats")
+}
+
+/// Донат. Идентификатор доната — он же order_id на странице «спасибо»:
+/// uuid не перебрать, отдельный публичный номер не нужен.
+model Donation {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId String         @map("campaign_id") @db.Uuid
+  /// Nullable намеренно: донат без региона обязан проходить (CLAUDE.md).
+  regionId   String?        @map("region_id") @db.Uuid
+  status     DonationStatus @default(pending)
+  /// Сумма заказа, которую сформировал сервер. Клиентскому значению не верим:
+  /// оно проходит только через валидацию DTO и пересчёт на бэкенде.
+  amountKopecks BigInt @map("amount_kopecks")
+  /// Фактически оплаченная сумма — из вебхука. Заполнена у всех paid-донатов
+  /// (CHECK в миграции) и только она попадает в витринные счётчики.
+  paidAmountKopecks BigInt? @map("paid_amount_kopecks")
+  /// Валюта реального списания: RUB для агрегатора РФ, KZT для Kaspi,
+  /// KGS для Mbank. Учётная сумма при этом всегда в копейках рубля.
+  chargedCurrency    String  @default("RUB") @map("charged_currency") @db.Char(3)
+  chargedAmountMinor BigInt? @map("charged_amount_minor")
+  /// Код провайдера: 'manual' | 'robokassa' | 'kaspi' | 'mbank'. Не enum —
+  /// агрегатор ещё не согласован (блокер), а миграцию enum'а на проде не хочется.
+  provider          String  @default("manual") @db.VarChar(32)
+  /// Способ внутри провайдера: 'sbp' | 'card' | 'sberpay' | 'tpay' | 'bank_transfer'.
+  /// Показывается в живой ленте поступлений.
+  method            String? @db.VarChar(32)
+  /// Идентификатор платежа на стороне провайдера (счёт, инвойс).
+  providerPaymentId String? @map("provider_payment_id") @db.VarChar(128)
+  /// Публичная подпись для ленты и топа донатеров. У анонимного доната пуста —
+  /// это CHECK в миграции: чего в таблице нет, то невозможно показать по ошибке.
+  /// Имя для сверки платежей живёт в donation_contact.full_name.
+  donorName         String? @map("donor_name") @db.VarChar(120)
+  /// Анонимность включена по умолчанию: садака — скрытое поклонение (блок 9 ТЗ).
+  /// В топ донатеров попадают только те, кто снял галочку сознательно.
+  isAnonymous  Boolean @default(true) @map("is_anonymous")
+  /// Откуда взялся регион: 'link' (региональная ссылка), 'form' (селектор),
+  /// 'admin'. У референса атрибуция была ~7%, и понять это можно было только так.
+  regionSource String? @map("region_source") @db.VarChar(16)
+  /// Место под автоплатёж: сам он за границами MVP, но боевую таблицу
+  /// потом мигрировать не хочется.
+  recurringId  String? @map("recurring_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  paidAt    DateTime? @map("paid_at") @db.Timestamptz(3)
+
+  campaign Campaign         @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  region   Region?          @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  contact  DonationContact?
+  events   PaymentEvent[]
+
+  @@unique([provider, providerPaymentId])
+  /// Индекс живой ленты: keyset-пагинация по (paid_at, id), без OFFSET.
+  @@index([status, paidAt(sort: Desc), id(sort: Desc)])
+  @@index([campaignId, status])
+  @@index([regionId, status])
+  /// Топ донатеров: только status=paid и is_anonymous=false.
+  @@index([status, isAnonymous, paidAmountKopecks(sort: Desc)])
+  @@index([recurringId])
+  @@map("donation")
+}
+
+/// Персональные данные донатера — отдельной таблицей (152-ФЗ):
+///   • публичные выборки (лента, топы, рейтинг) читают только donation
+///     и физически не могут вытащить телефон;
+///   • по требованию об удалении ПДн строка удаляется, донат и сумма сбора
+///     остаются на месте.
+model DonationContact {
+  donationId String  @id @map("donation_id") @db.Uuid
+  /// Телефон строго в E.164: +79991234567. Формат проверяет CHECK в миграции.
+  phoneE164  String? @map("phone_e164") @db.VarChar(16)
+  /// Имя как его ввёл донатер — нужно для сверки поступлений по реквизитам.
+  /// Публичная подпись — это donation.donor_name, а не это поле.
+  fullName   String? @map("full_name") @db.VarChar(120)
+  /// Отметка согласия на обработку ПДн — обязательна: без неё строки быть не должно.
+  personalDataConsentAt DateTime @map("personal_data_consent_at") @db.Timestamptz(3)
+  consentIp             String?  @map("consent_ip") @db.Inet
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  donation Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+
+  @@map("donation_contact")
+}
+
+/// Колбэки провайдера. Уникальный (provider, provider_event_id) — это и есть
+/// идемпотентность: повтор доставки упирается в индекс, донат не задваивается
+/// ни в сумме сбора, ни в рейтинге региона.
+/// Сырое тело храним для разбора спорных платежей.
+model PaymentEvent {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Пусто, если колбэк пришёл на неизвестный заказ — такие тоже сохраняем,
+  /// иначе разбираться с провайдером будет нечем.
+  donationId      String?        @map("donation_id") @db.Uuid
+  provider        String         @db.VarChar(32)
+  /// Идентификатор события у провайдера. Если провайдер своего не даёт
+  /// (Robokassa присылает только номер счёта), подставляется детерминированный
+  /// хеш тела — повторная доставка даёт тот же ключ.
+  providerEventId String         @map("provider_event_id") @db.VarChar(128)
+  status          DonationStatus
+  amountKopecks   BigInt?        @map("amount_kopecks")
+  payload         Json           @db.JsonB
+  receivedAt      DateTime       @default(now()) @map("received_at") @db.Timestamptz(3)
+  /// Заполняется, когда событие реально перевело донат в новый статус.
+  /// Пусто — значит дубликат или колбэк без последствий.
+  appliedAt       DateTime?      @map("applied_at") @db.Timestamptz(3)
+
+  donation Donation? @relation(fields: [donationId], references: [id], onDelete: Restrict)
+
+  @@unique([provider, providerEventId])
+  @@index([donationId, receivedAt])
+  @@map("payment_event")
+}
+
+/// Фотогалерея стройки (блок 6 ТЗ) — с самых первых этапов, хронологически.
+/// width/height нужны фронтенду: без них Next.js не зарезервирует место
+/// под картинку и первый экран будет прыгать.
+model GalleryItem {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId  String    @map("campaign_id") @db.Uuid
+  imageUrl    String    @map("image_url") @db.VarChar(500)
+  altText     String?   @map("alt_text") @db.VarChar(200)
+  caption     String?   @db.VarChar(300)
+  /// Дата съёмки — по ней галерея выстраивается в хронологию стройки.
+  takenOn     DateTime? @map("taken_on") @db.Date
+  width       Int?
+  height      Int?
+  sortOrder   Int       @default(100) @map("sort_order")
+  isPublished Boolean   @default(true) @map("is_published")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, isPublished, sortOrder, takenOn])
+  @@map("gallery_item")
+}

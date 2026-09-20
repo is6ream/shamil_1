@@ -9,10 +9,13 @@
 ## Структура
 
 ```
-apps/api     NestJS + PostgreSQL — кампания, донаты, рейтинги, вебхуки
-apps/web     Next.js (App Router) — лендинг, платёжный флоу, OG-превью
-docs         ТЗ, роудмап, разбор референса, дизайн и прототипы
+apps/api            NestJS + PostgreSQL — кампания, донаты, рейтинги, вебхуки
+apps/api/prisma     схема БД и миграции
+apps/web            Next.js (App Router) — лендинг, платёжный флоу, OG-превью
+docs                ТЗ, роудмап, разбор референса, дизайн и прототипы
 ```
+
+Решения по схеме БД — [docs/db-schema.md](docs/db-schema.md).
 
 Дизайн-токены живут в [docs/design/tokens.css](docs/design/tokens.css) — это единственный
 источник правды по цвету, типографике и отступам. В `apps/web/app/tokens.css` лежит его
@@ -32,8 +35,10 @@ npm install
 # 2. Окружение: скопировать шаблон и заполнить
 cp .env.example .env
 
-# 3. База
+# 3. База: контейнер, миграции, справочные данные
 npm run db:up
+npm run db:migrate:deploy --workspace @shamil/api
+npm run db:seed --workspace @shamil/api
 
 # 4. Бэкенд (http://localhost:3001/api) и фронтенд (http://localhost:3000)
 npm run dev:api
@@ -41,6 +46,10 @@ npm run dev:web
 ```
 
 Проверка, что бэкенд жив: `curl http://localhost:3001/api/health`.
+
+Если порт 5432 занят локально установленным PostgreSQL, поменяйте `POSTGRES_PORT`
+в `.env` (и тот же номер в `DATABASE_URL` и `TEST_DATABASE_URL`) — контейнер поднимется
+на свободном порту.
 
 ## Команды
 
@@ -50,6 +59,14 @@ npm run dev:web
 | `npm run test` | Тесты во всех воркспейсах |
 | `npm run lint` | Линтеры во всех воркспейсах |
 | `npm run db:up` / `npm run db:down` | Поднять / остановить PostgreSQL |
+| `npm run db:migrate --workspace @shamil/api` | Создать миграцию по изменённой схеме |
+| `npm run db:migrate:deploy --workspace @shamil/api` | Применить миграции |
+| `npm run db:seed --workspace @shamil/api` | Справочные данные: регионы, сбор, цель месяца |
+| `npm run db:studio --workspace @shamil/api` | Посмотреть данные глазами |
+
+Тесты схемы работают с настоящим PostgreSQL. Базу для них создаёт сам прогон,
+адрес — `TEST_DATABASE_URL`; если сервер недоступен, эти тесты пропускаются
+с предупреждением, остальные идут.
 
 ## Решения по версиям стека
 
@@ -81,4 +98,5 @@ npm run dev:web
 
 Каркас поднят: репозиторий, монорепозиторий на npm workspaces, NestJS с валидацией
 окружения и rate limiting, Next.js с токенами дизайна, PostgreSQL в Docker Compose.
-Дальше по роудмапу — схема БД и миграции (день 5).
+Схема БД, миграции и сиды готовы (день 5) — [docs/db-schema.md](docs/db-schema.md).
+Дальше по роудмапу — API кампании, рейтингов и галереи (день 6).
