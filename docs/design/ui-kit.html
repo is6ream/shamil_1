@@ -40,7 +40,14 @@ body { padding-bottom: 80px; }
 .sw .meta code { font-size: 12px; color: var(--ink-soft); }
 .sw .meta span { display: block; color: var(--ink-soft); margin-top: 4px; }
 
+/* Таблицы на три колонки не сжимаются уже на 390px и раздвигали страницу
+   до 393px — горизонтальный скролл всего документа. Прокручивается сама
+   таблица, а не страница. */
 table.t { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+@media (max-width: 620px) {
+  table.t { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.t th, table.t td { white-space: nowrap; }
+}
 table.t th, table.t td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: baseline; }
 table.t th { font-size: 12.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft); font-weight: 500; }
 table.t code { font-size: 13px; color: var(--blue); }
@@ -50,6 +57,12 @@ table.t code { font-size: 13px; color: var(--blue); }
 .callout { border-left: 3px solid var(--blue); background: var(--white); border-radius: 0 var(--r-md) var(--r-md) 0;
   padding: 16px 20px; margin: 22px 0; font-size: 15px; }
 .callout b { color: var(--ink); }
+
+/* Демонстрация hero: на узком повторяет боевой порядок — сцена над текстом */
+@media (max-width: 900px) {
+  .kit-hero { grid-template-columns: 1fr !important; gap: 22px !important; }
+  .kit-hero .stage { order: -1; }
+}
 </style>
 </head>
 <body>
@@ -204,7 +217,7 @@ table.t code { font-size: 13px; color: var(--blue); }
         <p class="micro">Ни одного отдельного правила: роли переопределены на <code>.panel</code>.</p>
       </div>
       <div class="slot"><span class="tag">Фокус с клавиатуры</span>
-        <div class="row"><button class="btn btn-primary" type="button" autofocus>Нажмите Tab</button></div>
+        <div class="row"><button class="btn btn-primary" type="button">Нажмите Tab</button></div>
         <p class="micro">Кольцо 3 px с отступом 2 px. В прототипе дня 2 фокуса не было нигде —
         человек с клавиатуры не видел, где находится, прямо в платёжной форме.</p>
       </div>

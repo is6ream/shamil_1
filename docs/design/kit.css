@@ -482,6 +482,19 @@ details.more .grid { display: grid; grid-template-columns: repeat(auto-fill, min
 .brand .mark svg { width: 22px; height: 22px; }
 .brand b { display: block; font-family: var(--font-display); font-size: 19px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
 .brand i { font-style: normal; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-soft); }
+/* На телефоне «Уфа · сбор на строительство» переносится на вторую строку, а
+   следом переносится и само название — вместе выходило четыре строки, и шапка
+   высотой 62px обрезала им верх. Подпись убираем: ровно то же самое написано
+   строкой ниже крупно. Одного этого хватает — название в две строки в 62px
+   помещается свободно.
+
+   Переносу названия не мешаем: на 360px «Мечеть «Шамиль»» в одну строку не
+   влезает рядом с кнопкой и выталкивает её за край экрана. */
+@media (max-width: 560px) {
+  .brand i { display: none; }
+  .brand b { font-size: 17px; }
+  .brand { min-height: var(--control-h-sm); }  /* палец, а не 40px по картинке */
+}
 
 /* Футер не декоративный: сбор на 240 млн без уставных документов на виду —
    красный флаг и нарушение требований к благотворительным сборам. */
@@ -493,6 +506,13 @@ footer a { color: #DCE7F2; }
 .docs { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
 .doc { padding: 11px 15px; border: 1px solid var(--border); border-radius: var(--r-field); color: var(--text-soft); text-decoration: none; font-size: 13.5px; transition: 200ms; }
 .doc:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.5); color: var(--text-strong); }
+
+/* Юридические ссылки футера. Были тремя <a> подряд через <br>: высота строки
+   17px, соседние ссылки вплотную — на телефоне промах по соседней почти
+   гарантирован, а это ровно те ссылки, по которым идут разбираться, кому
+   отдают деньги. Каждая теперь своя строка высотой в палец. */
+.legal { display: flex; flex-direction: column; align-items: flex-start; margin-top: 10px; }
+.legal a { display: inline-flex; align-items: center; min-height: var(--control-h-sm); }
 
 /* ══ Появление блоков ═══════════════════════════════════════════════════
    Один приём на весь сайт: сдвиг 12px + прозрачность.                    */
