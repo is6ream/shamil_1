@@ -47,3 +47,8 @@ uploads/
 # временное
 *.tmp
 .cache/
+
+# локальные артефакты Claude и worktrees агентов
+.claude/
+Claude outputs/
+.worktrees/
