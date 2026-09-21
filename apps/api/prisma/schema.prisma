@@ -164,6 +164,13 @@ model RegionStats {
 /// uuid не перебрать, отдельный публичный номер не нужен.
 model Donation {
   id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Числовой номер счёта для провайдера: Robokassa принимает InvId только
+  /// целым числом (0…2147483647), uuid ей отдать нельзя. Значение выдаёт
+  /// последовательность в БД — счётчик в сервисе дал бы гонку на двух инстансах.
+  /// Публичный идентификатор заказа при этом остаётся uuid'ом: его не перебрать.
+  /// SERIAL, а не dbgenerated: иначе Prisma видит дрейф и следующая
+  /// `migrate dev` сама сгенерирует «исправление» боевой таблицы.
+  invoiceNo  Int            @unique @default(autoincrement()) @map("invoice_no")
   campaignId String         @map("campaign_id") @db.Uuid
   /// Nullable намеренно: донат без региона обязан проходить (CLAUDE.md).
   regionId   String?        @map("region_id") @db.Uuid

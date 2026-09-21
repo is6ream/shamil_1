@@ -107,11 +107,12 @@ export interface PendingDonationOptions {
   readonly providerPaymentId?: string;
 }
 
+/** `invoiceNo` возвращается вместе с id: по нему донат находит вебхук. */
 export async function createPendingDonation(
   prisma: PrismaClient,
   fixtures: TestFixtures,
   options: PendingDonationOptions = {},
-): Promise<{ id: string }> {
+): Promise<{ id: string; invoiceNo: number }> {
   return prisma.donation.create({
     data: {
       campaignId: fixtures.campaignId,
@@ -122,7 +123,7 @@ export async function createPendingDonation(
       provider: options.provider ?? 'manual',
       providerPaymentId: options.providerPaymentId,
     },
-    select: { id: true },
+    select: { id: true, invoiceNo: true },
   });
 }
 

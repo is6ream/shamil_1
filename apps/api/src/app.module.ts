@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { configuration } from './config/configuration';
 import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
+import { DonationsModule } from './donations/donations.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { HealthModule } from './health/health.module';
     }),
     DatabaseModule,
     HealthModule,
+    DonationsModule,
   ],
   providers: [
     // Rate limiting по умолчанию на все эндпоинты: платёжная форма и вебхуки

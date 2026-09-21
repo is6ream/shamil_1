@@ -3,6 +3,7 @@ import {
   TEST_MONTHLY_GOAL_KOPECKS,
   TEST_MONTH_END,
   TEST_MONTH_START,
+  createPendingDonation,
   createTestClient,
   describeDatabase,
   resetDatabase,
@@ -88,8 +89,45 @@ describeDatabase('гарантии схемы', () => {
         'payment_event_provider_provider_event_id_key',
         'region_one_row_per_country',
         'donation_status_paid_at_id_idx',
+        // По этому номеру обработчик вебхука находит донат: без уникальности
+        // колбэк применится к случайному из двух.
+        'donation_invoice_no_key',
       ]),
     );
+  });
+
+  test('номер счёта выдаёт последовательность и не даёт выйти за int4', async () => {
+    // Act
+    const sequences = await prisma.$queryRawUnsafe<{ max_value: bigint; cycle: boolean }[]>(
+      `SELECT max_value, cycle
+         FROM pg_sequences
+        WHERE schemaname = 'public' AND sequencename = 'donation_invoice_no_seq'`,
+    );
+
+    // Assert: NO CYCLE обязателен — второй круг означает два доната с одним
+    // InvId, то есть колбэк, применённый не к тому платежу.
+    expect(sequences).toHaveLength(1);
+    expect(sequences[0]).toMatchObject({ max_value: 2_147_483_647n, cycle: false });
+  });
+
+  test('каждый донат получает свой номер счёта, не спрашивая сервис', async () => {
+    // Arrange & Act: сервис номер не назначает — его выдаёт база
+    const first = await createPendingDonation(prisma, fixtures);
+    const second = await createPendingDonation(prisma, fixtures);
+
+    const numbers = await prisma.donation.findMany({
+      where: { id: { in: [first.id, second.id] } },
+      select: { invoiceNo: true },
+    });
+
+    // Assert
+    const issued = numbers.map(({ invoiceNo }) => invoiceNo);
+
+    expect(issued).toHaveLength(2);
+    expect(new Set(issued).size).toBe(2);
+    for (const invoiceNo of issued) {
+      expect(invoiceNo).toBeGreaterThan(0);
+    }
   });
 
   test('все денежные колонки — bigint: копейки целым числом, без плавающей точки', async () => {

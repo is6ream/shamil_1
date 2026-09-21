@@ -22,5 +22,8 @@
     "test": "npm run test --workspaces --if-present",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
   }
 }

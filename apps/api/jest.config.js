@@ -13,6 +13,11 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/$1' },
 
+  // Декораторы class-validator и DI Nest читают метаданные через Reflect.
+  // В приложении полифилл подтягивает @nestjs/core, в тестах его нет:
+  // без этой строки падает всё, что валидирует окружение и DTO.
+  setupFiles: ['reflect-metadata'],
+
   // Готовит тестовую базу: создаёт её при необходимости и накатывает миграции.
   // Если базы нет, тесты на схему пропускаются с предупреждением, а остальные идут.
   globalSetup: '<rootDir>/database/testing/global-setup.ts',
