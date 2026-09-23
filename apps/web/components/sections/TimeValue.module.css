@@ -1,0 +1,24 @@
+/* Иллюстрация и текст рядом. Ширину меряем контейнером, а не вьюпортом:
+   блок живёт в левой колонке, которая уже экрана. Контейнер — карточка,
+   запрос — на вложенной сетке: элемент не может запрашивать сам себя. */
+
+.wrap {
+  container-type: inline-size;
+}
+
+.grid {
+  display: grid;
+  gap: var(--sp-6);
+  align-items: center;
+}
+
+@container (min-width: 620px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-8);
+  }
+}
+
+.values {
+  margin-top: var(--sp-5);
+}

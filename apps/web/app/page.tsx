@@ -1,47 +1,90 @@
-import { SITE_NAME, SLOGAN } from "@/lib/site";
+import { BuildSection } from "@/components/build/BuildSection";
+import { DonationWidget } from "@/components/donation/DonationWidget";
+import { DonationsFeed } from "@/components/feed/DonationsFeed";
+import { ProgressGoal } from "@/components/goal/ProgressGoal";
+import { HeroSection } from "@/components/hero/HeroSection";
+import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { DonorsTop } from "@/components/ranking/DonorsTop";
+import { RegionsTop } from "@/components/ranking/RegionsTop";
+import { FinalCta } from "@/components/sections/FinalCta";
+import { SadaqaValue } from "@/components/sections/SadaqaValue";
+import { TimeValue } from "@/components/sections/TimeValue";
+import { WhyMosque } from "@/components/sections/WhyMosque";
+import { ShareBlock } from "@/components/share/ShareBlock";
+import {
+  getBuildProgress,
+  getCampaign,
+  getEmptyRegionsCount,
+  getFeed,
+  getGallery,
+  getRegions,
+  getTopDonors,
+  getTopRegions,
+} from "@/lib/api/showcase";
 
 import styles from "./page.module.css";
 
 /**
- * Каркас главной. Порядок блоков зафиксирован ТЗ §5 и не меняется —
- * наполнение идёт по дням 10–13 роудмапа, здесь пока заглушки.
+ * Главная.
+ *
+ * ПОРЯДОК БЛОКОВ ИЗМЕНЁН 21.09.2026 по решению заказчика: форма оплаты
+ * поднята из одиннадцатого блока ТЗ §5 в правую колонку и видна с первого
+ * экрана. Раскладка взята у референса mahallya-kasim.ru — его механика,
+ * наша подача: палитра, шрифты и графика остаются нашими. Остальные десять
+ * блоков идут в прежнем порядке.
+ *
+ *   Десктоп (≥1024px): слева Hero → Цель → … → Лента, справа sticky-виджет.
+ *   Телефон: Hero → Цель → Форма → остальное, одной колонкой.
+ *
+ * Серверный компонент: витрина читается здесь и уходит вниз пропсами.
+ * Сейчас за ней стоят моки (lib/api/showcase.ts), интерфейс — уже боевой.
  */
-const SECTIONS = [
-  { id: "hero", title: "Слоган и призыв" },
-  { id: "goal", title: "Цель сбора и прогресс" },
-  { id: "share", title: "Поделиться сбором" },
-  { id: "regions", title: "Топ поддерживающих регионов" },
-  { id: "donors", title: "Топ донатеров" },
-  { id: "gallery", title: "Фотогалерея стройки" },
-  { id: "why-mosque", title: "Почему мечеть" },
-  { id: "time", title: "Ценность времени" },
-  { id: "sadaqa", title: "Ценность садака" },
-  { id: "final-cta", title: "Финальный призыв" },
-  { id: "payment", title: "Способы оплаты" },
-] as const;
+export default async function HomePage() {
+  const [campaign, regions, topRegions, emptyRegions, donors, build, gallery, feed] =
+    await Promise.all([
+      getCampaign(),
+      getRegions(),
+      getTopRegions(),
+      getEmptyRegionsCount(),
+      getTopDonors(),
+      getBuildProgress(),
+      getGallery(),
+      getFeed(),
+    ]);
 
-export default function HomePage() {
   return (
-    <main className={styles.main}>
-      <header className={styles.intro}>
-        <p className={styles.eyebrow}>Каркас проекта</p>
-        <h1>
-          {SITE_NAME} — {SLOGAN}
-        </h1>
-        <p className={styles.lede}>
-          Фронтенд поднят, шрифты и палитра подключены. Блоки ниже —
-          заглушки в порядке, зафиксированном ТЗ; вёрстка идёт по роудмапу.
-        </p>
-      </header>
+    <>
+      <SiteHeader />
 
-      <ol className={styles.sections}>
-        {SECTIONS.map((section, index) => (
-          <li key={section.id} className={styles.section}>
-            <span className={styles.index}>{index + 1}</span>
-            <span>{section.title}</span>
-          </li>
-        ))}
-      </ol>
-    </main>
+      <main className={styles.columns}>
+        <div className={styles.head}>
+          <HeroSection
+            collectedKopecks={campaign.collectedKopecks}
+            donationsCount={campaign.donationsCount}
+            regionsCount={topRegions.length}
+          />
+          <ProgressGoal campaign={campaign} regionsCount={topRegions.length} />
+        </div>
+
+        <aside className={styles.aside} id="donate" aria-label="Форма пожертвования">
+          <DonationWidget campaign={campaign} regions={regions} />
+        </aside>
+
+        <div className={styles.rest}>
+          <ShareBlock />
+          <BuildSection progress={build} gallery={gallery} />
+          <RegionsTop regions={topRegions} emptyCount={emptyRegions} />
+          <DonorsTop donors={donors} />
+          <WhyMosque />
+          <TimeValue />
+          <SadaqaValue />
+          <FinalCta />
+          <DonationsFeed initialPage={feed} />
+        </div>
+      </main>
+
+      <SiteFooter />
+    </>
   );
 }

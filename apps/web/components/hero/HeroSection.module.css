@@ -1,0 +1,124 @@
+/*
+ * Первый экран. Раскладка внутри левой колонки, поэтому ширину меряем
+ * контейнерным запросом, а не вьюпортом: на десктопе колонка около 780px
+ * при вьюпорте 1240px, и медиазапрос по вьюпорту здесь соврал бы.
+ *
+ * Контейнер — корень самого блока, имя не нужно: запрос обращается
+ * к ближайшему размерному предку.
+ */
+
+.hero {
+  container-type: inline-size;
+  padding-top: var(--hero-pad-top);
+}
+
+.grid {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+/*
+ * Узкая колонка (телефон и мобильная раскладка): сцена идёт НАД заголовком.
+ * Анимация и есть крючок, а под текстом её не видно без скролла — трафик
+ * из WhatsApp почти весь мобильный.
+ *
+ * Порядок дальше — из дня 4, по замерам реальных высот экрана: лид уезжает
+ * ПОД кнопку, иначе CTA уходит за сгиб на 390×664, 360×640 и 375×553.
+ * Первый экран без кнопки на сборе пожертвований — потерянный экран.
+ */
+.text {
+  display: flex;
+  flex-direction: column;
+}
+
+.scene {
+  order: -1;
+}
+
+.eyebrow {
+  order: 1;
+}
+
+.title {
+  order: 2;
+}
+
+.cta {
+  order: 3;
+}
+
+.lede {
+  order: 4;
+}
+
+.proof {
+  order: 5;
+}
+
+@container (min-width: 620px) {
+  .grid {
+    grid-template-columns: 1.02fr 0.98fr;
+    gap: clamp(30px, 5cqi, 68px);
+    align-items: center;
+  }
+
+  /* Колонка широкая — текст читается сверху вниз в естественном порядке. */
+  .scene,
+  .eyebrow,
+  .title,
+  .lede,
+  .cta,
+  .proof {
+    order: 0;
+  }
+}
+
+/* Акцент в заголовке: «за 100 ₽» подчёркивается линией, которая
+   прорисовывается один раз. Цена входа — главное слово первого экрана. */
+.accent {
+  position: relative;
+  color: var(--accent-quiet);
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.accent::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.07em;
+  height: 0.09em;
+  border-radius: 2px;
+  background: var(--accent-quiet);
+  opacity: 0.22;
+  transform-origin: left;
+  animation: underline 1s 0.9s var(--ease) both;
+}
+
+@keyframes underline {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.proof {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-8);
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+.proof b {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accent::after {
+    animation: none;
+    transform: scaleX(1);
+  }
+}

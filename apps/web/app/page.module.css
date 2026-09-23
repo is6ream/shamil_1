@@ -1,56 +1,76 @@
-.main {
+/*
+ * Раскладка главной. Две колонки с 1024px, одна ниже.
+ *
+ * Структура из трёх блоков выбрана ради одного свойства: на телефоне
+ * достаточно естественного порядка DOM, без единого `order`.
+ *
+ *   .head   — первый экран и цель сбора
+ *   .aside  — виджет формы
+ *   .rest   — всё остальное
+ *
+ * Телефон читает их подряд: Hero → Цель → Форма → остальное. На десктопе
+ * .head и .rest встают в первую колонку двумя строками, а .aside занимает
+ * вторую колонку на обе строки — и только поэтому sticky работает на всю
+ * высоту страницы. Если задать .aside одну строку, его блок-контейнер
+ * сожмётся до высоты первого экрана, и форма уедет вместе с ним.
+ *
+ * 1024px литералом: CSS не умеет переменные в медиазапросах. Остальные
+ * значения — из tokens.css.
+ */
+
+.columns {
   max-width: var(--container);
   margin: 0 auto;
-  padding: var(--section-pad) var(--sp-6);
+  padding: 0 var(--sp-6);
+  width: 100%;
 }
 
-.intro {
-  max-width: var(--measure);
+@media (max-width: 640px) {
+  .columns {
+    padding: 0 18px;
+  }
 }
 
-.eyebrow {
-  margin: 0 0 var(--sp-5);
-  font-size: var(--fs-eyebrow);
-  font-weight: 500;
-  letter-spacing: var(--ls-caps);
-  text-transform: uppercase;
-  color: var(--text-soft);
+@media (min-width: 1024px) {
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--col-aside);
+    column-gap: var(--col-gap);
+    align-items: start;
+  }
+
+  .head {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .rest {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .aside {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: start;
+    position: sticky;
+    top: var(--sticky-top);
+  }
 }
 
-.lede {
-  margin: var(--sp-6) 0 0;
-  font-size: var(--fs-lede);
-  color: var(--text-soft);
+/*
+ * Секции внутри колонок уже несут вертикальный ритм из kit.css
+ * (`section { padding: var(--section-pad) 0 }`). Виджету он не нужен:
+ * на десктопе он должен начинаться на одной высоте с первым экраном.
+ */
+.aside > * {
+  margin-top: var(--section-pad);
 }
 
-.sections {
-  display: grid;
-  gap: var(--sp-3);
-  margin: var(--sp-12) 0 0;
-  padding: 0;
-  list-style: none;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-}
-
-.section {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  padding: var(--sp-4) var(--sp-5);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-}
-
-.index {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--r-pill);
-  background: var(--surface-sunken);
-  color: var(--accent-quiet);
-  font-size: var(--fs-small);
-  font-weight: 600;
+@media (min-width: 1024px) {
+  .aside > * {
+    margin-top: var(--hero-pad-top); /* ровно верх первого экрана */
+  }
 }

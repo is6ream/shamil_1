@@ -1,0 +1,61 @@
+/* Виджет формы. Внутри узкой колонки — одна колонка полей;
+   в мобильной раскладке карточка занимает всю ширину, но поля те же. */
+
+.form {
+  margin-top: var(--sp-5);
+}
+
+.amountField {
+  margin-top: var(--sp-3);
+}
+
+.section {
+  margin-top: var(--sp-6);
+}
+
+/* Пояснение под чекбоксом анонимности: своя строка, а не хвост подписи. */
+.checkHint {
+  display: block;
+  margin-top: var(--sp-1);
+}
+
+.submit {
+  margin-top: var(--sp-6);
+}
+
+/*
+ * Honeypot: полностью убран и от глаза, и от скринридера, и из табстопа.
+ * Не `.sr-only` — та специально оставляет поле доступным для чтения вслух,
+ * и человек с экранным диктором услышал бы «Ваш адрес» и заполнил ловушку.
+ */
+.honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  left: -9999px;
+}
+
+/*
+ * Ошибка ответа бэкенда. Живёт над кнопкой, а не под ней: под кнопкой
+ * на телефоне она оказывается за краем экрана ровно в тот момент, когда
+ * человек смотрит на кнопку и не понимает, почему ничего не произошло.
+ */
+.formError {
+  margin: var(--sp-4) 0 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid #B3261E;
+  border-radius: var(--r-field);
+  background: rgba(179, 38, 30, 0.06);
+  font-size: var(--fs-small);
+  color: #B3261E;
+}
+
+.transferNote {
+  margin-top: var(--sp-5);
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}

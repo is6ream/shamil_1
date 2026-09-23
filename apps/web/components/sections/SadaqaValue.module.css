@@ -1,0 +1,12 @@
+.lede {
+  margin-inline: auto;
+  margin-bottom: var(--sp-8);
+}
+
+.cardText {
+  margin-top: var(--sp-3);
+}
+
+.ayah {
+  margin-top: var(--sp-6);
+}

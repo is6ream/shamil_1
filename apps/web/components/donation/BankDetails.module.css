@@ -1,0 +1,57 @@
+/* Реквизиты. Список пар «подпись — значение», читаемый и с экрана,
+   и вслух: номер счёта часто диктуют по телефону. */
+
+.wrap {
+  margin-top: var(--sp-4);
+}
+
+.pending {
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-field);
+  background: var(--surface-sunken);
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+.list {
+  margin: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.row {
+  display: grid;
+  gap: var(--sp-1);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.label {
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.value {
+  margin: 0;
+  /* Номер счёта переносится по любому месту: 20 цифр не влезают
+     в узкую колонку виджета. */
+  overflow-wrap: anywhere;
+  font-size: var(--fs-input);
+  font-weight: 500;
+}
+
+.qr {
+  display: block;
+  width: 180px;
+  height: auto;
+  margin: var(--sp-5) auto 0;
+  border-radius: var(--r-field);
+}

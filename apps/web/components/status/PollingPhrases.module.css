@@ -1,0 +1,13 @@
+/* Фразы ожидания. Высота фиксирована, чтобы страница не дёргалась
+   при смене фразы: длина у них разная. */
+
+.phrases {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  margin: var(--sp-5) 0 0;
+  font-size: var(--fs-lede);
+  color: var(--text-soft);
+  transition: opacity var(--dur) var(--ease);
+}

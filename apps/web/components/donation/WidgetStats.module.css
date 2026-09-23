@@ -1,0 +1,47 @@
+/*
+ * Компактный повтор цифр сбора над формой.
+ *
+ * Зачем повторять то, что и так есть в блоке «Цель»: на десктопе форма
+ * видна с любой высоты прокрутки, а блок цели — только сверху. Человек,
+ * доскроллив до рассказа про садака, должен видеть сумму рядом с кнопкой,
+ * иначе цифры и действие живут в разных экранах.
+ */
+
+.stats {
+  padding: var(--card-pad);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.collected {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-amount-md);
+  line-height: 1;
+}
+
+.goal {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+.track {
+  margin-top: var(--sp-4);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-4);
+  margin: var(--sp-4) 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+.meta b {
+  color: var(--text-strong);
+  font-weight: 600;
+}

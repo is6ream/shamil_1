@@ -1,0 +1,202 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Мечеть «Шамиль» — линейная графика сайта.
+
+   Две сцены на одном языке: белый штрих 2.1px со скруглёнными концами,
+   взятый из логотипа.
+
+   1. Сцена первого экрана (.stage) — ладони → монета 100 ₽ → мечеть
+      прорисовывается линией → полумесяц. ~5 секунд, один проход.
+      Объясняет слоган «дом в раю за 100 ₽» без единого слова.
+   2. Иллюстрация блока 8 (.stage-time) — добавлена на дне 4, см. низ файла.
+
+   Чистый SVG + CSS: ни GSAP, ни Lottie, ни видео — ровно как у
+   «Подари жизнь», где во всех 463 КБ CSS нет ни одного @keyframes
+   от библиотек.
+
+   Используется дважды: hero в prototype.html и лоадер опроса статуса
+   в thanks.html. Раньше файл был скопирован в оба — правка тайминга
+   расходилась между главной и экраном оплаты.
+
+   Разметку SVG см. в prototype.html → .stage
+   ───────────────────────────────────────────────────────────────────────── */
+
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  aspect-ratio: 1/1;
+  border-radius: var(--r-panel);
+  overflow: hidden;
+  background: var(--grad-stage);
+}
+
+/* Сцена уменьшается, чтобы над ней помещалась шапка, а под ней —
+   заголовок и CTA без скролла. Трафик из WhatsApp почти весь мобильный:
+   анимация, ради которой её вернули в MVP, обязана быть видна сразу. */
+@media (max-width: 980px) { .stage { max-width: min(62vw, 400px); aspect-ratio: 1/0.9; } }
+@media (max-width: 640px) {
+  .stage { max-width: min(76vw, 320px); aspect-ratio: 1/0.86; border-radius: 24px; }
+  .stage .caption { display: none; }
+}
+
+.stage .pattern, .stage-time .pattern { opacity: 0.055; animation: drift 40s linear infinite; }
+@keyframes drift { to { transform: translate(42px, 42px); } }
+
+.stage .glow {
+  position: absolute;
+  left: 50%; top: 46%;
+  width: 74%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: radial-gradient(circle, rgba(150, 205, 245, 0.5) 0%, rgba(2, 106, 169, 0.18) 38%, transparent 68%);
+  animation: breathe 7s ease-in-out infinite;
+}
+@keyframes breathe { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+
+.stage svg.art, .stage-time svg.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Одна толщина штриха на весь сайт, скруглённые концы — из логотипа.
+   non-scaling-stroke: линия не толстеет вместе с масштабом сцены.
+
+   Цвет через переменную, а не константой: на градиентной сцене линия белая,
+   на светлой карточке блока 8 — тёмно-синяя. Одна и та же разметка SVG. */
+.art .stroke {
+  fill: none;
+  stroke: var(--art-stroke, #fff);
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.art .stroke.thin { stroke-width: 1.4; }
+
+/* Заливка — только у песка в часах. Всё остальное на сайте рисуется линией. */
+.art .sand { fill: var(--art-sand, rgba(255, 255, 255, 0.16)); stroke: none; }
+
+/* 0.25 c — ладони поднимаются снизу */
+.hands { opacity: 0; animation: handsIn 1.1s 0.25s cubic-bezier(0.2, 0.75, 0.3, 1) forwards; }
+@keyframes handsIn { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 1.15 c — падает монета и гаснет вспышкой в ладонях */
+.coin { opacity: 0; animation: coinDrop 1.25s 1.15s cubic-bezier(0.45, 0, 0.55, 1) forwards; }
+@keyframes coinDrop {
+  0%   { opacity: 0; transform: translateY(-120px) scale(0.7); }
+  22%  { opacity: 1; }
+  72%  { opacity: 1; transform: translateY(0) scale(1); }
+  88%  { opacity: 0.35; transform: translateY(0) scale(1.5); }
+  100% { opacity: 0; transform: translateY(0) scale(1.9); }
+}
+.coin text { font-family: var(--font-text); font-size: 15px; font-weight: 600; fill: #fff; }
+
+/* 2.15 c — из света линией прорисовывается мечеть */
+.mosque .stroke {
+  stroke-dasharray: var(--len, 900);
+  stroke-dashoffset: var(--len, 900);
+  animation: draw 2.1s 2.15s cubic-bezier(0.35, 0.1, 0.25, 1) forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* 3.90 c — проявляются купол и минареты */
+.mosque .fillfade { opacity: 0; animation: fadeIn 0.9s 3.9s ease forwards; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+/* 4.05 c — полумесяц, с лёгким отскоком */
+.crescent { opacity: 0; transform-origin: center; animation: popIn 0.8s 4.05s cubic-bezier(0.2, 0.9, 0.3, 1.3) forwards; }
+@keyframes popIn { from { opacity: 0; transform: scale(0.4) rotate(-25deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+
+/* далее — искры и дыхание света, бесконечно и почти незаметно */
+.spark { opacity: 0; animation: spark 2.4s 4.3s ease-in-out infinite; }
+.spark:nth-of-type(2) { animation-delay: 4.9s; }
+.spark:nth-of-type(3) { animation-delay: 5.4s; }
+@keyframes spark {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.5); }
+  35%  { opacity: 0.9; transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-16px) scale(0.6); }
+}
+
+.stage .caption {
+  position: absolute;
+  left: 0; right: 0; bottom: 20px;
+  text-align: center;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.72);
+  opacity: 0;
+  animation: fadeIn 1s 4.6s ease forwards;
+}
+
+/* Финальный кадр без движения. Не «пустая сцена»: мечеть, ладони,
+   полумесяц и подпись стоят на месте, исчезает только монета —
+   её единственная роль в том, чтобы упасть. */
+@media (prefers-reduced-motion: reduce) {
+  .hands, .mosque .fillfade, .crescent, .stage .caption { opacity: 1 !important; }
+  .mosque .stroke { stroke-dashoffset: 0 !important; }
+  .coin, .spark { display: none; }
+  .stage .glow { animation: none; opacity: 0.7; }
+  .stage .pattern, .stage-time .pattern { animation: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Блок 8 — «Цени, пока не потерял». День 4.
+
+   Песочные часы: песок из верхней колбы пересыпался вниз и сложился в
+   очертание мечети. Вся мысль блока одной картинкой — время утекает в любом
+   случае, вопрос только в том, останется ли после него что-нибудь.
+
+   Почему не AI-иллюстрация, как было заложено в роудмапе: растровая картинка
+   рядом с линейным hero читается как вставка из другого проекта. Здесь тот же
+   штрих, что у мечети на первом экране, — блок 8 рифмуется с блоком 1, а не
+   спорит с ним. Побочно: ~2 КБ вместо фотографии, не зависит от материалов
+   заказчика и не требует отдельной обработки под ретину.
+
+   Линия тёмная, а не белая: четвёртая градиентная панель на странице сломала
+   бы правило «три панели» из moodboard.md (hero, финальный CTA, футер).
+
+   Сюжет намеренно не опирается на текст хадиса — он ещё не выверен имамом.
+   Если формулировка изменится, иллюстрация останется верной.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.stage-time {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  aspect-ratio: 4/3;
+  border-radius: var(--r-photo);
+  overflow: hidden;
+  background: var(--surface-sunken);
+
+  --art-stroke: var(--ink);
+  --art-sand: rgba(10, 51, 103, 0.13);
+}
+
+/* Свет собран внизу, под мечетью: взгляд идёт туда же, куда и песок.
+   Слабее, чем на первом экране: там свет — событие, здесь фон под линией,
+   и на 0.18 он глушил саму мечеть. */
+.stage-time .glow {
+  position: absolute;
+  left: 50%; top: 74%;
+  width: 52%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: radial-gradient(circle, rgba(2, 106, 169, 0.11) 0%, transparent 68%);
+}
+
+.art-time .stream { opacity: 0.3; }
+
+/* Три крупинки — три вещи из пилюль под текстом: время, молодость, здоровье.
+   Разгораются по очереди сверху вниз, цикл 3.6 с: песок сыплется, но ничто
+   не ездит по экрану. Это единственное движение в блоке — он про чтение,
+   и мельтешить рядом с текстом нечему.
+
+   Именно opacity, а не падение: между горлышком и полумесяцем 24 px, и
+   любая крупинка, которая реально едет вниз, въезжает в купол. */
+.art-time .grain { opacity: 0.2; animation: grainPulse 3.6s ease-in-out infinite; }
+.art-time .grain:nth-of-type(2) { animation-delay: 0.45s; }
+.art-time .grain:nth-of-type(3) { animation-delay: 0.9s; }
+@keyframes grainPulse { 0%, 100% { opacity: 0.2; } 25% { opacity: 1; } 55% { opacity: 0.2; } }
+
+/* Без движения крупинки просто стоят в струе на средней яркости. */
+@media (prefers-reduced-motion: reduce) {
+  .art-time .grain { animation: none; opacity: 0.7; }
+}

@@ -1,0 +1,19 @@
+/* Финальный призыв. Заголовок мельче первого экрана: он завершает
+   разговор, а не открывает его. */
+
+.title {
+  font-size: clamp(26px, 3.8vw, 44px);
+}
+
+.lede {
+  margin-inline: auto;
+  margin-top: var(--sp-5);
+}
+
+.cta {
+  justify-content: center;
+}
+
+.second {
+  margin-top: var(--sp-10);
+}
