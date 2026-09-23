@@ -52,3 +52,8 @@ uploads/
 .claude/
 Claude outputs/
 .worktrees/
+
+# скиллы ИИ-ассистентов (ставятся локально, к коду проекта не относятся)
+.agents/
+.windsurf/
+skills-lock.json
