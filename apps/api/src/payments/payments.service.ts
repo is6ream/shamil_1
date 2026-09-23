@@ -1,10 +1,19 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import { MANUAL_CONFIRM_DEFAULT_METHOD, MANUAL_PROVIDER_CODE } from '../config/constants';
 import { PrismaService } from '../database/prisma.service';
 import { isEffectiveTransition } from '../donations/donation-status';
+import { DonationStatus } from '../generated/prisma/enums';
 import { PAYMENT_PROVIDER } from './payment-provider.interface';
 import type { PaymentProvider } from './payment-provider.interface';
 import type { ParsedWebhook, WebhookBody } from './payment-provider.types';
+import type {
+  ApplyEventInput,
+  ManualConfirmation,
+  ManualConfirmationOptions,
+  PaymentEventOutcome,
+} from './payments.types';
+import { MANUAL_EVENT_ID_PREFIX } from './payments.types';
 
 /**
  * Поля колбэка, которые не сохраняются в `payment_event.payload`.
@@ -64,9 +73,8 @@ export class PaymentsService {
    * действительно прислал провайдер. Статус и сумма берутся из колбэка,
    * а не из заказа: это единственный канал, которому можно верить.
    *
-   * Витринные счётчики (сумма сбора, рейтинг региона, цель месяца)
-   * пересчитывает триггер `donation_stats_sync` — здесь их не трогаем,
-   * иначе два независимых источника правды разойдутся.
+   * Сам переход живёт в `applyEvent` — общем для вебхука и для ручного
+   * подтверждения из админки.
    */
   async applyWebhook(parsed: ParsedWebhook, body: WebhookBody): Promise<void> {
     const donation = await this.prisma.donation.findUnique({
@@ -90,64 +98,170 @@ export class PaymentsService {
       );
     }
 
+    const outcome = await this.applyEvent({
+      donationId: donation.id,
+      provider: this.provider.code,
+      providerEventId: parsed.providerEventId,
+      status: parsed.status,
+      amountKopecks: parsed.amountKopecks,
+      method: parsed.method,
+      payload: toStoredPayload(body),
+    });
+
+    if (outcome === 'duplicate') {
+      // Агрегаторы ретраят колбэк, пока не получат 200; без ключа
+      // идемпотентности донат задвоился бы и в сумме сбора, и в рейтинге.
+      this.logger.log(`Повтор колбэка по счёту ${parsed.invoiceNo} — уже обработан`);
+    }
+  }
+
+  /**
+   * Подтверждение ручного перевода из админки.
+   *
+   * Запасной путь оплаты (ManualProvider) колбэков не имеет вовсе: донат висит
+   * в `pending`, пока поступление не увидят в выписке. Этот метод — вторая
+   * половина того пути, и он идёт ровно через ту же машинерию, что и вебхук:
+   * то же событие в `payment_event`, тот же ключ идемпотентности, тот же
+   * переход статуса, тот же пересчёт витрин триггером БД.
+   *
+   * Повторный вызов — no-op: ключ события `manual:<invoiceNo>` детерминирован,
+   * второе подтверждение упирается в уникальный индекс. Поэтому и сумму
+   * повтором не переписать: исправление уже зачисленного доната — отдельная
+   * операция, а не побочный эффект повторного нажатия.
+   */
+  async confirmManual(
+    donationId: string,
+    options: ManualConfirmationOptions = {},
+  ): Promise<ManualConfirmation> {
+    const donation = await this.prisma.donation.findUnique({
+      where: { id: donationId },
+      // Поимённая выборка без `contact`: ПДн этой операции не нужны
+      // и не должны попасть ни в ответ, ни в лог.
+      select: { id: true, invoiceNo: true, provider: true, amountKopecks: true },
+    });
+
+    if (donation === null) {
+      throw new NotFoundException('Донат не найден');
+    }
+
+    if (donation.provider !== MANUAL_PROVIDER_CODE) {
+      // Донат агрегатора подтверждает только его колбэк. Разрешить это здесь
+      // значило бы завести второй источник правды о деньгах — с правом
+      // объявить оплаченным платёж, которого не было.
+      throw new BadRequestException(
+        `Донат оплачивается через «${donation.provider}» и подтверждается колбэком провайдера, не вручную`,
+      );
+    }
+
+    const amountKopecks = options.amountKopecks ?? donation.amountKopecks;
+    const method = options.method ?? MANUAL_CONFIRM_DEFAULT_METHOD;
+
+    const outcome = await this.applyEvent({
+      donationId: donation.id,
+      provider: MANUAL_PROVIDER_CODE,
+      providerEventId: `${MANUAL_EVENT_ID_PREFIX}${donation.invoiceNo}`,
+      status: DonationStatus.paid,
+      amountKopecks,
+      method,
+      // Кто и когда подтвердил — видно по `payment_event.received_at`;
+      // имени и телефона донатера здесь нет намеренно.
+      payload: {
+        source: 'admin',
+        method,
+        confirmedAmountKopecks: amountKopecks.toString(),
+        orderAmountKopecks: donation.amountKopecks.toString(),
+      },
+    });
+
+    this.logger.log(`Ручной донат ${donation.id}: подтверждение — ${outcome}`);
+
+    return this.loadConfirmation(donation.id, outcome === 'applied');
+  }
+
+  /**
+   * Применение события к донату — единственное место, где меняется статус.
+   *
+   * Витринные счётчики (сумма сбора, рейтинг региона, цель месяца) пересчитывает
+   * триггер `donation_stats_sync` — здесь их не трогаем, иначе два независимых
+   * источника правды разойдутся.
+   */
+  private async applyEvent(input: ApplyEventInput): Promise<PaymentEventOutcome> {
     try {
-      await this.applyInTransaction(parsed, body);
+      return await this.prisma.$transaction(async (tx) => {
+        // Статус перечитывается внутри транзакции: между поиском доната
+        // и записью события могла пройти параллельная доставка.
+        const current = await tx.donation.findUniqueOrThrow({
+          where: { id: input.donationId },
+          select: { status: true },
+        });
+
+        const isEffective = isEffectiveTransition(current.status, input.status);
+        const appliedAt = isEffective ? new Date() : null;
+
+        await tx.paymentEvent.create({
+          data: {
+            donationId: input.donationId,
+            provider: input.provider,
+            providerEventId: input.providerEventId,
+            status: input.status,
+            amountKopecks: input.amountKopecks,
+            payload: { ...input.payload },
+            // Пусто — значит событие ничего не изменило: донат уже в этом
+            // статусе или переход запрещён.
+            appliedAt,
+          },
+        });
+
+        if (!isEffective) {
+          return 'ignored';
+        }
+
+        const isPaid = input.status === DonationStatus.paid;
+
+        await tx.donation.update({
+          where: { id: input.donationId },
+          data: {
+            status: input.status,
+            // Следы оплаты несёт только `paid` — это CHECK `donation_paid_fields`.
+            // В `failed` сумма и время платежа обязаны остаться пустыми.
+            paidAmountKopecks: isPaid ? input.amountKopecks : null,
+            // Robokassa времени платежа в Result URL не присылает, у ручного
+            // перевода его нет вовсе — фиксируем момент подтверждения.
+            paidAt: isPaid ? appliedAt : null,
+            ...(input.method === undefined ? {} : { method: input.method }),
+          },
+        });
+
+        return 'applied';
+      });
     } catch (error: unknown) {
       if (isUniqueViolation(error)) {
-        // Повторная доставка того же события. Агрегаторы ретраят колбэк,
-        // пока не получат 200; без этого ветвления донат задвоился бы
-        // и в сумме сбора, и в рейтинге региона.
-        this.logger.log(`Повтор колбэка по счёту ${parsed.invoiceNo} — уже обработан`);
-
-        return;
+        // Событие с этим ключом уже записано: ретрай агрегатора или повторное
+        // подтверждение из админки. И то и другое обязано быть no-op.
+        return 'duplicate';
       }
 
       throw error;
     }
   }
 
-  private async applyInTransaction(parsed: ParsedWebhook, body: WebhookBody): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      // Статус перечитывается внутри транзакции: между поиском доната
-      // и записью события могла пройти параллельная доставка.
-      const current = await tx.donation.findUniqueOrThrow({
-        where: { invoiceNo: parsed.invoiceNo },
-        select: { id: true, status: true },
-      });
-
-      const isEffective = isEffectiveTransition(current.status, parsed.status);
-      const appliedAt = isEffective ? new Date() : null;
-
-      await tx.paymentEvent.create({
-        data: {
-          donationId: current.id,
-          provider: this.provider.code,
-          providerEventId: parsed.providerEventId,
-          status: parsed.status,
-          amountKopecks: parsed.amountKopecks,
-          payload: toStoredPayload(body),
-          // Пусто — значит событие ничего не изменило: донат уже в этом
-          // статусе или переход запрещён.
-          appliedAt,
-        },
-      });
-
-      if (!isEffective) {
-        return;
-      }
-
-      await tx.donation.update({
-        where: { id: current.id },
-        data: {
-          status: parsed.status,
-          paidAmountKopecks: parsed.amountKopecks,
-          // Robokassa времени платежа в Result URL не присылает — фиксируем
-          // момент подтверждения.
-          paidAt: appliedAt,
-          ...(parsed.method === undefined ? {} : { method: parsed.method }),
-        },
-      });
+  /** Состояние доната после подтверждения — то, что увидит админ в ответе. */
+  private async loadConfirmation(
+    donationId: string,
+    applied: boolean,
+  ): Promise<ManualConfirmation> {
+    const stored = await this.prisma.donation.findUniqueOrThrow({
+      where: { id: donationId },
+      select: { id: true, status: true, paidAmountKopecks: true, paidAt: true },
     });
+
+    return {
+      orderId: stored.id,
+      status: stored.status,
+      paidAmountKopecks: stored.paidAmountKopecks,
+      paidAt: stored.paidAt,
+      applied,
+    };
   }
 
   /**

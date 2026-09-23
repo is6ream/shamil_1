@@ -56,6 +56,9 @@ function createPaymentProvider(config: ConfigService<AppConfig, true>): PaymentP
       useFactory: createPaymentProvider,
     },
   ],
-  exports: [PAYMENT_PROVIDER],
+  // PaymentsService экспортируется ради админского подтверждения ручного
+  // доната: перевод pending → paid обязан идти через ту же машинерию, что
+  // и вебхук, а не через вторую копию логики в админском модуле.
+  exports: [PAYMENT_PROVIDER, PaymentsService],
 })
 export class PaymentsModule {}

@@ -14,6 +14,7 @@ import {
 } from 'class-validator';
 
 import {
+  ADMIN_TOKEN_MIN_LENGTH,
   DEFAULT_API_PORT,
   DEFAULT_THROTTLE_LIMIT,
   DEFAULT_THROTTLE_TTL_MS,
@@ -211,6 +212,22 @@ export class EnvVars {
   @ValidateIf((env: EnvVars) => env.PAYMENT_RECEIPT_ENABLED)
   @IsIn(VAT_RATES)
   PAYMENT_RECEIPT_VAT?: VatRate;
+
+  // ─── Админские эндпоинты ───────────────────────────────────────────────────
+
+  /**
+   * Статический токен админских эндпоинтов. Полноценной аутентификации в MVP
+   * нет (CLAUDE.md: админка — это защищённые эндпоинты, не UI), и подтверждение
+   * ручного доната закрыто одним общим токеном.
+   *
+   * Обязателен только в production: локально и в тестах приложение обязано
+   * подниматься без него. Открытым эндпоинт при этом не становится — с пустым
+   * токеном гард отклоняет вообще все запросы, включая запрос без заголовка.
+   */
+  @ValidateIf((env: EnvVars) => env.NODE_ENV === NodeEnv.Production)
+  @IsString()
+  @MinLength(ADMIN_TOKEN_MIN_LENGTH)
+  ADMIN_API_TOKEN?: string;
 }
 
 export function validateEnv(raw: Record<string, unknown>): EnvVars {

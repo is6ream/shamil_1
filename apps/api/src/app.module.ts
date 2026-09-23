@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
+import { AdminModule } from './admin/admin.module';
 import { configuration } from './config/configuration';
 import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
@@ -31,6 +32,7 @@ import { HealthModule } from './health/health.module';
     DatabaseModule,
     HealthModule,
     DonationsModule,
+    AdminModule,
   ],
   providers: [
     // Rate limiting по умолчанию на все эндпоинты: платёжная форма и вебхуки

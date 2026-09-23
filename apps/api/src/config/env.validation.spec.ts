@@ -110,6 +110,34 @@ describe('валидация окружения', () => {
     expect(act).toThrow(/PAYMENT_IS_TEST/);
   });
 
+  test('в production без ADMIN_API_TOKEN приложение не поднимается', () => {
+    // Arrange: за админским токеном лежит подтверждение донатов — операция,
+    // двигающая сумму сбора. На проде она не должна остаться без ключа
+    const act = (): unknown =>
+      validateEnv({ ...BASE_ENV, NODE_ENV: NodeEnv.Production });
+
+    // Assert
+    expect(act).toThrow(/ADMIN_API_TOKEN/);
+  });
+
+  test('короткий админский токен не принимается', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({ ...BASE_ENV, NODE_ENV: NodeEnv.Production, ADMIN_API_TOKEN: 'admin123' });
+
+    // Assert
+    expect(act).toThrow(/ADMIN_API_TOKEN/);
+  });
+
+  test('вне production токен необязателен — приложение стартует', () => {
+    // Arrange & Act: локальная разработка не должна упираться в секрет;
+    // открытым эндпоинт при этом не становится — гард отклоняет всё
+    const env = validateEnv(BASE_ENV);
+
+    // Assert
+    expect(env.ADMIN_API_TOKEN).toBeUndefined();
+  });
+
   test('включённая фискализация требует СНО, наименование позиции и ставку НДС', () => {
     // Act
     const act = (): unknown =>

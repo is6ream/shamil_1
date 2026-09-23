@@ -42,6 +42,14 @@ export interface DatabaseConfig {
   readonly url: string;
 }
 
+export interface AdminConfig {
+  /**
+   * Статический токен админских эндпоинтов. Пустая строка — не «выключено»,
+   * а «закрыто»: гард с пустым токеном не пропускает никого.
+   */
+  readonly apiToken: string;
+}
+
 export interface ThrottleConfig {
   readonly ttlMs: number;
   readonly limit: number;
@@ -55,6 +63,7 @@ export interface AppConfig {
   readonly throttle: ThrottleConfig;
   readonly publicUrls: PublicUrlsConfig;
   readonly payment: PaymentConfig;
+  readonly admin: AdminConfig;
 }
 
 function parseOrigins(value: string): readonly string[] {
@@ -125,5 +134,10 @@ export function configuration(): AppConfig {
       siteUrl: trimTrailingSlash(env.PUBLIC_SITE_URL),
     },
     payment: buildPaymentConfig(env),
+    admin: {
+      // Вне production переменной может не быть — и это не повод пропускать
+      // запросы: пустой токен гард трактует как «закрыто наглухо».
+      apiToken: env.ADMIN_API_TOKEN ?? '',
+    },
   };
 }
