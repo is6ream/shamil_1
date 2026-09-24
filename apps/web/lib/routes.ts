@@ -16,6 +16,13 @@ export const THANKS_PATH = "/spasibo";
 /** Имя query-параметра с публичным id заказа. */
 export const ORDER_QUERY_PARAM = "order_id";
 
+/**
+ * Тот же id заказа, но в имени, под которым его возвращает Robokassa
+ * на Success URL. Зеркало `ROBOKASSA_ORDER_SHP_PARAM`
+ * в apps/api/src/payments/robokassa/robokassa.constants.ts.
+ */
+export const PROVIDER_ORDER_QUERY_PARAM = "Shp_order_id";
+
 /** Параметр региональной ссылки: `?region=bashkortostan`. */
 export const REGION_QUERY_PARAM = "region";
 

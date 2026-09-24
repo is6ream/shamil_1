@@ -11,6 +11,19 @@ export const PAYMENTS_ROUTE_PREFIX = 'payments';
  */
 export const ROBOKASSA_RESULT_ROUTE = 'robokassa/result';
 
+/**
+ * Пользовательский параметр с публичным id заказа (uuid доната).
+ *
+ * На Success URL Robokassa возвращает донатера с `InvId`, а страница «спасибо»
+ * опрашивает статус по uuid — номер счёта наружу не выдаём, его легко перебрать.
+ * `Shp_`-параметры Robokassa возвращает и в Result URL, и на Success/Fail URL,
+ * поэтому uuid едет через провайдера туда и обратно. Параметр входит в подпись
+ * ссылки и колбэка — подменить его по дороге нельзя.
+ *
+ * Имя дублируется во фронтенде (`apps/web/lib/routes.ts`).
+ */
+export const ROBOKASSA_ORDER_SHP_PARAM = 'Shp_order_id';
+
 /** Язык интерфейса на стороне провайдера. */
 export const ROBOKASSA_CULTURE = 'ru';
 

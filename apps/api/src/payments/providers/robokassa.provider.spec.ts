@@ -6,13 +6,17 @@ import { DonationStatus } from '../../generated/prisma/enums';
 import { WebhookParseError } from '../payment-provider.types';
 import { RobokassaProvider } from './robokassa.provider';
 
+const ORDER_ID = '11111111-2222-3333-4444-555555555555';
+
 /**
  * Эталонные подписи (посчитаны отдельно от кода под тестом):
- *   md5('demo:100.00:42:password_1') — ссылка на оплату
- *   md5('100.00:42:password_2')      — колбэк
+ *   md5('demo:100.00:42:password_1:Shp_order_id=<ORDER_ID>') — ссылка на оплату
+ *   md5('100.00:42:password_2')                               — колбэк без Shp_
+ *   md5('100.00:42:password_2:Shp_order_id=<ORDER_ID>')       — колбэк с Shp_
  */
-const LINK_SIGNATURE = '42a60c45cd1a722d91aee889c3d5f59c';
+const LINK_SIGNATURE = 'af053803f34d2719009d33aff9a215cd';
 const CALLBACK_SIGNATURE = '26f30947013e19685eda7f3ea6e94c99';
+const CALLBACK_WITH_ORDER_SIGNATURE = 'b356070bc6f20a2ed542feca24e2f87e';
 
 const BASE_PAYMENT: PaymentConfig = {
   provider: PaymentProviderCode.Robokassa,
@@ -34,7 +38,7 @@ function createProvider(overrides: Partial<PaymentConfig> = {}): RobokassaProvid
 /** Донат на 100 ₽ — минимальный по ТЗ, он же слоган сбора. */
 const DONATION = {
   invoiceNo: 42,
-  donationId: '11111111-2222-3333-4444-555555555555',
+  donationId: ORDER_ID,
   amountKopecks: 10_000n,
   description: 'Пожертвование на строительство мечети «Шамиль»',
 };
@@ -59,6 +63,15 @@ describe('RobokassaProvider: создание платежа', () => {
     expect(url.searchParams.get('InvId')).toBe('42');
     expect(url.searchParams.get('SignatureValue')).toBe(LINK_SIGNATURE);
     expect(payment.externalId).toBe('42');
+  });
+
+  test('uuid заказа уходит в Shp_order_id — по нему «спасибо» опрашивает статус', async () => {
+    // Act
+    const payment = await createProvider().createPayment(DONATION);
+
+    // Assert: без него Robokassa вернёт донатера только с InvId,
+    // и страница «спасибо» не узнает, какой заказ проверять
+    expect(new URL(payment.redirectUrl).searchParams.get('Shp_order_id')).toBe(ORDER_ID);
   });
 
   test('в тестовом режиме уходит IsTest=1, в боевом флага нет', async () => {
@@ -131,6 +144,19 @@ describe('RobokassaProvider: проверка подписи колбэка', ()
     expect(createProvider({ webhookSecret: 'другой' }).verifySignature(CALLBACK)).toBe(false);
   });
 
+  test('колбэк с Shp_order_id проверяется с учётом параметра', () => {
+    // Arrange: Robokassa возвращает Shp_-параметры в колбэк и включает их в подпись
+    const body = {
+      ...CALLBACK,
+      Shp_order_id: ORDER_ID,
+      SignatureValue: CALLBACK_WITH_ORDER_SIGNATURE,
+    };
+
+    // Assert
+    expect(createProvider().verifySignature(body)).toBe(true);
+    expect(createProvider().verifySignature({ ...body, Shp_order_id: 'подмена' })).toBe(false);
+  });
+
   test('колбэк без подписи отвергается, а не падает', () => {
     // Assert
     expect(createProvider().verifySignature({ OutSum: '100.00', InvId: '42' })).toBe(false);
@@ -186,6 +212,16 @@ describe('RobokassaProvider: разбор колбэка', () => {
     expect(() => createProvider().parseWebhook({ ...CALLBACK, InvId: '0' })).toThrow(
       WebhookParseError,
     );
+  });
+
+  test('неразбираемая сумма — WebhookParseError (400), а не 500', () => {
+    // Arrange: на 500 Robokassa ретраила бы колбэк без конца
+    const parse = (outSum: string) => () =>
+      createProvider().parseWebhook({ ...CALLBACK, OutSum: outSum });
+
+    // Assert
+    expect(parse('сто')).toThrow(WebhookParseError);
+    expect(parse('100.001')).toThrow(WebhookParseError);
   });
 
   test('колбэк без обязательных полей — ошибка', () => {

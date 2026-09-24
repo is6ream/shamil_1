@@ -12,6 +12,7 @@ import {
   MAX_DESCRIPTION_LENGTH,
   MAX_METHOD_LENGTH,
   ROBOKASSA_CULTURE,
+  ROBOKASSA_ORDER_SHP_PARAM,
   ROBOKASSA_PAYMENT_URL,
 } from '../robokassa/robokassa.constants';
 import {
@@ -19,6 +20,7 @@ import {
   buildResultSignatureSource,
   formatOutSum,
   hashSignature,
+  OutSumParseError,
   parseOutSumToKopecks,
   signaturesMatch,
 } from '../robokassa/signature';
@@ -32,9 +34,10 @@ function readField(body: WebhookBody, name: string): string | undefined {
 }
 
 /**
- * Пользовательские параметры из колбэка. Мы своих `Shp_` не отправляем, но
- * подпись обязана считаться по фактическому составу тела: если параметр
- * появится (например, регион отдельным полем), проверка не должна поехать.
+ * Пользовательские параметры из колбэка. Сами мы отправляем только
+ * `Shp_order_id`, но подпись обязана считаться по фактическому составу тела:
+ * если параметр появится (например, регион отдельным полем), проверка
+ * не должна поехать.
  */
 function collectShpParams(body: WebhookBody): ShpParams {
   const collected: Record<string, string> = {};
@@ -99,6 +102,9 @@ export class RobokassaProvider implements PaymentProvider {
     const outSum = formatOutSum(input.amountKopecks);
     const invId = String(input.invoiceNo);
     const description = input.description.slice(0, MAX_DESCRIPTION_LENGTH);
+    // uuid заказа едет через Robokassa и возвращается на Success URL —
+    // иначе страница «спасибо» не узнает, какой заказ опрашивать.
+    const shp: ShpParams = { [ROBOKASSA_ORDER_SHP_PARAM]: input.donationId };
 
     // Чек уходит и в ссылку, и в подпись, но в подпись — URL-кодированным
     // (docs.robokassa.ru, «Фискализация»). Кодируем один раз здесь:
@@ -116,6 +122,7 @@ export class RobokassaProvider implements PaymentProvider {
         invId,
         receipt: receiptEncoded,
         password: this.payment.secretKey,
+        shp,
       }),
       this.payment.hashAlgorithm,
     );
@@ -129,6 +136,10 @@ export class RobokassaProvider implements PaymentProvider {
     url.searchParams.set('Culture', ROBOKASSA_CULTURE);
     url.searchParams.set('Encoding', 'utf-8');
     url.searchParams.set('SignatureValue', signature);
+
+    for (const [name, value] of Object.entries(shp)) {
+      url.searchParams.set(name, value);
+    }
 
     if (receiptJson !== undefined) {
       // searchParams кодирует значение сам — кладём сырой JSON, иначе
@@ -196,10 +207,28 @@ export class RobokassaProvider implements PaymentProvider {
       // Единственный статус, о котором Result URL вообще сообщает.
       // Отказ провайдер сюда не шлёт — донат остаётся pending.
       status: DonationStatus.paid,
-      amountKopecks: parseOutSumToKopecks(outSum),
+      amountKopecks: this.readAmount(outSum),
       method: this.readMethod(body),
       acknowledgement: `OK${invoiceNo}`,
     };
+  }
+
+  /**
+   * Сумма из подписанного колбэка. Не разобралась — это расхождение
+   * с форматом провайдера, а не сбой сервера: контроллер должен ответить 400
+   * и залогировать причину. Голый `OutSumParseError` дошёл бы до клиента
+   * как 500, и Robokassa ретраила бы колбэк без конца.
+   */
+  private readAmount(outSum: string): bigint {
+    try {
+      return parseOutSumToKopecks(outSum);
+    } catch (error: unknown) {
+      if (error instanceof OutSumParseError) {
+        throw new WebhookParseError(error.message);
+      }
+
+      throw error;
+    }
   }
 
   /**

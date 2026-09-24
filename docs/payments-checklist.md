@@ -42,8 +42,8 @@
 
 - [ ] Публичный HTTPS-URL под колбэк (локально — туннель cloudflared/ngrok на :3001; прод — домен + Nginx/TLS)
 - [ ] В кабинете Robokassa: Result URL (метод **POST**)
-- [ ] В кабинете Robokassa: Success URL
-- [ ] В кабинете Robokassa: Fail URL
+- [ ] В кабинете Robokassa: Success URL (метод **GET**)
+- [ ] В кабинете Robokassa: Fail URL (метод **GET**)
 
 ---
 
@@ -56,7 +56,9 @@ PAYMENT_SECRET_KEY=       # Пароль #1 (боевой)
 PAYMENT_WEBHOOK_SECRET=   # Пароль #2 (боевой)
 PAYMENT_TEST_SECRET_KEY=      # Пароль #1 (тестовый)
 PAYMENT_TEST_WEBHOOK_SECRET=  # Пароль #2 (тестовый)
-PAYMENT_IS_TEST=1         # 1 — тестовый режим, 0 — боевой
-PAYMENT_PUBLIC_URL=       # публичный base-URL для Result/Success/Fail
-# Receipt/СНО не нужны — чек не формируем
+PAYMENT_IS_TEST=true      # true — тестовая пара, false — боевая; задать явно
+PAYMENT_HASH_ALGORITHM=md5  # как в кабинете: md5 или sha256
+PUBLIC_API_URL=           # внешний адрес API — из него собирается Result URL
+PUBLIC_SITE_URL=          # внешний адрес сайта — Success/Fail URL
+PAYMENT_RECEIPT_ENABLED=false  # чек не формируем
 ```

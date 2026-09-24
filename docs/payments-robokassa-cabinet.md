@@ -49,7 +49,9 @@ PAYMENT_IS_TEST=true      # true — тестовая пара, false — бое
 | **Result URL** | `{PUBLIC_API_URL}/api/payments/robokassa/result` | `buildResultUrl()` в `robokassa.constants.ts`; префикс `/api` = `API_GLOBAL_PREFIX` |
 | Метод Result URL | **POST** | контроллер слушает только `@Post` (`payment-callbacks.controller.ts`) |
 | **Success URL** | `{PUBLIC_SITE_URL}/spasibo` | `THANKS_PATH` (`payments.constants.ts`) |
+| Метод Success URL | **GET** | страница Next.js POST не принимает — на POST донатер увидит ошибку |
 | **Fail URL** | `{PUBLIC_SITE_URL}/` (или отдельная страница отказа) | своей fail-страницы в коде пока нет |
+| Метод Fail URL | **GET** | то же |
 | Хеш-алгоритм подписи | тот же, что в `PAYMENT_HASH_ALGORITHM` | иначе все подписи не сойдутся |
 | URL сайта магазина | `https://mechetshamil.ru` | — |
 
@@ -89,12 +91,11 @@ cloudflared tunnel --url http://localhost:3001
 
 ### Заметки на потом (не блокеры регистрации)
 
-- **Success URL и `order_id`.** Страница `/spasibo` опрашивает статус по query-параметру
-  `order_id` (`app/spasibo/page.tsx` → `ThanksScreen`). Robokassa на Success-редиректе
-  отдаёт `InvId`, а не `order_id`. В тестовом прогоне сверить, с каким именем параметр
-  реально приходит, и при необходимости настроить Success URL / чтение параметра — иначе
-  после оплаты страница «спасибо» не получит id заказа и не запустит поллинг.
-- **`docs/payments-checklist.md`** в блоке «Итоговый `.env`» отстал от кода: там
-  `PAYMENT_IS_TEST=1` (в коде булев флаг, читается `true/false`) и несуществующая
-  `PAYMENT_PUBLIC_URL` (в коде — `PUBLIC_API_URL` / `PUBLIC_SITE_URL`), нет
-  `PAYMENT_HASH_ALGORITHM`. Стоит поправить, чтобы два чек-листа не расходились.
+- **Success URL и id заказа — решено.** Ссылка на оплату несёт `Shp_order_id=<uuid доната>`
+  (входит в подпись), Robokassa возвращает его на Success URL, и `/spasibo` читает
+  `order_id ?? Shp_order_id`. В тестовом прогоне убедиться, что после оплаты адрес
+  выглядит как `/spasibo?...&Shp_order_id=<uuid>`. Колбэк теперь тоже приходит
+  с `Shp_order_id` — подпись проверяется с его учётом (`collectShpParams`).
+- **Словарь способов оплаты.** После первого колбэка посмотреть `IncCurrLabel` в
+  `payment_event.payload` и завести маппинг в `readMethod` (`robokassa.provider.ts`).
+  В тестовом режиме там будет тестовый способ — реальные значения придут с боевыми платежами.
