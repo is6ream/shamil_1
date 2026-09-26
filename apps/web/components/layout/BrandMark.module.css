@@ -1,0 +1,82 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: inherit;
+}
+
+.circle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--surface-sunken);
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--white);
+}
+
+.circle svg {
+  width: 26px;
+  height: 26px;
+}
+
+.text {
+  display: grid;
+  gap: 2px;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-strong);
+}
+
+.tagline {
+  font-size: 12.5px;
+  color: var(--text-soft);
+}
+
+.lg .circle {
+  width: 76px;
+  height: 76px;
+}
+
+.lg .circle svg {
+  width: 38px;
+  height: 38px;
+}
+
+.lg .name {
+  font-size: 22px;
+}
+
+@media (max-width: 767px) {
+  .circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .circle svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .name {
+    font-size: 17px;
+  }
+
+  .tagline {
+    display: none;
+  }
+
+  .lg .circle {
+    width: 68px;
+    height: 68px;
+  }
+}

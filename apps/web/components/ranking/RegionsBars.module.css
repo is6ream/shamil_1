@@ -1,0 +1,25 @@
+.list {
+  display: grid;
+  gap: var(--sp-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
+  font-size: 15px;
+}
+
+.name {
+  min-width: 0;
+}
+
+.amount {
+  flex: none;
+  font-weight: 700;
+  white-space: nowrap;
+}

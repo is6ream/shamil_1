@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import { ApiError, createDonation } from "@/lib/api/client";
 import { buildCreateDonationBody } from "@/lib/api/donation-body";
 import type { Region } from "@/lib/api/types";
 import { DONATION_FORM } from "@/lib/content";
-import { REGION_QUERY_PARAM } from "@/lib/routes";
+import { useRegionFromUrl } from "@/lib/hooks/useRegionFromUrl";
 
 import {
   AMOUNT_PRESETS_RUBLES,
@@ -31,17 +31,6 @@ import type { DonationField, DonationFormState, FieldErrors } from "./donation-f
 const REDIRECT_DELAY_MS = 800;
 
 export type SubmitStatus = "idle" | "submitting" | "redirecting";
-
-/**
- * Адресная строка за время жизни формы не меняется: региональная ссылка —
- * это вход на страницу, а не навигация внутри неё. Подписываться не на что,
- * но `useSyncExternalStore` требует функцию подписки.
- */
-const subscribeToNothing = () => () => {};
-
-function readRegionFromLocation(): string | null {
-  return new URLSearchParams(window.location.search).get(REGION_QUERY_PARAM);
-}
 
 function presetFor(amountInput: string): number | null {
   const amount = selectAmountRubles({ ...INITIAL_FORM_STATE, amountInput });
@@ -74,17 +63,7 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
     [],
   );
 
-  /*
-   * Регион из адресной строки (`?region=…`) читается через
-   * `useSyncExternalStore`, а не эффектом: серверный снимок `null`, и главная
-   * остаётся статической — обращение к `searchParams` сделало бы её
-   * динамической, а репост в WhatsApp упирается в скорость первого ответа.
-   */
-  const linkSlugFromUrl = useSyncExternalStore(
-    subscribeToNothing,
-    readRegionFromLocation,
-    () => null,
-  );
+  const linkSlugFromUrl = useRegionFromUrl();
 
   const linkSlug = initialRegionSlug ?? linkSlugFromUrl;
   const isKnownLinkSlug = linkSlug !== null && regions.some((region) => region.slug === linkSlug);

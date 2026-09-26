@@ -1,0 +1,31 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-8) var(--sp-10);
+  margin: var(--sp-12) 0 0;
+}
+
+.cell {
+  /* Подпись идёт под цифрой визуально, а в разметке — первой: так
+     `dt`/`dd` читаются скринридером в правильном порядке. */
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border);
+}
+
+.value {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-stat);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--text-strong);
+}
+
+.label {
+  font-size: 15px;
+  color: var(--text-soft);
+}

@@ -1,0 +1,92 @@
+.section {
+  padding: var(--section-pad) 0 0;
+}
+
+.title {
+  max-width: 16em;
+  font-size: var(--fs-h2);
+}
+
+.text {
+  max-width: 36em;
+  margin: var(--sp-6) 0 0;
+  font-size: var(--fs-lede);
+  line-height: 1.65;
+  color: var(--text-soft);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  align-items: end;
+  gap: var(--sp-10);
+  margin-top: var(--sp-12);
+}
+
+/* Арка: радиус верхних углов — половина ширины. */
+.arch {
+  position: relative;
+  aspect-ratio: 260 / 360;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 130px 130px var(--r-photo) var(--r-photo);
+  background: var(--surface-sunken);
+}
+
+.image {
+  object-fit: cover;
+}
+
+.caption {
+  position: absolute;
+  bottom: var(--sp-4);
+  left: 50%;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-8) var(--sp-6);
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border);
+}
+
+.factValue {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-stat);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.factLabel {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-soft);
+}
+
+@media (max-width: 1023px) {
+  .body {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: var(--sp-6);
+  }
+
+  .arch {
+    border-radius: 100px 100px var(--r-photo) var(--r-photo);
+  }
+}

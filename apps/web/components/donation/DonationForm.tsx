@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { MosqueMark } from "@/components/layout/MosqueMark";
 import { Checkbox } from "@/components/ui/Checkbox";
 import field from "@/components/ui/field.module.css";
@@ -136,13 +138,13 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
             }}
           >
             {DONATION_FORM.consentPrefix}{" "}
-            <a href={PAGES.consent.href} target="_blank" rel="noopener">
+            <Link href={PAGES.consent.href} target="_blank" rel="noopener">
               {DONATION_FORM.consentData}
-            </a>{" "}
+            </Link>{" "}
             {DONATION_FORM.consentJoin}{" "}
-            <a href={PAGES.paymentTerms.href} target="_blank" rel="noopener">
+            <Link href={PAGES.paymentTerms.href} target="_blank" rel="noopener">
               {DONATION_FORM.consentTerms}
-            </a>
+            </Link>
           </Checkbox>
           {errors.personalDataConsent === undefined ? null : (
             <p className={field.error} id={CONSENT_ERROR_ID}>

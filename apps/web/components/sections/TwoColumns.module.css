@@ -1,0 +1,48 @@
+/* Две колонки нижней части главной: отчёты, реквизиты + документы. */
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-16) var(--sp-20);
+}
+
+.wideLeft {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--sp-16);
+}
+
+.title {
+  margin-bottom: var(--sp-8);
+  font-size: var(--fs-h2);
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.titleLink {
+  flex: none;
+  color: var(--accent);
+  font-size: 15px;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 1023px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .columns {
+    gap: var(--sp-10);
+  }
+
+  .title {
+    margin-bottom: var(--sp-5);
+    font-size: 24px;
+  }
+}

@@ -1,5 +1,60 @@
-/* Время и способ — первая строка записи: по ним видно, что лента живая. */
-.when {
-  font-weight: 600;
+.list {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-4) 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.row p {
+  margin: 0;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.row .when {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--text-soft);
+}
+
+.amount {
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.error {
+  margin: var(--sp-4) 0 0;
   font-size: var(--fs-small);
+  color: var(--danger);
+}
+
+.more {
+  margin-top: var(--sp-5);
+}
+
+@media (max-width: 767px) {
+  .list {
+    padding: var(--sp-1) var(--sp-4);
+    /* Внутри белого аккордеона телефона белая карточка сливается с фоном. */
+    background: var(--bg);
+  }
 }

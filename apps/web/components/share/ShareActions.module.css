@@ -1,0 +1,54 @@
+.actions {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.primary {
+  width: 100%;
+  background: var(--white);
+  color: var(--ink);
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+.secondary {
+  border: var(--stroke) solid var(--border);
+  background: transparent;
+  color: var(--text-strong);
+}
+
+.secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2) var(--sp-6);
+  margin-top: var(--sp-4);
+}
+
+.link {
+  padding: var(--sp-1) 0;
+  border: 0;
+  background: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.link:hover {
+  color: var(--text-strong);
+}

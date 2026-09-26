@@ -1,0 +1,152 @@
+/* Футер макета v2. Цвета — через .on-dark-инверсию `footer` в tokens.css. */
+
+.footer {
+  margin-top: 0;
+  padding: var(--sp-20) 0 calc(var(--sp-16) + var(--mobile-bar-space, 0px));
+  background: var(--panel-bg);
+  color: var(--text-soft);
+  font-size: 15px;
+}
+
+.inner {
+  width: min(100% - 2 * var(--gutter), var(--container));
+  margin: 0 auto;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 0.8fr;
+  gap: var(--sp-12);
+}
+
+.legal {
+  max-width: 26em;
+  margin: var(--sp-6) 0 0;
+  line-height: 1.55;
+}
+
+.eyebrow {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+
+.phone {
+  display: inline-block;
+  margin-bottom: var(--sp-3);
+  color: var(--text-strong);
+  font-size: 22px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.lines,
+.links {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-strong);
+}
+
+.lines a,
+.links a {
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+.lines a:hover,
+.links a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Юридические ссылки — в палец высотой на телефоне. */
+.links a {
+  display: inline-block;
+  padding: 2px 0;
+}
+
+.copyright {
+  margin: var(--sp-12) 0 0;
+  padding-top: var(--sp-6);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13.5px;
+}
+
+@media (max-width: 1023px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .footer {
+    padding-top: var(--sp-12);
+  }
+
+  .columns {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-6);
+  }
+
+  /* Порядок макета: логотип → контакты → юрлицо → ссылки. */
+  .brand {
+    display: contents;
+  }
+
+  .brand > :first-child {
+    order: 1;
+  }
+
+  .columns > div:nth-child(2) {
+    order: 2;
+  }
+
+  .legal {
+    order: 3;
+    margin: 0;
+    padding-top: var(--sp-5);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 14px;
+  }
+
+  .info {
+    order: 4;
+  }
+
+  .eyebrow {
+    display: none;
+  }
+
+  .phone {
+    font-size: 22px;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2) var(--sp-6);
+  }
+
+  .links a {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .desktopOnly {
+    display: none;
+  }
+
+  .copyright {
+    display: none;
+  }
+}

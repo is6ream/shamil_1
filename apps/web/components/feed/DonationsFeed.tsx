@@ -4,48 +4,53 @@ import { useState } from "react";
 
 import { getFeed } from "@/lib/api/showcase";
 import type { FeedItem, FeedPage } from "@/lib/api/types";
-import { formatTimeOfDay } from "@/lib/format";
+import { FEED } from "@/lib/content";
+import {
+  formatDayMonthNumeric,
+  formatRelativeDay,
+  formatTimeOfDay,
+  paymentMethodLabel,
+} from "@/lib/format";
+import { useClientNow } from "@/lib/hooks/useClientNow";
 import { kopecksToRubDisplay } from "@/lib/money";
 
 import styles from "./DonationsFeed.module.css";
 
 interface Props {
   readonly initialPage: FeedPage;
-}
-
-/** Человекочитаемые названия способов из `donation.method`. */
-const METHOD_LABELS: Readonly<Record<string, string>> = {
-  sbp: "СБП",
-  card: "Карта",
-  sberpay: "SberPay",
-  tpay: "T-Pay",
-  bank_transfer: "Перевод",
-  cash: "Наличные",
-  kaspi: "Kaspi",
-  mbank: "Mbank",
-};
-
-function describe(item: FeedItem): string {
-  const who = item.donorName ?? "Аноним";
-
-  return item.regionName === null ? who : `${who} · ${item.regionName}`;
+  /** «Показать ещё» — на странице отчётов; на главной ровно шесть строк. */
+  readonly canLoadMore?: boolean;
 }
 
 /**
- * Живая лента поступлений — добавка сверх ТЗ, и она работает на слоган.
- *
- * Две функции: доказывает, что сайт живой, и нормализует малые суммы —
+ * Жирная строка записи: имя, если человек снял анонимность; иначе регион;
+ * иначе «Анонимное пожертвование» (макет v2).
+ */
+function titleOf(item: FeedItem): string {
+  return item.donorName ?? item.regionName ?? FEED.anonymous;
+}
+
+function whenOf(item: FeedItem, now: number | null): string {
+  const day = now === null ? formatDayMonthNumeric(item.paidAt) : formatRelativeDay(item.paidAt, now);
+  const method = paymentMethodLabel(item.method);
+  const when = `${day}, ${formatTimeOfDay(item.paidAt)}`;
+
+  return method === null ? when : `${when} · ${method}`;
+}
+
+/**
+ * Живая лента поступлений — добавка сверх ТЗ, и она работает на слоган:
  * видно, что жертвуют по 10–100 ₽ и это нормально.
  *
  * Пагинацию на 2388 страниц, как у референса, не копируем: «Показать ещё»
- * и keyset-курсор. Первая страница приходит с сервера, следующие —
- * по кнопке, поэтому блок не задерживает первый экран.
+ * и keyset-курсор. Первая страница приходит с сервера.
  */
-export function DonationsFeed({ initialPage }: Props) {
+export function DonationsFeed({ initialPage, canLoadMore = false }: Props) {
   const [items, setItems] = useState<readonly FeedItem[]>(initialPage.items);
   const [cursor, setCursor] = useState<string | null>(initialPage.nextCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const now = useClientNow();
 
   const loadMore = async () => {
     if (cursor === null) {
@@ -61,7 +66,7 @@ export function DonationsFeed({ initialPage }: Props) {
       setItems((current) => [...current, ...page.items]);
       setCursor(page.nextCursor);
     } catch {
-      setError("Не удалось загрузить продолжение ленты");
+      setError("Не удалось загрузить продолжение ленты. Попробуйте ещё раз.");
     } finally {
       setLoading(false);
     }
@@ -72,46 +77,40 @@ export function DonationsFeed({ initialPage }: Props) {
   }
 
   return (
-    <section id="feed">
-      <div className="card">
-        <h2>Последние поступления</h2>
-        <p className="sub">Жертвуют по 10, 100, 500 — и это нормально. Время уфимское</p>
+    <>
+      <ul className={styles.list}>
+        {items.map((item) => (
+          <li className={styles.row} key={item.id}>
+            <div>
+              <p className={styles.title}>{titleOf(item)}</p>
+              <p className={styles.when}>
+                <time dateTime={item.paidAt}>{whenOf(item, now)}</time>
+              </p>
+            </div>
+            <p className={styles.amount}>{kopecksToRubDisplay(item.amountKopecks)}</p>
+          </li>
+        ))}
+      </ul>
 
-        <ul className="rank-list">
-          {items.map((item) => (
-            <li className="rank" key={item.id}>
-              <div className="body">
-                <div className={styles.when}>
-                  {formatTimeOfDay(item.paidAt)}
-                  {item.method === null
-                    ? null
-                    : ` · ${METHOD_LABELS[item.method] ?? item.method}`}
-                </div>
-                <div className="sum">{describe(item)}</div>
-              </div>
-              <div className="amt">{kopecksToRubDisplay(item.amountKopecks)}</div>
-            </li>
-          ))}
-        </ul>
+      {error === null ? null : (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      )}
 
-        {error === null ? null : <p className="field-error">{error}</p>}
-
-        {cursor === null ? null : (
-          <div className="cta">
-            <button
-              className="btn btn-ghost"
-              type="button"
-              aria-busy={isLoading}
-              disabled={isLoading}
-              onClick={() => {
-                void loadMore();
-              }}
-            >
-              {isLoading ? "Загружаем…" : "Показать ещё"}
-            </button>
-          </div>
-        )}
-      </div>
-    </section>
+      {canLoadMore && cursor !== null ? (
+        <button
+          className={`btn btn-ghost ${styles.more}`}
+          type="button"
+          aria-busy={isLoading}
+          disabled={isLoading}
+          onClick={() => {
+            void loadMore();
+          }}
+        >
+          {isLoading ? "Загружаем…" : FEED.showMore}
+        </button>
+      ) : null}
+    </>
   );
 }

@@ -1,0 +1,48 @@
+.bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: var(--z-bar);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-bar);
+    transition: transform var(--dur) var(--ease);
+  }
+
+  .bar[data-hidden="true"] {
+    transform: translateY(110%);
+  }
+}
+
+.summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.amounts {
+  margin: 0 0 var(--sp-2);
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--text-soft);
+}
+
+.amounts b {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.button {
+  flex: none;
+  height: 50px;
+  padding: 0 var(--sp-5);
+}

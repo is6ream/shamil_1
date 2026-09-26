@@ -1,60 +1,104 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 
-import { SITE_NAME } from "@/lib/site";
+import { MenuIcon } from "@/components/icons/Icons";
+import { HERO, NAV_ITEMS, SECTION_IDS } from "@/lib/content";
+import { useActiveSection } from "@/lib/hooks/useActiveSection";
+import { ORGANIZATION, toTelHref } from "@/lib/organization";
+import { scrollToSection, sectionHref } from "@/lib/scroll-to-section";
 
-import { MosqueMark } from "./MosqueMark";
+import { BrandMark } from "./BrandMark";
+import { MobileMenu } from "./MobileMenu";
+import styles from "./SiteHeader.module.css";
 
-/** После какого сдвига у шапки появляется нижняя граница. */
-const STUCK_AFTER_PX = 8;
+const MENU_ID = "mobile-menu";
+const NAV_IDS = NAV_ITEMS.map((item) => item.id);
 
 /**
- * Шапка сайта. Клиентский компонент ради одной вещи: граница снизу
- * появляется только когда страница прокручена — иначе на первом экране
- * линия режет градиентную панель.
+ * Шапка макета v2: логотип, навигация по секциям, телефон, «Помочь».
  *
- * Кнопка ведёт к форме: на десктопе она в правой колонке и видна сразу,
- * на телефоне — третьим блоком сверху.
+ * Работает и на главной, и на служебных страницах: ссылки ведут на `/#id`,
+ * а на главной клик перехватывается плавной прокруткой (см.
+ * `scrollToSection` — там же, почему не просто `#id`).
+ *
+ * На телефоне и планшете навигация уезжает в выдвижное меню.
  */
 export function SiteHeader() {
-  const [isStuck, setIsStuck] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const activeId = useActiveSection(NAV_IDS);
 
-  useEffect(() => {
-    const onScroll = () => {
-      setIsStuck(window.scrollY > STUCK_AFTER_PX);
-    };
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    menuButtonRef.current?.focus();
+  }, []);
 
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+  const onNavigate = useCallback((event: ReactMouseEvent<HTMLAnchorElement>, id: string) => {
+    setMenuOpen(false);
 
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-    };
+    if (scrollToSection(id)) {
+      event.preventDefault();
+    }
   }, []);
 
   return (
-    <header className={`top${isStuck ? " stuck" : ""}`}>
-      <div className="wrap">
-        <a className="brand" href="#top">
-          <span className="mark">
-            <MosqueMark />
-          </span>
-          <span>
-            <b>{SITE_NAME}</b>
-            <i>Уфа · сбор на строительство</i>
-          </span>
-        </a>
-        <nav aria-label="Разделы страницы">
-          <a href="#goal">Цель</a>
-          <a href="#build">Ход стройки</a>
-          <a href="#regions">Регионы</a>
-          <a href="#docs">Документы</a>
+    <header className={styles.header}>
+      <div className={styles.inner}>
+        <Link className={styles.brand} href="/" aria-label="Мечеть «Шамиль» — на главную">
+          <BrandMark hasTagline />
+        </Link>
+
+        <nav className={styles.nav} aria-label="Разделы сайта">
+          {NAV_ITEMS.map((item) => (
+            <a
+              key={item.id}
+              className={styles.navLink}
+              href={sectionHref(item.id)}
+              aria-current={activeId === item.id ? "location" : undefined}
+              onClick={(event) => {
+                onNavigate(event, item.id);
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
-        <a className="btn btn-primary btn-sm" href="#donate">
-          Пожертвовать
+
+        {ORGANIZATION.phone === null ? null : (
+          <a className={styles.phone} href={toTelHref(ORGANIZATION.phone)}>
+            {ORGANIZATION.phone}
+          </a>
+        )}
+
+        <a
+          className={`btn btn-primary ${styles.help}`}
+          href={sectionHref(SECTION_IDS.donate)}
+          onClick={(event) => {
+            onNavigate(event, SECTION_IDS.donate);
+          }}
+        >
+          {HERO.helpButton}
         </a>
+
+        <button
+          className={styles.burger}
+          ref={menuButtonRef}
+          type="button"
+          aria-label="Открыть меню"
+          aria-expanded={isMenuOpen}
+          aria-controls={MENU_ID}
+          onClick={() => {
+            setMenuOpen(true);
+          }}
+        >
+          <MenuIcon />
+        </button>
       </div>
+
+      <MobileMenu id={MENU_ID} isOpen={isMenuOpen} onClose={closeMenu} onNavigate={onNavigate} />
     </header>
   );
 }

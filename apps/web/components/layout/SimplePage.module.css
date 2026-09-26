@@ -1,0 +1,21 @@
+.main {
+  width: min(100% - 2 * var(--gutter), 880px);
+  min-height: 50vh;
+  margin: 0 auto;
+  padding: var(--section-pad) 0;
+}
+
+.title {
+  font-size: var(--fs-h2);
+}
+
+.lede {
+  max-width: 36em;
+  margin: var(--sp-5) 0 0;
+  font-size: var(--fs-lede);
+  color: var(--text-soft);
+}
+
+.body {
+  margin-top: var(--sp-10);
+}

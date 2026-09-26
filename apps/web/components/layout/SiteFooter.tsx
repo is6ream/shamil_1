@@ -1,62 +1,76 @@
-import { ORGANIZATION } from "@/lib/organization";
+import Link from "next/link";
+
+import { FOOTER, PAGES, SECTION_IDS } from "@/lib/content";
+import { ORGANIZATION, organizationDisplayName, toTelHref } from "@/lib/organization";
+
+import { BrandMark } from "./BrandMark";
+import styles from "./SiteFooter.module.css";
+
+const INFO_LINKS = [PAGES.privacy, PAGES.cookie, PAGES.reports] as const;
+
+/** На телефоне в макете только две ссылки из трёх. */
+const MOBILE_HIDDEN_HREF: string = PAGES.cookie.href;
 
 /**
- * Футер — не декоративный: сбор на 240 млн без уставных документов на виду
- * это красный флаг для всякого, кто читал про мошеннические сборы, и
- * требование законодательства о благотворительности (CLAUDE.md).
+ * Футер макета v2: логотип и юрлицо, контакты, информация.
  *
- * Всё, чего ещё нет, помечено как «ожидается» видимым текстом, а не пустой
- * ссылкой: битая ссылка на устав хуже честного «документ готовится».
+ * Неизвестные значения (телефон, адрес, Telegram) — `null` в
+ * lib/organization.ts с TODO(заказчик): строка с `null` не выводится,
+ * плейсхолдеры макета в квадратных скобках на сайт не попадают.
  */
 export function SiteFooter() {
+  const { phone, mosqueAddress, imamName, telegramChannel } = ORGANIZATION;
+
   return (
-    <footer id="docs">
-      <div className="wrap">
-        <div className="fcols">
-          <div>
-            <h3>{ORGANIZATION.shortName}</h3>
-            <p>{ORGANIZATION.legalName}</p>
-            <p>
-              ИНН {ORGANIZATION.inn}
-              {ORGANIZATION.ogrn === null ? null : <> · ОГРН {ORGANIZATION.ogrn}</>}
-              <br />
-              {ORGANIZATION.address ?? "Юридический адрес — уточняется"}
+    <footer className={styles.footer} id={SECTION_IDS.contacts}>
+      <div className={styles.inner}>
+        <div className={styles.columns}>
+          <div className={styles.brand}>
+            <BrandMark size="lg" />
+            <p className={styles.legal}>
+              {organizationDisplayName()} · ИНН {ORGANIZATION.inn}
             </p>
           </div>
 
           <div>
-            <h3>Документы</h3>
-            <div className="docs">
-              {ORGANIZATION.documents.map((document) =>
-                document.url === null ? (
-                  <span className="doc" key={document.title} aria-disabled="true">
-                    {document.title} — готовится
-                  </span>
-                ) : (
-                  <a className="doc" key={document.title} href={document.url}>
-                    {document.title}
+            <p className={styles.eyebrow}>{FOOTER.contacts}</p>
+            {phone === null ? null : (
+              <a className={styles.phone} href={toTelHref(phone)}>
+                {phone}
+              </a>
+            )}
+            <ul className={styles.lines}>
+              <li>{mosqueAddress === null ? "г. Уфа" : `г. Уфа, ${mosqueAddress}`}</li>
+              <li>
+                {FOOTER.imamPrefix} {imamName}
+              </li>
+              {telegramChannel === null ? null : (
+                <li>
+                  {FOOTER.telegramPrefix}{" "}
+                  <a href={`https://t.me/${telegramChannel}`} target="_blank" rel="noopener noreferrer">
+                    @{telegramChannel}
                   </a>
-                ),
+                </li>
               )}
-            </div>
+            </ul>
           </div>
 
-          <div>
-            <h3>Контакты</h3>
-            <p>
-              {ORGANIZATION.phone ?? "Телефон — уточняется"}
-              <br />
-              {ORGANIZATION.mosqueAddress ?? "Адрес мечети — уточняется"}
-            </p>
-            <div className="legal">
-              {ORGANIZATION.legalPages.map((page) => (
-                <span className="doc" key={page} aria-disabled="true">
-                  {page} — готовится
-                </span>
+          <div className={styles.info}>
+            <p className={styles.eyebrow}>{FOOTER.info}</p>
+            <ul className={styles.links}>
+              {INFO_LINKS.map((link) => (
+                <li
+                  key={link.href}
+                  className={link.href === MOBILE_HIDDEN_HREF ? styles.desktopOnly : undefined}
+                >
+                  <Link href={link.href}>{link.title}</Link>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
+
+        <p className={styles.copyright}>{FOOTER.copyright}</p>
       </div>
     </footer>
   );
