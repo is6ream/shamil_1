@@ -15,6 +15,7 @@
 import {
   FIXTURE_BUILD_PROGRESS,
   FIXTURE_CAMPAIGN,
+  FIXTURE_CONSTRUCTION,
   FIXTURE_EMPTY_REGIONS_COUNT,
   FIXTURE_FEED,
   FIXTURE_GALLERY,
@@ -25,6 +26,7 @@ import {
 import type {
   BuildProgress,
   Campaign,
+  ConstructionTimeline,
   DonorRankRow,
   FeedPage,
   GalleryItem,
@@ -32,11 +34,14 @@ import type {
   RegionRankRow,
 } from "./types";
 
-/** Сколько поступлений отдаётся одной страницей ленты. */
-export const FEED_PAGE_SIZE = 4;
+/** Сколько поступлений отдаётся одной страницей ленты: шесть строк — макет v2. */
+export const FEED_PAGE_SIZE = 6;
 
 /** Сколько строк рейтинга регионов показываем до «ещё N регионов». */
 export const TOP_REGIONS_LIMIT = 10;
+
+/** Строк в блоке «География поддержки» на главной (макет v2). */
+export const HOME_REGIONS_LIMIT = 6;
 
 /**
  * Цифры сбора: общая цель, цель месяца, число платежей.
@@ -120,6 +125,17 @@ export function getFeed(cursor?: string): Promise<FeedPage> {
  */
 export function getBuildProgress(): Promise<BuildProgress> {
   return Promise.resolve(FIXTURE_BUILD_PROGRESS);
+}
+
+/**
+ * Ход строительства для таймлайна макета v2: семь этапов со статусом
+ * и сметой. Как и `getBuildProgress`, в MVP это контент от заказчика.
+ *
+ * TODO(api): если этапы переедут в базу —
+ * return apiGet<ConstructionTimeline>("/construction");
+ */
+export function getConstructionStages(): Promise<ConstructionTimeline> {
+  return Promise.resolve(FIXTURE_CONSTRUCTION);
 }
 
 /**

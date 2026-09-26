@@ -80,6 +80,14 @@ export interface Campaign {
   readonly lastPaidAt: string | null;
   /** `null`, пока заказчик не назвал сумму и период (открытый вопрос). */
   readonly monthlyGoal: MonthlyGoal | null;
+  /**
+   * Сколько человек жертвуют ежемесячно — строка статистики макета v2.
+   * `null`, пока автоплатежа нет (вне MVP): ячейку тогда не показываем,
+   * «0 человек помогают каждый месяц» читается как провал.
+   *
+   * TODO(api): добавить в `GET /campaign` вместе с автоплатежом.
+   */
+  readonly monthlyDonorsCount: number | null;
 }
 
 /** Двухуровневый справочник: страна → субъект (CLAUDE.md, «Справочник»). */
@@ -140,6 +148,26 @@ export interface BuildProgress {
   readonly done: BuildStage;
   readonly current: BuildStage;
   readonly upcoming: BuildStage;
+}
+
+/* ── Ход строительства, макет v2 ─────────────────────────────────────────
+   Вертикальный таймлайн из семи этапов вместо трёх колонок BuildProgress.
+   Эндпоинта нет; в MVP это контент от заказчика.                         */
+
+export type ConstructionStageStatus = "done" | "current" | "upcoming";
+
+export interface ConstructionStage {
+  readonly id: string;
+  readonly title: string;
+  readonly status: ConstructionStageStatus;
+  /** Смета этапа в копейках. `null` — сумма ещё не названа, не показываем. */
+  readonly amountKopecks: string | null;
+}
+
+export interface ConstructionTimeline {
+  /** ISO-8601: дата последнего обновления. */
+  readonly updatedAt: string;
+  readonly stages: readonly ConstructionStage[];
 }
 
 export interface GalleryItem {

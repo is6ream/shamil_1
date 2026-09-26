@@ -29,7 +29,7 @@ body {
 h1, h2, h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700; /* у Philosopher только 400 и 700 */
   line-height: var(--lh-tight);
   letter-spacing: var(--ls-tight);
   text-wrap: balance;
@@ -161,7 +161,7 @@ section { padding: var(--section-pad) 0; }
   height: var(--control-h);
   padding: 0 26px;
   border: 0;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-field);
   font-family: var(--font-text);
   font-size: var(--fs-button);
   font-weight: 600;
@@ -227,12 +227,12 @@ section { padding: var(--section-pad) 0; }
    который вешает IntersectionObserver, добавляет прокрутку от нуля.      */
 
 .track {
-  height: 13px;
+  height: var(--track-h);
   border-radius: var(--r-pill);
   background: var(--surface-sunken);
   overflow: hidden;
 }
-.track.thin { height: 7px; }
+.track.thin { height: 4px; }
 .track > .fill {
   display: block;
   width: 100%;

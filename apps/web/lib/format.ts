@@ -75,3 +75,67 @@ export function formatDayMonth(iso: string): string {
     timeZone: CAMPAIGN_TIME_ZONE,
   });
 }
+
+/** «21.09» по времени сбора. */
+export function formatDayMonthNumeric(iso: string): string {
+  return new Date(iso).toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: CAMPAIGN_TIME_ZONE,
+  });
+}
+
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Календарный день по времени сбора, «2026-09-21». Локаль `en-CA` выбрана
+ * ради формата ГГГГ-ММ-ДД — строки такого вида сравниваются как даты.
+ */
+function campaignDayKey(time: number): string {
+  return new Date(time).toLocaleDateString("en-CA", { timeZone: CAMPAIGN_TIME_ZONE });
+}
+
+/**
+ * «Сегодня», «Вчера» или «21.09» — день поступления относительно `now`.
+ *
+ * `now` передаётся явно, а не берётся внутри: на сервере и в браузере
+ * «сейчас» разное, и относительная подпись обязана считаться там же, где
+ * рендерится, — иначе hydration mismatch. См. `useRelativeDays`.
+ */
+export function formatRelativeDay(iso: string, now: number): string {
+  const day = campaignDayKey(new Date(iso).getTime());
+
+  if (day === campaignDayKey(now)) {
+    return "Сегодня";
+  }
+
+  // В Екатеринбургском поясе нет перехода на летнее время: сутки всегда 24 ч.
+  if (day === campaignDayKey(now - MS_IN_DAY)) {
+    return "Вчера";
+  }
+
+  return formatDayMonthNumeric(iso);
+}
+
+/**
+ * Человекочитаемые названия способов оплаты для ленты. Ключи — значения
+ * `donation.method` бэкенда как есть (docs/api-gaps.md §5).
+ */
+const PAYMENT_METHOD_LABELS: Readonly<Record<string, string>> = {
+  sbp: "СБП",
+  card: "Картой",
+  sberpay: "SberPay",
+  tpay: "T-Pay",
+  bank_transfer: "Перевод",
+  recurring: "Ежемесячно",
+  cash: "Наличными",
+};
+
+/** `null` — способ неизвестен или новый: строка ленты выводится без него. */
+export function paymentMethodLabel(method: string | null): string | null {
+  if (method === null) {
+    return null;
+  }
+
+  return PAYMENT_METHOD_LABELS[method] ?? null;
+}

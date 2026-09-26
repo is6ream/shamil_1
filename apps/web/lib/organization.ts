@@ -30,8 +30,13 @@ export interface BankDetails {
 
 export const ORGANIZATION = {
   shortName: "Мечеть «Шамиль»",
-  /** TODO(заказчик): полное юридическое наименование одной строкой. */
-  legalName: "МРО «Махалля Шамиль» — полное наименование уточняется",
+  /** Краткое наименование получателя — подтверждено (CLAUDE.md, «Платежи»). */
+  recipientShortName: "МРО «Махалля Шамиль»",
+  /**
+   * TODO(заказчик): полное юридическое наименование одной строкой.
+   * Нужно дословно: это поле «Получатель» в банковском переводе.
+   */
+  legalName: null as string | null,
   inn: "0274940398",
   /** TODO(заказчик): ОГРН. */
   ogrn: null as string | null,
@@ -39,19 +44,25 @@ export const ORGANIZATION = {
   address: null as string | null,
   /** TODO(заказчик): адрес мечети для блока контактов. */
   mosqueAddress: null as string | null,
-  /** TODO(заказчик): телефон для блока контактов. */
+  /** TODO(заказчик): телефон для блока контактов, в виде «+7 (347) 000-00-00». */
   phone: null as string | null,
+  /** Имам мечети — назван в CLAUDE.md. */
+  imamName: "Вадим Агаев",
+  /** TODO(заказчик): Telegram-канал, имя без @ — «mechetshamil». */
+  telegramChannel: null as string | null,
 
   /**
-   * Пять документов — тот же набор, что у референса. Файлы кладутся
-   * в `public/docs/` и подставляются сюда.
+   * Пять документов в порядке макета v2. Файлы кладутся в `public/docs/`
+   * и подставляются сюда; `url: null` — строка неактивна, «скоро».
+   *
+   * TODO(заказчик): PDF всех пяти документов.
    */
   documents: [
-    { title: "Устав", url: null },
     { title: "Свидетельство о регистрации", url: null },
-    { title: "Свидетельство ФНС", url: null },
-    { title: "Регистрация юрлица", url: null },
-    { title: "Агентский договор", url: null },
+    { title: "Устав организации", url: null },
+    { title: "Выписка ЕГРЮЛ", url: null },
+    { title: "Разрешение на строительство", url: null },
+    { title: "Агентский договор с платёжной платформой", url: null },
   ] as readonly OrganizationDocument[],
 
   /** Обязательны по 152-ФЗ, готовятся вместе с юридической частью. */
@@ -74,6 +85,19 @@ export const BANK_DETAILS: BankDetails = {
   kpp: null,
   sbpQrUrl: null,
 };
+
+/** Назначение платежа для перевода по реквизитам. */
+export const PAYMENT_PURPOSE = "Пожертвование на строительство мечети";
+
+/** Полное наименование, а до его подтверждения — краткое. Для футера. */
+export function organizationDisplayName(): string {
+  return ORGANIZATION.legalName ?? ORGANIZATION.recipientShortName;
+}
+
+/** «+7 (347) 000-00-00» → «tel:+73470000000». */
+export function toTelHref(phone: string): string {
+  return `tel:${phone.replace(/[^\d+]/g, "")}`;
+}
 
 /** Есть ли что показывать в блоке реквизитов. */
 export function hasBankDetails(details: BankDetails = BANK_DETAILS): boolean {

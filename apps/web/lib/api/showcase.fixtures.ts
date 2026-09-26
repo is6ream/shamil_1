@@ -14,6 +14,7 @@
 import type {
   BuildProgress,
   Campaign,
+  ConstructionTimeline,
   DonorRankRow,
   FeedItem,
   GalleryItem,
@@ -32,6 +33,8 @@ export const FIXTURE_CAMPAIGN: Campaign = {
     periodStart: "2026-09-01T00:00:00.000Z",
     periodEnd: "2026-09-30T23:59:59.000Z",
   },
+  // Автоплатежа в MVP нет — и ежемесячных жертвователей тоже.
+  monthlyDonorsCount: null,
 };
 
 /**
@@ -244,3 +247,22 @@ export const FIXTURE_GALLERY: readonly GalleryItem[] = [
   { id: "shot-3", url: null, caption: "Кладка стен", takenAtLabel: "август 2026" },
   { id: "shot-4", url: null, caption: "Перекрытия", takenAtLabel: "сентябрь 2026" },
 ];
+
+/**
+ * Этапы стройки для таймлайна макета v2. Названия этапов — из макета,
+ * статусы и сметы выдуманы.
+ *
+ * TODO(заказчик): фактические статусы, сметы этапов и дата обновления.
+ */
+export const FIXTURE_CONSTRUCTION: ConstructionTimeline = {
+  updatedAt: "2026-09-18T00:00:00.000Z",
+  stages: [
+    { id: "project", title: "Проект и разрешительная документация", status: "done", amountKopecks: "320000000" },
+    { id: "foundation", title: "Земляные работы и фундамент", status: "done", amountKopecks: "2150000000" },
+    { id: "walls", title: "Стены и перекрытия", status: "current", amountKopecks: "5400000000" },
+    { id: "roof", title: "Кровля, купол и минарет", status: "upcoming", amountKopecks: "4800000000" },
+    { id: "utilities", title: "Инженерные сети", status: "upcoming", amountKopecks: "3100000000" },
+    { id: "finishing", title: "Внутренняя и наружная отделка", status: "upcoming", amountKopecks: "6200000000" },
+    { id: "landscaping", title: "Благоустройство территории", status: "upcoming", amountKopecks: "2030000000" },
+  ],
+};
