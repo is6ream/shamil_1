@@ -1,25 +1,18 @@
-import type { Campaign, Region } from "@/lib/api/types";
+import type { Region } from "@/lib/api/types";
 
 import { DonationForm } from "./DonationForm";
-import { WidgetStats } from "./WidgetStats";
 
 interface Props {
-  readonly campaign: Campaign;
   readonly regions: readonly Region[];
 }
 
 /**
- * Правая колонка целиком: цифры сбора и форма.
+ * Правая колонка главной: форма «Внести вклад».
  *
- * Серверный компонент — клиентским становится только сама форма. Данные
- * приходят пропсами сверху, поэтому виджет одинаково работает и в правой
- * колонке десктопа, и третьим блоком мобильной раскладки.
+ * Серверный компонент — клиентской становится только сама форма. Цифры
+ * сбора над формой (`WidgetStats`) в макете v2 ушли в левую колонку,
+ * в блок «Собрано».
  */
-export function DonationWidget({ campaign, regions }: Props) {
-  return (
-    <>
-      <WidgetStats campaign={campaign} />
-      <DonationForm regions={regions} />
-    </>
-  );
+export function DonationWidget({ regions }: Props) {
+  return <DonationForm regions={regions} />;
 }

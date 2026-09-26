@@ -1,42 +1,115 @@
-/* Виджет формы. Внутри узкой колонки — одна колонка полей;
-   в мобильной раскладке карточка занимает всю ширину, но поля те же. */
+/* Карточка формы «Внести вклад» (макет v2): белая, радиус 28, мягкая тень. */
 
-.form {
-  margin-top: var(--sp-5);
+.card {
+  padding: var(--form-pad);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-form);
 }
 
-.amountField {
+@media (max-width: 767px) {
+  .card {
+    padding: var(--form-pad) var(--sp-5);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.title {
+  font-size: var(--fs-h3);
+}
+
+.subtitle {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+/* Круглый знак справа от заголовка. На телефоне в макете его нет. */
+.mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.mark svg {
+  width: 24px;
+  height: 24px;
+}
+
+@media (max-width: 767px) {
+  .mark {
+    display: none;
+  }
+}
+
+.form {
+  display: grid;
+  gap: var(--sp-6);
+  margin-top: var(--sp-6);
+}
+
+.customLabel {
   margin-top: var(--sp-3);
 }
 
-.section {
-  margin-top: var(--sp-6);
+@media (min-width: 768px) {
+  /* На десктопе поле своей суммы идёт сразу под пресетами, без подписи —
+     как в макете; подпись остаётся для скринридера. */
+  .customLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .customLabel + input {
+    margin-top: var(--sp-3);
+  }
 }
 
-/* Пояснение под чекбоксом анонимности: своя строка, а не хвост подписи. */
-.checkHint {
-  display: block;
-  margin-top: var(--sp-1);
+.actions {
+  display: grid;
+  gap: var(--sp-4);
 }
 
 .submit {
-  margin-top: var(--sp-6);
+  height: var(--control-h);
+  font-size: 17px;
+}
+
+/* Кнопка во время отправки заблокирована, но не бледнеет: блеклая кнопка
+   читается как «что-то не так» ровно в момент, когда всё хорошо. */
+.submit[aria-busy="true"] {
+  opacity: 1;
 }
 
 /*
  * Honeypot: полностью убран и от глаза, и от скринридера, и из табстопа.
  * Не `.sr-only` — та специально оставляет поле доступным для чтения вслух,
- * и человек с экранным диктором услышал бы «Ваш адрес» и заполнил ловушку.
+ * и человек с экранным диктором услышал бы поле и заполнил ловушку.
  */
 .honeypot {
   position: absolute;
+  left: -9999px;
   width: 1px;
   height: 1px;
   padding: 0;
   border: 0;
   opacity: 0;
   pointer-events: none;
-  left: -9999px;
 }
 
 /*
@@ -45,17 +118,47 @@
  * человек смотрит на кнопку и не понимает, почему ничего не произошло.
  */
 .formError {
-  margin: var(--sp-4) 0 0;
+  margin: 0;
   padding: var(--sp-3) var(--sp-4);
-  border: 1px solid #B3261E;
+  border: 1px solid var(--danger);
   border-radius: var(--r-field);
-  background: rgba(179, 38, 30, 0.06);
+  background: var(--danger-soft);
   font-size: var(--fs-small);
-  color: #B3261E;
+  color: var(--danger);
 }
 
-.transferNote {
-  margin-top: var(--sp-5);
-  font-size: var(--fs-small);
+.success {
+  margin: 0;
+  padding: var(--sp-4);
+  border-radius: var(--r-field);
+  background: var(--surface-sunken);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-strong);
+}
+
+.note {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
   color: var(--text-soft);
+}
+
+.note a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.mobileOnly {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: inline;
+  }
 }

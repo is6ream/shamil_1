@@ -1,0 +1,77 @@
+/*
+ * Поля ввода и подписи макета v2 — общие для формы доната. Один модуль,
+ * а не копия в каждом компоненте: высота поля и цвет ошибки должны
+ * совпадать у суммы, имени и телефона.
+ */
+
+.label {
+  display: block;
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+.input {
+  display: block;
+  width: 100%;
+  height: var(--field-h);
+  padding: 0 var(--sp-4);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-field);
+  background: var(--surface);
+  color: var(--text-strong);
+  font: inherit;
+  font-size: var(--fs-input);
+  transition: border-color var(--dur-fast);
+}
+
+.input::placeholder {
+  color: var(--text-soft);
+  opacity: 0.8;
+}
+
+.input:hover:not(:disabled) {
+  border-color: var(--accent-quiet);
+}
+
+.input:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+
+.input:disabled {
+  background: var(--surface-sunken);
+  color: var(--text-soft);
+  cursor: not-allowed;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.error {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-small);
+  line-height: 1.4;
+  color: var(--danger);
+}
+
+.hint {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  composes: label;
+  padding: 0;
+}

@@ -1,0 +1,51 @@
+/* Серая подложка с белой «таблеткой» на выбранном варианте. */
+
+.segment {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border-radius: var(--r-field);
+  background: var(--surface-sunken);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 var(--sp-1);
+  border-radius: 9px;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
+}
+
+.option:hover {
+  color: var(--text-strong);
+}
+
+.option:has(:checked) {
+  background: var(--surface);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-segment);
+}
+
+.option:has(:focus-visible) {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: 0;
+}
+
+@media (max-width: 767px) {
+  .segment {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .option {
+    height: 46px;
+    font-size: 15px;
+  }
+}

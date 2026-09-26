@@ -1,28 +1,29 @@
+import field from "@/components/ui/field.module.css";
+import { DONATION_FORM } from "@/lib/content";
 import { formatCount } from "@/lib/format";
 
+import styles from "./ChoiceGrid.module.css";
 import { AMOUNT_PRESETS_RUBLES } from "./donation-form.model";
 
 interface Props {
   readonly selectedPreset: number | null;
   readonly onSelect: (rubles: number) => void;
-  readonly onCustom: () => void;
 }
 
 /**
  * Пресеты сумм. У референса их нет вообще, только ручной ввод, — и это
  * упущение: пресет снимает вопрос «сколько принято жертвовать».
  *
- * Это настоящие `input[type=radio]` внутри `<label>`, а не div-ы с классом:
- * иначе форма непроходима с клавиатуры, а скринридер не объявляет выбранную
- * сумму. На форме, через которую идут деньги, это не косметика.
+ * Своя сумма — отдельное поле под пресетами (макет v2), поэтому пятой
+ * кнопки «Своя сумма» больше нет: ручной ввод сам снимает подсветку.
  */
-export function AmountPresets({ selectedPreset, onSelect, onCustom }: Props) {
+export function AmountPresets({ selectedPreset, onSelect }: Props) {
   return (
-    <fieldset className="fieldset-plain">
-      <legend className="field-label">Сумма пожертвования</legend>
-      <div className="chips">
+    <fieldset className={field.fieldset}>
+      <legend className={field.legend}>{DONATION_FORM.amountLegend}</legend>
+      <div className={styles.grid}>
         {AMOUNT_PRESETS_RUBLES.map((preset) => (
-          <label className="chip" key={preset}>
+          <label className={styles.choice} key={preset}>
             <input
               className="sr-only"
               type="radio"
@@ -36,18 +37,6 @@ export function AmountPresets({ selectedPreset, onSelect, onCustom }: Props) {
             {formatCount(preset)} ₽
           </label>
         ))}
-
-        <label className="chip">
-          <input
-            className="sr-only"
-            type="radio"
-            name="amount-preset"
-            value="custom"
-            checked={selectedPreset === null}
-            onChange={onCustom}
-          />
-          Своя сумма
-        </label>
       </div>
     </fieldset>
   );

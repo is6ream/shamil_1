@@ -1,30 +1,55 @@
-/**
- * «Единоразовое / Автоплатёж».
- *
- * Автоплатёж вне MVP и остаётся задизейбленным: он требует токенизации
- * карты, SMS-подтверждения и личного кабинета — это дни работы, а не часы
- * (CONTEXT.md §5). У референса 76 активных подписок, то есть вещь рабочая,
- * и вернуться к ней стоит сразу после запуска.
- *
- * Почему показываем вообще, а не прячем: заказчик назвал автоплатёж одной
- * из главных целей сайта. Видимая пометка «скоро» — честный ответ на
- * ожидание; отсутствие переключателя читалось бы как «забыли».
- */
-export function RecurrenceToggle() {
-  return (
-    <fieldset className="fieldset-plain">
-      <legend className="field-label">Периодичность</legend>
-      <div className="chips">
-        <label className="chip">
-          <input className="sr-only" type="radio" name="recurrence" value="once" defaultChecked />
-          Единоразовое
-        </label>
+import field from "@/components/ui/field.module.css";
+import { DONATION_FORM } from "@/lib/content";
 
-        <label className="chip" aria-disabled="true">
-          <input className="sr-only" type="radio" name="recurrence" value="monthly" disabled />
-          Ежемесячно <span className="tag">скоро</span>
-        </label>
+import type { Recurrence } from "./donation-form.model";
+import styles from "./RecurrenceToggle.module.css";
+
+interface Props {
+  readonly value: Recurrence;
+  readonly onChange: (value: Recurrence) => void;
+}
+
+const HINT_ID = "donation-recurrence-hint";
+
+/**
+ * «Как часто»: сегмент-контрол на четыре варианта (макет v2).
+ *
+ * Это группа настоящих радиокнопок: стрелки клавиатуры, `radiogroup`
+ * и объявление выбранного варианта браузер даёт сам.
+ *
+ * Автоплатёж вне MVP (токенизация карты, SMS, личный кабинет), поэтому
+ * любой выбор кроме «Разово» сопровождается честной подсказкой: сейчас
+ * пройдёт разовое пожертвование. Прятать переключатель нельзя — заказчик
+ * назвал регулярные платежи одной из главных целей сайта.
+ */
+export function RecurrenceToggle({ value, onChange }: Props) {
+  const isRecurring = value !== "once";
+
+  return (
+    <fieldset className={field.fieldset} aria-describedby={isRecurring ? HINT_ID : undefined}>
+      <legend className={field.legend}>{DONATION_FORM.recurrenceLegend}</legend>
+      <div className={styles.segment}>
+        {DONATION_FORM.recurrence.map((option) => (
+          <label className={styles.option} key={option.id}>
+            <input
+              className="sr-only"
+              type="radio"
+              name="recurrence"
+              value={option.id}
+              checked={value === option.id}
+              onChange={() => {
+                onChange(option.id);
+              }}
+            />
+            {option.label}
+          </label>
+        ))}
       </div>
+      {isRecurring ? (
+        <p className={field.hint} id={HINT_ID}>
+          {DONATION_FORM.recurrenceHint}
+        </p>
+      ) : null}
     </fieldset>
   );
 }

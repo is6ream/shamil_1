@@ -136,6 +136,46 @@ export const HADITH_BAND = {
   source: "Сахих аль-Бухари, Сахих Муслим",
 } as const;
 
+export const DONATION_FORM = {
+  title: "Внести вклад",
+  subtitle: "Займёт меньше минуты",
+  recurrenceLegend: "Как часто",
+  recurrence: [
+    { id: "once", label: "Разово" },
+    { id: "daily", label: "Ежедневно" },
+    { id: "weekly", label: "Еженедельно" },
+    { id: "monthly", label: "Ежемесячно" },
+  ],
+  recurrenceHint: "Регулярные платежи скоро появятся. Сейчас пройдёт разовое пожертвование.",
+  amountLegend: "Сумма",
+  customAmountLabel: "Или своя сумма, ₽",
+  customAmountPlaceholder: "Например, 2 500",
+  methodLegend: "Способ оплаты",
+  methods: [
+    { id: "sbp", label: "СБП" },
+    { id: "card", label: "Картой" },
+    { id: "sberpay", label: "SberPay" },
+    { id: "tpay", label: "T-Pay" },
+  ],
+  anonymous: "Пожертвовать анонимно",
+  nameLabel: "Имя",
+  namePlaceholder: "Как к вам обращаться",
+  // Не «телефон для чека»: чек ККТ не формируем (решение 20.09.2026).
+  phoneLabel: "Телефон",
+  phonePlaceholder: "+7",
+  consentPrefix: "Согласен на",
+  consentData: "обработку данных",
+  consentJoin: "и",
+  consentTerms: "условия оплаты",
+  submit: "Пожертвовать",
+  submitting: "Отправляем…",
+  success: "Джазакаллаху хайран! Переходим на страницу оплаты…",
+  commission: "Комиссия уже включена",
+  commissionLong: "Комиссия платёжных агентов уже включена",
+  transferLink: "Перевод по реквизитам",
+  unknownError: "Что-то пошло не так. Попробуйте ещё раз.",
+} as const;
+
 export const REGIONS = {
   title: "География поддержки",
 } as const;
