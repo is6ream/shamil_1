@@ -219,7 +219,6 @@ export const MOBILE_SECTIONS = {
 export const FOOTER = {
   contacts: "Контакты",
   info: "Информация",
-  imamPrefix: "Имам —",
   telegramPrefix: "Telegram-канал",
   copyright: "© 2026 Мечеть «Шамиль», Уфа",
 } as const;

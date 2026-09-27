@@ -46,8 +46,6 @@ export const ORGANIZATION = {
   mosqueAddress: null as string | null,
   /** TODO(заказчик): телефон для блока контактов, в виде «+7 (347) 000-00-00». */
   phone: null as string | null,
-  /** Имам мечети — назван в CLAUDE.md. */
-  imamName: "Вадим Агаев",
   /** TODO(заказчик): Telegram-канал, имя без @ — «mechetshamil». */
   telegramChannel: null as string | null,
 

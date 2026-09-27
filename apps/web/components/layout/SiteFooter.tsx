@@ -19,7 +19,7 @@ const MOBILE_HIDDEN_HREF: string = PAGES.cookie.href;
  * плейсхолдеры макета в квадратных скобках на сайт не попадают.
  */
 export function SiteFooter() {
-  const { phone, mosqueAddress, imamName, telegramChannel } = ORGANIZATION;
+  const { phone, mosqueAddress, telegramChannel } = ORGANIZATION;
 
   return (
     <footer className={styles.footer} id={SECTION_IDS.contacts}>
@@ -41,9 +41,6 @@ export function SiteFooter() {
             )}
             <ul className={styles.lines}>
               <li>{mosqueAddress === null ? "г. Уфа" : `г. Уфа, ${mosqueAddress}`}</li>
-              <li>
-                {FOOTER.imamPrefix} {imamName}
-              </li>
               {telegramChannel === null ? null : (
                 <li>
                   {FOOTER.telegramPrefix}{" "}

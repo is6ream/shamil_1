@@ -60,7 +60,9 @@ export default async function HomePage() {
         </div>
 
         <aside className={styles.aside} id={SECTION_IDS.donate} aria-label="Форма пожертвования">
-          <DonationWidget regions={regions} />
+          <div className={styles.asideSticky}>
+            <DonationWidget regions={regions} />
+          </div>
         </aside>
 
         <div className={styles.stats}>
