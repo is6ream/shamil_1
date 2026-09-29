@@ -29,9 +29,9 @@ interface Props {
  * В табстоп попадает только выбранный таб (`tabIndex`), внутрь группы
  * человек входит стрелками.
  *
- * Ограничение, о котором стоит помнить: сейчас таб не управляет маршрутом
- * платежа. Провайдер выбирается глобально через `PAYMENT_PROVIDER`, поля
- * `channel` в DTO ещё нет — контракт расширения описан в docs/api-gaps.md.
+ * Таб управляет маршрутом платежа: значение уходит в `POST /donations`
+ * полем `channel`, и бэкенд выбирает провайдера по нему — «Расчётный счёт»
+ * ведёт на реквизиты даже при активной Robokassa.
  */
 export function ChannelTabs({ value, onChange, panelId }: Props) {
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {

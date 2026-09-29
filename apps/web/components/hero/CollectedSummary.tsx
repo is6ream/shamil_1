@@ -7,7 +7,8 @@ import { kopecksToRubDisplay, kopecksToRubNumberDisplay, percentOfGoal } from "@
 import styles from "./CollectedSummary.module.css";
 
 interface Props {
-  readonly campaign: Campaign;
+  /** `null` — бэкенд недоступен. Показываем нейтральное «обновляем», не «0 ₽». */
+  readonly campaign: Campaign | null;
   /** Вариант подписей: полный для десктопа, короткий для телефона (макет v2). */
   readonly className?: string;
 }
@@ -28,6 +29,17 @@ function formatPercent(percent: number): string {
  * и без расхождения при гидратации.
  */
 export function CollectedSummary({ campaign, className }: Props) {
+  if (campaign === null) {
+    return (
+      <div className={`${styles.summary} ${className ?? ""}`}>
+        <p className={styles.label}>{COLLECTED.label}</p>
+        <p className={styles.goal} role="status">
+          {COLLECTED.pending}
+        </p>
+      </div>
+    );
+  }
+
   const percent = percentOfGoal(campaign.collectedKopecks, campaign.goalKopecks);
   const percentText = `${formatPercent(percent)}%`;
   const count = formatCount(campaign.donationsCount);

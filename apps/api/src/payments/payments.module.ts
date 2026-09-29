@@ -4,19 +4,20 @@ import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../config/configuration';
 import { PaymentProviderCode } from '../config/env.validation';
 import { DatabaseModule } from '../database/database.module';
-import { PAYMENT_PROVIDER } from './payment-provider.interface';
 import type { PaymentProvider } from './payment-provider.interface';
+import { PaymentProviderResolver } from './payment-provider.resolver';
 import { PaymentCallbacksController } from './payment-callbacks.controller';
 import { PaymentsService } from './payments.service';
 import { ManualProvider } from './providers/manual.provider';
 import { RobokassaProvider } from './providers/robokassa.provider';
 
 /**
- * Фабрика активного провайдера.
+ * Онлайн-провайдер приложения, если он включён.
  *
- * Провайдер в приложении ровно один и выбирается конфигом: переключение
- * `manual → robokassa` не должно требовать правок в коде — в день активации
- * мерчанта у нас будет время только на смену переменных окружения.
+ * `PAYMENT_PROVIDER` теперь значит «какой онлайн-агрегатор подключён»:
+ * `manual` — онлайн выключен целиком, и таб «Онлайн» получает 400 с просьбой
+ * перевести по реквизитам. Это же и рубильник: выключить приём картой
+ * в день проблем у агрегатора — одна переменная, пароли стирать не нужно.
  *
  * Классы создаются здесь вручную, а не регистрируются провайдерами модуля,
  * намеренно: Nest поднимает всех провайдеров модуля сразу, а конструктор
@@ -27,12 +28,12 @@ import { RobokassaProvider } from './providers/robokassa.provider';
  * был бы хуже падения: сбор продолжил бы работать, показывая реквизиты вместо
  * оплаты картой, и заметили бы это по просевшим поступлениям через сутки.
  */
-function createPaymentProvider(config: ConfigService<AppConfig, true>): PaymentProvider {
+function createOnlineProvider(config: ConfigService<AppConfig, true>): PaymentProvider | null {
   const { provider } = config.get('payment', { infer: true });
 
   switch (provider) {
     case PaymentProviderCode.Manual:
-      return new ManualProvider(config);
+      return null;
 
     case PaymentProviderCode.Robokassa:
       return new RobokassaProvider(config);
@@ -45,20 +46,31 @@ function createPaymentProvider(config: ConfigService<AppConfig, true>): PaymentP
   }
 }
 
+export function createPaymentProviderResolver(config: ConfigService<AppConfig, true>): PaymentProviderResolver {
+  const online = createOnlineProvider(config);
+
+  return new PaymentProviderResolver({
+    manual: new ManualProvider(config),
+    online,
+    // Без `channel` в запросе — прежнее поведение: провайдер из PAYMENT_PROVIDER.
+    defaultChannel: online === null ? 'transfer' : 'online',
+  });
+}
+
 @Module({
   imports: [DatabaseModule],
   controllers: [PaymentCallbacksController],
   providers: [
     PaymentsService,
     {
-      provide: PAYMENT_PROVIDER,
+      provide: PaymentProviderResolver,
       inject: [ConfigService],
-      useFactory: createPaymentProvider,
+      useFactory: createPaymentProviderResolver,
     },
   ],
   // PaymentsService экспортируется ради админского подтверждения ручного
   // доната: перевод pending → paid обязан идти через ту же машинерию, что
   // и вебхук, а не через вторую копию логики в админском модуле.
-  exports: [PAYMENT_PROVIDER, PaymentsService],
+  exports: [PaymentProviderResolver, PaymentsService],
 })
 export class PaymentsModule {}

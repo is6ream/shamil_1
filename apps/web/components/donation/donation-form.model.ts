@@ -39,7 +39,7 @@ export type OnlineMethodId = "sbp" | "card" | "sberpay" | "tpay";
 export type Recurrence = "once" | "daily" | "weekly" | "monthly";
 
 export interface DonationFormState {
-  /** Онлайн или перевод по реквизитам. В запрос пока не уходит. */
+  /** Онлайн или перевод по реквизитам. Уходит в запрос полем `channel`. */
   readonly channel: DonationChannel;
   /** Сырой ввод суммы — человек может печатать «1 000 ₽». */
   readonly amountInput: string;

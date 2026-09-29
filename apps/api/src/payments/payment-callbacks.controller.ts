@@ -4,15 +4,15 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  Inject,
   Logger,
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 
-import { PAYMENT_PROVIDER } from './payment-provider.interface';
+import { ROBOKASSA_PROVIDER_CODE } from '../config/constants';
 import type { PaymentProvider } from './payment-provider.interface';
+import { PaymentProviderResolver } from './payment-provider.resolver';
 import { WebhookParseError } from './payment-provider.types';
 import type { WebhookBody } from './payment-provider.types';
 import { PaymentsService } from './payments.service';
@@ -24,7 +24,7 @@ export class PaymentCallbacksController {
 
   constructor(
     private readonly payments: PaymentsService,
-    @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
+    private readonly providers: PaymentProviderResolver,
   ) {}
 
   /**
@@ -41,15 +41,20 @@ export class PaymentCallbacksController {
   @HttpCode(HttpStatus.OK)
   @SkipThrottle()
   async handleRobokassaResult(@Body() body: WebhookBody): Promise<string> {
+    // Подпись проверяет именно Robokassa — маршрут её, а не «активного»
+    // провайдера. Robokassa выключена — колбэк некому проверить, и он
+    // получает тот же 401, что и поддельный.
+    const provider = this.providers.byCode(ROBOKASSA_PROVIDER_CODE);
+
     // Проверка подписи ДО разбора тела: неподписанный колбэк не должен
     // оставить в базе ни строки.
-    if (!this.provider.verifySignature(body)) {
+    if (provider === null || !provider.verifySignature(body)) {
       this.logger.warn('Колбэк с неверной подписью отклонён');
 
       throw new UnauthorizedException('Подпись колбэка не сошлась');
     }
 
-    const parsed = this.parse(body);
+    const parsed = this.parse(provider, body);
 
     await this.payments.applyWebhook(parsed, body);
 
@@ -63,9 +68,12 @@ export class PaymentCallbacksController {
    * с документацией провайдера. Молчать о нём нельзя: 400 и запись в лог,
    * чтобы это всплыло сразу, а не на разборе пропавших платежей.
    */
-  private parse(body: WebhookBody): ReturnType<PaymentProvider['parseWebhook']> {
+  private parse(
+    provider: PaymentProvider,
+    body: WebhookBody,
+  ): ReturnType<PaymentProvider['parseWebhook']> {
     try {
-      return this.provider.parseWebhook(body);
+      return provider.parseWebhook(body);
     } catch (error: unknown) {
       if (error instanceof WebhookParseError) {
         this.logger.error(`Подписанный колбэк не разобран: ${error.message}`);

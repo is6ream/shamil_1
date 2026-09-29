@@ -15,9 +15,10 @@ import {
 import {
   MAX_DONATION_KOPECKS,
   MIN_DONATION_KOPECKS,
+  PAYMENT_CHANNELS,
   PUBLIC_REGION_SOURCES,
 } from '../../config/constants';
-import type { PublicRegionSource } from '../../config/constants';
+import type { PaymentChannel, PublicRegionSource } from '../../config/constants';
 
 /** Слаг региона: тот же формат, что и CHECK `region_slug_format` в БД. */
 const REGION_SLUG_PATTERN = /^[a-z0-9-]+$/;
@@ -95,6 +96,14 @@ export class CreateDonationDto {
   @IsOptional()
   @IsBoolean()
   personalDataConsent?: boolean;
+
+  /**
+   * Таб формы: «Онлайн» или «Расчётный счёт». Не передан — провайдер
+   * из `PAYMENT_PROVIDER`, как до появления поля.
+   */
+  @IsOptional()
+  @IsIn(PAYMENT_CHANNELS)
+  channel?: PaymentChannel;
 
   /**
    * Honeypot против ботов: поле скрыто в вёрстке, человек его не заполняет.

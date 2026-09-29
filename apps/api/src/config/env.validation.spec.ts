@@ -148,6 +148,91 @@ describe('валидация окружения', () => {
   });
 });
 
+describe('эмулятор оплаты и адрес Robokassa', () => {
+  const EMULATOR_ENV: Readonly<Record<string, string>> = {
+    ...ROBOKASSA_TEST_ENV,
+    PAYMENT_EMULATOR_ENABLED: 'true',
+    PAYMENT_ROBOKASSA_URL: 'http://localhost:3001/api/dev/robokassa/checkout',
+  };
+
+  const PRODUCTION_ENV: Readonly<Record<string, string>> = {
+    ...BASE_ENV,
+    NODE_ENV: NodeEnv.Production,
+    ADMIN_API_TOKEN: 'x'.repeat(32),
+  };
+
+  test('по умолчанию эмулятор выключен, адрес — боевая Robokassa', () => {
+    // Act
+    const env = validateEnv(BASE_ENV);
+
+    // Assert
+    expect(env.PAYMENT_EMULATOR_ENABLED).toBe(false);
+    expect(env.PAYMENT_ROBOKASSA_URL).toBe('https://auth.robokassa.ru/Merchant/Index.aspx');
+  });
+
+  test('вне production эмулятор с тестовым режимом Robokassa стартует', () => {
+    // Act
+    const env = validateEnv(EMULATOR_ENV);
+
+    // Assert
+    expect(env.PAYMENT_EMULATOR_ENABLED).toBe(true);
+  });
+
+  test('в production эмулятор включить невозможно: приложение не стартует', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({
+        ...EMULATOR_ENV,
+        ...PRODUCTION_ENV,
+        PAYMENT_ROBOKASSA_URL: 'https://auth.robokassa.ru/Merchant/Index.aspx',
+      });
+
+    // Assert
+    expect(act).toThrow(/PAYMENT_EMULATOR_ENABLED: эмулятор оплаты в production запрещён/);
+  });
+
+  test('в production адрес оплаты — только auth.robokassa.ru', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({ ...PRODUCTION_ENV, PAYMENT_ROBOKASSA_URL: 'https://evil.example/Index.aspx' });
+
+    // Assert
+    expect(act).toThrow(/PAYMENT_ROBOKASSA_URL/);
+  });
+
+  test('в production похожий домен не проходит', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({ ...PRODUCTION_ENV, PAYMENT_ROBOKASSA_URL: 'https://auth.robokassa.ru.evil.example/' });
+
+    // Assert
+    expect(act).toThrow(/PAYMENT_ROBOKASSA_URL/);
+  });
+
+  test('эмулятор без тестового режима не стартует', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({
+        ...EMULATOR_ENV,
+        PAYMENT_IS_TEST: 'false',
+        PAYMENT_SECRET_KEY: 'live-1',
+        PAYMENT_WEBHOOK_SECRET: 'live-2',
+      });
+
+    // Assert
+    expect(act).toThrow(/эмулятор требует PAYMENT_IS_TEST=true/);
+  });
+
+  test('эмулятор без Robokassa не стартует — подпись проверять нечем', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({ ...BASE_ENV, PAYMENT_EMULATOR_ENABLED: 'true' });
+
+    // Assert
+    expect(act).toThrow(/PAYMENT_PROVIDER=robokassa/);
+  });
+});
+
 describe('сборка конфига', () => {
   const originalEnv = process.env;
 

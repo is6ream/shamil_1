@@ -141,13 +141,14 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
           regionSlug: region.slug,
           regionSource: region.source,
           antispam: state.antispam,
-          // `recurrence` и `onlineMethod` в тело не уходят: в DTO их нет.
+          // Канал выбирает провайдера на бэкенде. `recurrence` и
+          // `onlineMethod` в тело не уходят: в DTO их нет (вне MVP).
           channel: state.channel,
         }),
       );
 
-      // Сервер сам решает, куда идти: Robokassa либо наша страница
-      // реквизитов, если активен ручной провайдер.
+      // Куда идти, решает сервер по каналу: онлайн — страница оплаты
+      // Robokassa (или локального эмулятора), перевод — наши реквизиты.
       setStatus("redirecting");
       redirectTimer.current = setTimeout(() => {
         window.location.assign(redirectUrl);

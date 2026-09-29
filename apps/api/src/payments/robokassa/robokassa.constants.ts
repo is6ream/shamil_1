@@ -1,5 +1,12 @@
-/** Точка входа оплаты. Ссылку подписываем локально, HTTP-вызова здесь нет. */
+/**
+ * Точка входа оплаты по умолчанию. Ссылку подписываем локально, HTTP-вызова
+ * здесь нет. Переопределяется `PAYMENT_ROBOKASSA_URL` — только ради локального
+ * эмулятора; в production валидация окружения требует этот хост.
+ */
 export const ROBOKASSA_PAYMENT_URL = 'https://auth.robokassa.ru/Merchant/Index.aspx';
+
+/** С чего обязан начинаться адрес оплаты в production. */
+export const ROBOKASSA_PRODUCTION_URL_PREFIX = 'https://auth.robokassa.ru/';
 
 /** Префикс контроллера колбэков. */
 export const PAYMENTS_ROUTE_PREFIX = 'payments';

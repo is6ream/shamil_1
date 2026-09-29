@@ -42,6 +42,3 @@ export interface PaymentProvider {
    */
   parseWebhook(body: WebhookBody): ParsedWebhook;
 }
-
-/** DI-токен: интерфейс в рантайме не существует, внедрять по нему нельзя. */
-export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');

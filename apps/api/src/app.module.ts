@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConditionalModule, ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
@@ -9,6 +9,11 @@ import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { DonationsModule } from './donations/donations.module';
 import { HealthModule } from './health/health.module';
+import {
+  PaymentEmulatorModule,
+  isPaymentEmulatorEnabled,
+} from './payments/emulator/payment-emulator.module';
+import { ShowcaseModule } from './showcase/showcase.module';
 
 @Module({
   imports: [
@@ -33,6 +38,10 @@ import { HealthModule } from './health/health.module';
     HealthModule,
     DonationsModule,
     AdminModule,
+    ShowcaseModule,
+    // Эмулятор оплаты — только локально: в production флаг запрещён
+    // валидацией окружения, и маршрутов `/api/dev/…` там нет (404).
+    ConditionalModule.registerWhen(PaymentEmulatorModule, isPaymentEmulatorEnabled),
   ],
   providers: [
     // Rate limiting по умолчанию на все эндпоинты: платёжная форма и вебхуки

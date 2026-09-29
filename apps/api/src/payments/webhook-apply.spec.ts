@@ -13,7 +13,6 @@ import {
 } from '../database/testing/test-database';
 import type { TestFixtures } from '../database/testing/test-database';
 import { DonationStatus } from '../generated/prisma/enums';
-import type { PaymentProvider } from './payment-provider.interface';
 import type { ParsedWebhook, WebhookBody } from './payment-provider.types';
 import { PaymentsService } from './payments.service';
 
@@ -24,16 +23,6 @@ import { PaymentsService } from './payments.service';
  * уникальный ключ события, запрет обратного перехода и пересчёт витрин
  * триггером. На моках всё это зелёное и бессмысленное.
  */
-
-/** Провайдеру в этих тестах достаточно кода: подпись проверена раньше. */
-const PROVIDER_STUB: PaymentProvider = {
-  code: ROBOKASSA_PROVIDER_CODE,
-  createPayment: () => Promise.reject(new Error('в этих тестах не используется')),
-  verifySignature: () => true,
-  parseWebhook: () => {
-    throw new Error('в этих тестах не используется');
-  },
-};
 
 function createPrisma(): PrismaService {
   const url = process.env.TEST_DATABASE_URL;
@@ -53,6 +42,8 @@ interface WebhookOptions {
 
 function webhook({ invoiceNo, amountKopecks, providerEventId }: WebhookOptions): ParsedWebhook {
   return {
+    // Код провайдера несёт сам колбэк: подпись проверена раньше, в контроллере.
+    provider: ROBOKASSA_PROVIDER_CODE,
     providerEventId: providerEventId ?? String(invoiceNo),
     invoiceNo,
     status: DonationStatus.paid,
@@ -79,7 +70,7 @@ describeDatabase('применение колбэка', () => {
 
   beforeAll(() => {
     prisma = createPrisma();
-    payments = new PaymentsService(prisma, PROVIDER_STUB);
+    payments = new PaymentsService(prisma);
   });
 
   afterAll(async () => {

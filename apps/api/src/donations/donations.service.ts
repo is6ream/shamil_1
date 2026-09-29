@@ -1,9 +1,8 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import { PrismaService } from '../database/prisma.service';
-import { PAYMENT_PROVIDER } from '../payments/payment-provider.interface';
-import type { PaymentProvider } from '../payments/payment-provider.interface';
+import { PaymentProviderResolver } from '../payments/payment-provider.resolver';
 import type { CreateDonationDto } from './dto/create-donation.dto';
 import type {
   CreatedDonationResponse,
@@ -22,7 +21,7 @@ interface ResolvedRegion {
 export class DonationsService {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
+    private readonly providers: PaymentProviderResolver,
   ) {}
 
   /**
@@ -41,6 +40,9 @@ export class DonationsService {
     }
 
     const amountKopecks = BigInt(dto.amountKopecks);
+    // Провайдер выбирается до записи доната: выключенный онлайн — это 400
+    // донатеру, а не висящий pending-заказ, который некому оплатить.
+    const provider = this.providers.forChannel(dto.channel);
 
     // Минимум живёт в БД и меняется без миграции — значит, и проверять его
     // нужно по базе, а не по константе сборки.
@@ -63,7 +65,9 @@ export class DonationsService {
         regionId: region.regionId,
         regionSource: region.regionSource,
         amountKopecks,
-        provider: this.provider.code,
+        // Код провайдера доната: по нему колбэк и админка потом знают,
+        // кто вправе подтвердить этот платёж.
+        provider: provider.code,
         isAnonymous,
         // Анонимный донат не хранит публичную подпись вообще — это CHECK
         // `donation_anonymous_has_no_public_name`: чего в таблице нет,
@@ -74,7 +78,7 @@ export class DonationsService {
       select: { id: true, invoiceNo: true },
     });
 
-    const payment = await this.provider.createPayment({
+    const payment = await provider.createPayment({
       invoiceNo: donation.invoiceNo,
       donationId: donation.id,
       amountKopecks,

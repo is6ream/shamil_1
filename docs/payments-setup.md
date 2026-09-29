@@ -140,17 +140,58 @@
 Прогнать полный флоу с `IsTest=1` до получения боевых ключей — вся интеграция пишется и
 проверяется, не дожидаясь одобрения мерчанта.
 
+#### Тестовый режим: эмулятор → Robokassa
+
+Пока мерчанта нет, цикл оплаты гоняется через локальный эмулятор
+(`apps/api/src/payments/emulator/`, настройка — README, «Локальный запуск
+с тестовой оплатой»). Код для перехода на настоящий тестовый режим Robokassa
+**не меняется** — только `.env`:
+
+1. `PAYMENT_EMULATOR_ENABLED=false`, строку `PAYMENT_ROBOKASSA_URL` удалить
+   (значение по умолчанию — `https://auth.robokassa.ru/Merchant/Index.aspx`).
+2. `PAYMENT_MERCHANT_ID` — идентификатор магазина из кабинета; `PAYMENT_TEST_SECRET_KEY`
+   и `PAYMENT_TEST_WEBHOOK_SECRET` — **тестовая** пара паролей из технических настроек
+   (docs.robokassa.ru/ru/testing-mode: для тестового режима используется отдельный
+   набор паролей, не совпадающий с рабочими). `PAYMENT_HASH_ALGORITHM` — как выбран
+   в кабинете. `PAYMENT_IS_TEST=true`.
+3. **Result URL должен быть публичным** — Robokassa стучится на него из интернета.
+   Локально: туннель на `:3001` (`cloudflared tunnel --url http://localhost:3001`
+   или `ngrok http 3001`), `PUBLIC_API_URL` = адрес туннеля. При старте бэкенд
+   печатает `Result URL для кабинета: …/api/payments/robokassa/result` — ровно
+   эту строку вписать в кабинет, метод **POST**.
+4. Success URL / Fail URL — как в docs/robokassa-activation.md (блок 4):
+   `${PUBLIC_SITE_URL}/spasibo` и `${PUBLIC_SITE_URL}/`. Если кабинет не примет
+   `localhost`, нужен туннель и для фронтенда (`:3000`), а `PUBLIC_SITE_URL`
+   и `CORS_ORIGINS` — его адрес.
+
+Переопределение адресов возврата в самой ссылке у Robokassa есть: в
+«Интерфейсе оплаты» (docs.robokassa.ru/ru/pay-interface) перечислены параметры
+`SuccessUrl2`, `SuccessUrl2Method`, `FailUrl2`, `FailUrl2Method` («Дополнительная
+переадресация»). **Мы их не используем**, и входят ли они в подпись, по доступной
+версии страницы подтвердить не удалось — перед использованием сверить раздел
+«Дополнительная переадресация» в docs.robokassa.ru/ru/notifications-and-redirects.
+
+Эмулятор в production включить нельзя: при `NODE_ENV=production` приложение
+с `PAYMENT_EMULATOR_ENABLED=true` или с `PAYMENT_ROBOKASSA_URL` не на
+`https://auth.robokassa.ru/` не стартует, а маршрутов `/api/dev/…` там нет.
+
 ### 8. Секреты — только через окружение
 `.env` (уже есть плейсхолдеры):
 - `PAYMENT_PROVIDER=robokassa`
 - `PAYMENT_MERCHANT_ID` = `MerchantLogin`
-- `PAYMENT_SECRET_KEY` = Пароль #1
-- `PAYMENT_WEBHOOK_SECRET` = Пароль #2
+- `PAYMENT_SECRET_KEY` = Пароль #1, `PAYMENT_WEBHOOK_SECRET` = Пароль #2 (боевые)
+- `PAYMENT_TEST_SECRET_KEY` / `PAYMENT_TEST_WEBHOOK_SECRET` — тестовая пара
 Неподписанный колбэк обязан получать `401`. `.env` в репозиторий не коммитим.
 
 ### 9. Запасной путь (`ManualProvider`)
 Реквизиты + QR СБП + ручное подтверждение доната из админки (защищённый эндпоинт). Постоянный
 способ, не заглушка. Реквизиты берёт заказчик у своего банка.
+
+Провайдер выбирается **по донату**, полем `channel` в `POST /donations`: `transfer`
+всегда ведёт на реквизиты, даже при `PAYMENT_PROVIDER=robokassa`; `online` при
+`PAYMENT_PROVIDER=manual` получает 400 «Онлайн-оплата временно недоступна —
+переведите по реквизитам». Колбэк Robokassa проверяется паролем Robokassa независимо
+от провайдера по умолчанию; событие пишется под кодом провайдера из колбэка.
 
 ---
 

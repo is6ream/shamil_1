@@ -25,6 +25,8 @@ const BASE_PAYMENT: PaymentConfig = {
   merchantId: 'demo',
   secretKey: 'password_1',
   webhookSecret: 'password_2',
+  paymentUrl: 'https://auth.robokassa.ru/Merchant/Index.aspx',
+  emulatorEnabled: false,
   receipt: { enabled: false },
 };
 

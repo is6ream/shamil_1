@@ -1,9 +1,9 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import { configureApp } from './bootstrap';
 import { API_GLOBAL_PREFIX } from './config/constants';
 import type { AppConfig } from './config/configuration';
 import { PaymentProviderCode } from './config/env.validation';
@@ -19,20 +19,7 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<AppConfig, true>);
   const http = config.get('http', { infer: true });
 
-  app.setGlobalPrefix(API_GLOBAL_PREFIX);
-  app.use(helmet());
-  app.enableCors({ origin: [...http.corsOrigins], credentials: true });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
-
-  app.enableShutdownHooks();
+  configureApp(app);
 
   await app.listen(http.port);
 

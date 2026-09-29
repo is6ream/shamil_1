@@ -7,7 +7,8 @@ import styles from "./HeroIntro.module.css";
 import { RenderCard } from "./RenderCard";
 
 interface Props {
-  readonly campaign: Campaign;
+  /** `null` — бэкенд недоступен: вместо цифр «обновляем данные». */
+  readonly campaign: Campaign | null;
 }
 
 /**

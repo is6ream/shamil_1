@@ -38,6 +38,15 @@ export const PUBLIC_REGION_SOURCES = ['link', 'form'] as const;
 
 export type PublicRegionSource = (typeof PUBLIC_REGION_SOURCES)[number];
 
+/**
+ * Канал оплаты из табов формы: «Онлайн» (агрегатор) или «Расчётный счёт»
+ * (перевод по реквизитам). Провайдер выбирается по донату, а не глобально:
+ * человек, нажавший «Расчётный счёт», не должен уехать на оплату картой.
+ */
+export const PAYMENT_CHANNELS = ['online', 'transfer'] as const;
+
+export type PaymentChannel = (typeof PAYMENT_CHANNELS)[number];
+
 /** Публичная форма доната: окно и лимит троттлинга, строже глобального. */
 export const DONATION_THROTTLE_TTL_MS = 60_000;
 export const DONATION_THROTTLE_LIMIT = 10;

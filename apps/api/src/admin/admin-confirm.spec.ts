@@ -17,7 +17,6 @@ import {
 } from '../database/testing/test-database';
 import type { TestFixtures } from '../database/testing/test-database';
 import { DonationStatus } from '../generated/prisma/enums';
-import type { PaymentProvider } from '../payments/payment-provider.interface';
 import { PaymentsService } from '../payments/payments.service';
 
 /**
@@ -28,16 +27,6 @@ import { PaymentsService } from '../payments/payments.service';
  * запрет обратного перехода и пересчёт витрин триггером. На моках всё это
  * зелёное и бессмысленное.
  */
-
-/** Активный провайдер приложения в подтверждении не участвует — код взят из доната. */
-const PROVIDER_STUB: PaymentProvider = {
-  code: MANUAL_PROVIDER_CODE,
-  createPayment: () => Promise.reject(new Error('в этих тестах не используется')),
-  verifySignature: () => false,
-  parseWebhook: () => {
-    throw new Error('в этих тестах не используется');
-  },
-};
 
 function createPrisma(): PrismaService {
   const url = process.env.TEST_DATABASE_URL;
@@ -56,7 +45,7 @@ describeDatabase('подтверждение ручного перевода', (
 
   beforeAll(() => {
     prisma = createPrisma();
-    payments = new PaymentsService(prisma, PROVIDER_STUB);
+    payments = new PaymentsService(prisma);
   });
 
   afterAll(async () => {

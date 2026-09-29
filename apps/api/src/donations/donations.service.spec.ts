@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 
-import { MANUAL_PROVIDER_CODE } from '../config/constants';
+import { MANUAL_PROVIDER_CODE, ROBOKASSA_PROVIDER_CODE } from '../config/constants';
 import type { AppConfig } from '../config/configuration';
 import { PrismaService } from '../database/prisma.service';
 import { CAMPAIGN_SEED } from '../database/seed/campaign.data';
@@ -16,6 +16,10 @@ import {
 import type { TestFixtures } from '../database/testing/test-database';
 import { DonationStatus } from '../generated/prisma/enums';
 import type { PaymentProvider } from '../payments/payment-provider.interface';
+import {
+  ONLINE_UNAVAILABLE_MESSAGE,
+  PaymentProviderResolver,
+} from '../payments/payment-provider.resolver';
 import { DonationsService } from './donations.service';
 import { CreateDonationDto } from './dto/create-donation.dto';
 
@@ -30,6 +34,13 @@ const PROVIDER_STUB: PaymentProvider = {
     throw new Error('в этих тестах не используется');
   },
 };
+
+/** Онлайн выключен: все донаты этих тестов идут по реквизитам, как раньше. */
+const RESOLVER = new PaymentProviderResolver({
+  manual: PROVIDER_STUB,
+  online: null,
+  defaultChannel: 'transfer',
+});
 
 function createPrisma(): PrismaService {
   const url = process.env.TEST_DATABASE_URL;
@@ -55,7 +66,7 @@ describeDatabase('создание доната', () => {
 
   beforeAll(() => {
     prisma = createPrisma();
-    donations = new DonationsService(prisma, PROVIDER_STUB);
+    donations = new DonationsService(prisma, RESOLVER);
   });
 
   afterAll(async () => {
@@ -180,7 +191,7 @@ describeDatabase('статус заказа', () => {
 
   beforeAll(() => {
     prisma = createPrisma();
-    donations = new DonationsService(prisma, PROVIDER_STUB);
+    donations = new DonationsService(prisma, RESOLVER);
   });
 
   afterAll(async () => {
@@ -284,5 +295,114 @@ describe('валидация формы доната', () => {
     expect(validate({ amountKopecks: VALID_AMOUNT, regionSource: 'admin' })).toContain(
       'regionSource',
     );
+  });
+});
+
+describeDatabase('канал оплаты', () => {
+  const ONLINE_URL = 'https://auth.robokassa.test/pay';
+  const TRANSFER_URL = 'http://localhost:3000/donate/transfer';
+
+  const ONLINE_STUB: PaymentProvider = {
+    code: ROBOKASSA_PROVIDER_CODE,
+    createPayment: (input) =>
+      Promise.resolve({ redirectUrl: ONLINE_URL, externalId: String(input.invoiceNo) }),
+    verifySignature: () => false,
+    parseWebhook: () => {
+      throw new Error('в этих тестах не используется');
+    },
+  };
+
+  const TRANSFER_STUB: PaymentProvider = {
+    ...PROVIDER_STUB,
+    createPayment: (input) =>
+      Promise.resolve({ redirectUrl: TRANSFER_URL, externalId: String(input.invoiceNo) }),
+  };
+
+  let prisma: PrismaService;
+
+  beforeAll(() => {
+    prisma = createPrisma();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  beforeEach(async () => {
+    await resetDatabase(prisma);
+    await seedFixtures(prisma, { campaignSlug: CAMPAIGN_SEED.slug });
+  });
+
+  describe('PAYMENT_PROVIDER=robokassa', () => {
+    const service = (): DonationsService =>
+      new DonationsService(
+        prisma,
+        new PaymentProviderResolver({ manual: TRANSFER_STUB, online: ONLINE_STUB, defaultChannel: 'online' }),
+      );
+
+    test('transfer — донат ручного перевода и ссылка на реквизиты, а не на оплату картой', async () => {
+      // Act
+      const created = await service().create(dto({ channel: 'transfer' }));
+
+      // Assert
+      const stored = await prisma.donation.findUniqueOrThrow({ where: { id: created.orderId } });
+      expect(stored.provider).toBe(MANUAL_PROVIDER_CODE);
+      expect(created.redirectUrl).toBe(TRANSFER_URL);
+    });
+
+    test('online и запрос без канала — донат Robokassa', async () => {
+      // Act
+      const online = await service().create(dto({ channel: 'online' }));
+      const legacy = await service().create(dto());
+
+      // Assert
+      const providers = await prisma.donation.findMany({
+        where: { id: { in: [online.orderId, legacy.orderId] } },
+        select: { provider: true },
+      });
+      expect(providers.map((row) => row.provider)).toEqual([ROBOKASSA_PROVIDER_CODE, ROBOKASSA_PROVIDER_CODE]);
+      expect(online.redirectUrl).toBe(ONLINE_URL);
+    });
+  });
+
+  describe('PAYMENT_PROVIDER=manual', () => {
+    const service = (): DonationsService =>
+      new DonationsService(
+        prisma,
+        new PaymentProviderResolver({ manual: TRANSFER_STUB, online: null, defaultChannel: 'transfer' }),
+      );
+
+    test('online — 400 с человеческим текстом и ни одного висящего заказа', async () => {
+      // Act
+      const act = service().create(dto({ channel: 'online' }));
+
+      // Assert
+      await expect(act).rejects.toThrow(ONLINE_UNAVAILABLE_MESSAGE);
+      await expect(act).rejects.toBeInstanceOf(BadRequestException);
+      expect(await prisma.donation.count()).toBe(0);
+    });
+
+    test('transfer — ручной перевод', async () => {
+      // Act
+      const created = await service().create(dto({ channel: 'transfer' }));
+
+      // Assert
+      const stored = await prisma.donation.findUniqueOrThrow({ where: { id: created.orderId } });
+      expect(stored.provider).toBe(MANUAL_PROVIDER_CODE);
+    });
+  });
+});
+
+describe('CreateDonationDto: channel', () => {
+  function errorsFor(body: Record<string, unknown>): string[] {
+    return validateSync(plainToInstance(CreateDonationDto, body)).map((error) => error.property);
+  }
+
+  test.each(['online', 'transfer'])('«%s» принимается', (channel) => {
+    expect(errorsFor({ amountKopecks: VALID_AMOUNT, channel })).toEqual([]);
+  });
+
+  test('неизвестный канал отклоняется', () => {
+    expect(errorsFor({ amountKopecks: VALID_AMOUNT, channel: 'crypto' })).toEqual(['channel']);
   });
 });

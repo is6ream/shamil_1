@@ -35,6 +35,10 @@ export interface PaymentConfig {
   readonly secretKey: string;
   /** Пароль #2 активного режима — проверка подписи колбэка. */
   readonly webhookSecret: string;
+  /** Страница оплаты: боевая Robokassa или локальный эмулятор. */
+  readonly paymentUrl: string;
+  /** Локальный эмулятор оплаты. В production выключен валидацией. */
+  readonly emulatorEnabled: boolean;
   readonly receipt: ReceiptConfig;
 }
 
@@ -99,6 +103,8 @@ function buildPaymentConfig(env: EnvVars): PaymentConfig {
     merchantId: env.PAYMENT_MERCHANT_ID ?? '',
     secretKey: (isTest ? env.PAYMENT_TEST_SECRET_KEY : env.PAYMENT_SECRET_KEY) ?? '',
     webhookSecret: (isTest ? env.PAYMENT_TEST_WEBHOOK_SECRET : env.PAYMENT_WEBHOOK_SECRET) ?? '',
+    paymentUrl: env.PAYMENT_ROBOKASSA_URL,
+    emulatorEnabled: env.PAYMENT_EMULATOR_ENABLED,
     receipt: {
       enabled: env.PAYMENT_RECEIPT_ENABLED,
       taxationSystem: env.PAYMENT_RECEIPT_SNO,

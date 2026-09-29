@@ -41,6 +41,13 @@ export type WebhookBody = Readonly<Record<string, unknown>>;
 
 export interface ParsedWebhook {
   /**
+   * Код провайдера, приславшего колбэк, — он же `payment_event.provider`.
+   * Берётся из разобравшего колбэк провайдера, а не из глобальной настройки:
+   * при `PAYMENT_PROVIDER=manual` и включённом эмуляторе или смене агрегатора
+   * событие должно лечь под своим кодом, иначе поедет ключ идемпотентности.
+   */
+  readonly provider: string;
+  /**
    * Ключ идемпотентности. Уникальный `(provider, provider_event_id)`
    * в `payment_event` — это и есть защита от ретраев: агрегаторы повторяют
    * доставку, пока не получат 200, и без ключа донат задвоится в сумме сбора

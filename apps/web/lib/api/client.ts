@@ -1,9 +1,9 @@
 /**
- * Боевые вызовы бэкенда. Эти два эндпоинта уже существуют
- * (apps/api/src/donations/donations.controller.ts), моков здесь нет.
+ * Боевые вызовы бэкенда: донат и его статус (`request`, без кеша) и витрина
+ * (`apiGet`, короткий кеш — её функции живут в `showcase.ts`).
  *
  * Компоненты не знают ни про `fetch`, ни про адрес API: они вызывают
- * `createDonation` и `getDonationStatus`, а ошибки ловят по `ApiError`.
+ * функции этого слоя, а ошибки ловят по `ApiError`.
  */
 
 import { API_URL } from "@/lib/site";
@@ -107,16 +107,13 @@ async function readBody(response: Response): Promise<unknown> {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function send<T>(path: string, init: RequestInit): Promise<T> {
   let response: Response;
 
   try {
     response = await fetch(`${API_URL}${path}`, {
-      // Витрина кешируется, деньги — никогда: ответ на донат и статус заказа
-      // обязаны быть свежими на каждый запрос.
-      cache: "no-store",
       ...init,
-      headers: { "Content-Type": "application/json", ...init?.headers },
+      headers: { "Content-Type": "application/json", ...init.headers },
     });
   } catch {
     // Текст исключения `fetch` («Failed to fetch») человеку ничего не говорит
@@ -131,6 +128,35 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return body as T;
+}
+
+/**
+ * Деньги: ответ на донат и статус заказа обязаны быть свежими на каждый
+ * запрос, поэтому `no-store` без исключений.
+ */
+function request<T>(path: string, init?: RequestInit): Promise<T> {
+  return send<T>(path, { cache: "no-store", ...init });
+}
+
+export interface ApiGetOptions {
+  /**
+   * Сколько секунд Next.js держит ответ в кеше данных (`next.revalidate`,
+   * модель кеширования без Cache Components — см. гайд
+   * `node_modules/next/dist/docs/01-app/02-guides/caching-without-cache-components.md`).
+   * Одинаковые GET с теми же опциями в одном серверном рендере Next.js
+   * ещё и склеивает в один запрос (мемоизация `fetch`).
+   */
+  readonly revalidate: number;
+}
+
+/**
+ * Витринное чтение: цифры сбора, рейтинги, лента, справочник, галерея.
+ * Кешируется коротко — при ставке на «поделиться» главная открывается
+ * пачками, и бэкенду незачем отвечать на каждое открытие.
+ * В браузере (`DonationsFeed` → «Показать ещё») опция `next` игнорируется.
+ */
+export function apiGet<T>(path: string, options: ApiGetOptions): Promise<T> {
+  return send<T>(path, { next: { revalidate: options.revalidate } });
 }
 
 /**

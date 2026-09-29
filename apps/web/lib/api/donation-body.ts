@@ -3,8 +3,8 @@
  *
  * Зачем отдельный модуль: на бэкенде `ValidationPipe` стоит с
  * `forbidNonWhitelisted`, то есть **любой** лишний ключ в объекте — 400.
- * Если тело собирать по месту в компоненте, первый же `channel` или `email`,
- * добавленный «на будущее», сломает приём денег. Здесь список полей закрыт
+ * Если тело собирать по месту в компоненте, первый же `email` или
+ * `recurrence`, добавленный «на будущее», сломает приём денег. Здесь список полей закрыт
  * и виден целиком.
  *
  * Функция чистая — её поведение проверяется без рендера.
@@ -12,9 +12,11 @@
 
 import { rublesToKopecks } from "@/lib/money";
 
-import type { CreateDonationBody, RegionSource } from "./types";
+import type { CreateDonationBody, DonationChannel, RegionSource } from "./types";
 
-/** Что знает форма. Шире DTO: `channel` в запрос пока не уходит (см. ниже). */
+export type { DonationChannel } from "./types";
+
+/** Что знает форма. Совпадает с DTO, кроме суммы в рублях — копейки считаются здесь. */
 export interface DonationDraft {
   /** Сумма в рублях, как её набрал человек. В копейки переводим здесь. */
   readonly amountRubles: number;
@@ -31,16 +33,13 @@ export interface DonationDraft {
   /** Honeypot: у человека всегда пустой. */
   readonly antispam: string;
   /**
-   * Онлайн или перевод по реквизитам.
-   *
-   * TODO(api): поля `channel` в `CreateDonationDto` пока нет — провайдер
-   * выбирается глобально через `PAYMENT_PROVIDER`. Отправка этого значения
-   * сейчас даёт 400; контракт расширения описан в docs/api-gaps.md.
+   * Онлайн или перевод по реквизитам. Уходит в тело: провайдер выбирается
+   * по донату — `transfer` всегда ведёт на реквизиты, даже при активной
+   * Robokassa; `online` при выключенном агрегаторе бэкенд отклоняет 400
+   * с просьбой перевести по реквизитам.
    */
   readonly channel: DonationChannel;
 }
-
-export type DonationChannel = "online" | "transfer";
 
 /** Тело собирается по шагам, поэтому внутри функции оно изменяемое. */
 type MutableDonationBody = {
@@ -62,6 +61,7 @@ export function buildCreateDonationBody(draft: DonationDraft): CreateDonationBod
   const body: MutableDonationBody = {
     amountKopecks: rublesToKopecks(draft.amountRubles),
     isAnonymous: draft.isAnonymous,
+    channel: draft.channel,
   };
 
   // Анонимный донат не несёт публичной подписи вообще: на бэкенде это CHECK

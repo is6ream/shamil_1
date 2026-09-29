@@ -13,7 +13,6 @@ import {
   MAX_METHOD_LENGTH,
   ROBOKASSA_CULTURE,
   ROBOKASSA_ORDER_SHP_PARAM,
-  ROBOKASSA_PAYMENT_URL,
 } from '../robokassa/robokassa.constants';
 import {
   buildInitSignatureSource,
@@ -127,7 +126,9 @@ export class RobokassaProvider implements PaymentProvider {
       this.payment.hashAlgorithm,
     );
 
-    const url = new URL(ROBOKASSA_PAYMENT_URL);
+    // Адрес из конфига: боевая Robokassa или локальный эмулятор. Подпись
+    // от адреса не зависит — эмулятор проверяет ровно ту же ссылку.
+    const url = new URL(this.payment.paymentUrl);
 
     url.searchParams.set('MerchantLogin', this.payment.merchantId);
     url.searchParams.set('OutSum', outSum);
@@ -199,6 +200,7 @@ export class RobokassaProvider implements PaymentProvider {
     }
 
     return {
+      provider: this.code,
       // Собственного id события Robokassa не присылает. Ключ идемпотентности —
       // номер счёта: Result URL вызывается только по успешной оплате, значит
       // повторная доставка — это всегда то же самое событие.

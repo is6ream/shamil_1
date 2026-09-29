@@ -12,6 +12,7 @@ import { RequisitesSection } from "@/components/sections/RequisitesSection";
 import { StatsGrid } from "@/components/sections/StatsGrid";
 import { SharePanel } from "@/components/share/SharePanel";
 import {
+  GALLERY_PLACEHOLDERS,
   HOME_REGIONS_LIMIT,
   getCampaign,
   getConstructionStages,
@@ -20,6 +21,8 @@ import {
   getRegions,
   getTopRegions,
 } from "@/lib/api/showcase";
+import type { FeedPage } from "@/lib/api/types";
+import { withFallback } from "@/lib/api/with-fallback";
 import { MOBILE_SECTIONS, SECTION_IDS } from "@/lib/content";
 
 import styles from "./page.module.css";
@@ -40,14 +43,25 @@ import styles from "./page.module.css";
  * Серверный компонент: витрина читается здесь и уходит вниз пропсами.
  * Клиентские только островки: форма, меню, аккордеон, копирование, share.
  */
+/**
+ * Перегенерация главной — не реже раза в 15 секунд: так же живут цифры
+ * сбора в `showcase.ts`. Значение дублируется здесь, чтобы главная
+ * обновлялась, даже если на `next build` бэкенд был недоступен.
+ */
+export const revalidate = 15;
+
+const EMPTY_FEED: FeedPage = { items: [], nextCursor: null };
+
 export default async function HomePage() {
+  // Бэкенд недоступен — страница всё равно рендерится: форма работает,
+  // вместо цифр «обновляем данные», пустые рейтинги не рисуются (with-fallback.ts).
   const [campaign, regions, topRegions, construction, gallery, feed] = await Promise.all([
-    getCampaign(),
-    getRegions(),
-    getTopRegions(),
+    withFallback(getCampaign(), null, "цифры сбора"),
+    withFallback(getRegions(), [], "справочник регионов"),
+    withFallback(getTopRegions(), [], "рейтинг регионов"),
     getConstructionStages(),
-    getGallery(),
-    getFeed(),
+    withFallback(getGallery(), GALLERY_PLACEHOLDERS, "галерея"),
+    withFallback(getFeed(), EMPTY_FEED, "лента поступлений"),
   ]);
 
   return (
@@ -66,7 +80,7 @@ export default async function HomePage() {
         </aside>
 
         <div className={styles.stats}>
-          <StatsGrid campaign={campaign} regionsCount={topRegions.length} />
+          {campaign === null ? null : <StatsGrid campaign={campaign} regionsCount={topRegions.length} />}
         </div>
 
         <div className={styles.about}>
@@ -103,7 +117,7 @@ export default async function HomePage() {
       </main>
 
       <SiteFooter />
-      <MobileDonateBar campaign={campaign} />
+      {campaign === null ? null : <MobileDonateBar campaign={campaign} />}
     </>
   );
 }

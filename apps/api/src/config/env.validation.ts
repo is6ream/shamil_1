@@ -14,6 +14,10 @@ import {
 } from 'class-validator';
 
 import {
+  ROBOKASSA_PAYMENT_URL,
+  ROBOKASSA_PRODUCTION_URL_PREFIX,
+} from '../payments/robokassa/robokassa.constants';
+import {
   ADMIN_TOKEN_MIN_LENGTH,
   DEFAULT_API_PORT,
   DEFAULT_THROTTLE_LIMIT,
@@ -190,6 +194,22 @@ export class EnvVars {
   @IsEnum(PaymentHashAlgorithm)
   PAYMENT_HASH_ALGORITHM: PaymentHashAlgorithm = PaymentHashAlgorithm.Md5;
 
+  /**
+   * Адрес страницы оплаты Robokassa. Меняется только ради локального
+   * эмулятора (`…/api/dev/robokassa/checkout`); в production обязан быть
+   * `https://auth.robokassa.ru/…` — см. `crossFieldErrors`.
+   */
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
+  PAYMENT_ROBOKASSA_URL: string = ROBOKASSA_PAYMENT_URL;
+
+  /**
+   * Локальный эмулятор страницы оплаты Robokassa: сквозная оплата без
+   * мерчант-аккаунта. Деньги не списываются. В production запрещён.
+   */
+  @envBoolean(false)
+  @IsBoolean()
+  PAYMENT_EMULATOR_ENABLED: boolean = false;
+
   // ─── Фискализация (54-ФЗ), см. TODO в constants.ts ─────────────────────────
 
   /**
@@ -230,20 +250,52 @@ export class EnvVars {
   ADMIN_API_TOKEN?: string;
 }
 
+/**
+ * Правила, связывающие несколько переменных. Декораторы class-validator
+ * проверяют поле по отдельности, а здесь цена ошибки — эмулятор, принимающий
+ * «оплаты» на боевом сайте, или ссылка оплаты, уводящая донатера не туда.
+ * Приложение с такой конфигурацией не стартует, а не деградирует молча.
+ */
+function crossFieldErrors(env: EnvVars): readonly string[] {
+  const errors: string[] = [];
+  const isProduction = env.NODE_ENV === NodeEnv.Production;
+
+  if (isProduction && env.PAYMENT_EMULATOR_ENABLED) {
+    errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор оплаты в production запрещён');
+  }
+
+  if (isProduction && !env.PAYMENT_ROBOKASSA_URL.startsWith(ROBOKASSA_PRODUCTION_URL_PREFIX)) {
+    errors.push(
+      `PAYMENT_ROBOKASSA_URL: в production допустим только ${ROBOKASSA_PRODUCTION_URL_PREFIX}…`,
+    );
+  }
+
+  if (env.PAYMENT_EMULATOR_ENABLED && env.PAYMENT_PROVIDER !== PaymentProviderCode.Robokassa) {
+    // Эмулятор проверяет подпись паролями Robokassa — без неё проверять нечем.
+    errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор работает только с PAYMENT_PROVIDER=robokassa');
+  }
+
+  if (env.PAYMENT_EMULATOR_ENABLED && env.PAYMENT_IS_TEST !== true) {
+    errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор требует PAYMENT_IS_TEST=true');
+  }
+
+  return errors;
+}
+
 export function validateEnv(raw: Record<string, unknown>): EnvVars {
   const parsed = plainToInstance(EnvVars, raw, {
     enableImplicitConversion: true,
     exposeDefaultValues: true,
   });
 
-  const errors = validateSync(parsed, { skipMissingProperties: false });
+  const fieldErrors = validateSync(parsed, { skipMissingProperties: false }).map(
+    (error) => `${error.property}: ${Object.values(error.constraints ?? {}).join(', ')}`,
+  );
+  // Межполевые правила имеют смысл, только когда сами поля уже разобраны.
+  const errors = fieldErrors.length > 0 ? fieldErrors : crossFieldErrors(parsed);
 
   if (errors.length > 0) {
-    const details = errors
-      .map((error) => `${error.property}: ${Object.values(error.constraints ?? {}).join(', ')}`)
-      .join('\n  ');
-
-    throw new Error(`Некорректные переменные окружения:\n  ${details}`);
+    throw new Error(`Некорректные переменные окружения:\n  ${errors.join('\n  ')}`);
   }
 
   return parsed;

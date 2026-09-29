@@ -1,27 +1,23 @@
 /**
- * Витринные данные: цель и собрано, рейтинги, лента, справочник регионов.
+ * Витринные данные: цель и собрано, рейтинги, лента, справочник регионов,
+ * галерея — из бэкенда (контракты в docs/api-gaps.md).
  *
- * ЭНДПОИНТОВ ПОД ЭТО ЕЩЁ НЕТ. Контракты согласованы и описаны в
- * docs/api-gaps.md; здесь они реализованы моками за тем же интерфейсом,
- * чтобы стыковка сводилась к замене тела функции — без единой правки
- * в компонентах.
- *
- * Правила, которые обязана сохранить боевая реализация:
+ * Правила, которые обязана сохранить реализация:
  *   • суммы остаются строками копеек — в базе это `BigInt`;
  *   • лента листается keyset-курсором по `(paid_at, id)`, не OFFSET;
- *   • функции остаются асинхронными.
+ *   • функции честно бросают `ApiError`: решение «что показать, если бэкенд
+ *     недоступен» принимает страница (`withFallback`), а не этот слой —
+ *     иначе «Показать ещё» в браузере не узнало бы об ошибке.
+ *
+ * Статикой остаются только ход строительства: это контент заказчика,
+ * а не таблица в БД.
  */
 
+import { apiGet } from "./client";
 import {
   FIXTURE_BUILD_PROGRESS,
-  FIXTURE_CAMPAIGN,
   FIXTURE_CONSTRUCTION,
-  FIXTURE_EMPTY_REGIONS_COUNT,
-  FIXTURE_FEED,
   FIXTURE_GALLERY,
-  FIXTURE_REGIONS,
-  FIXTURE_TOP_DONORS,
-  FIXTURE_TOP_REGIONS,
 } from "./showcase.fixtures";
 import type {
   BuildProgress,
@@ -32,6 +28,7 @@ import type {
   GalleryItem,
   Region,
   RegionRankRow,
+  TopRegionsResponse,
 } from "./types";
 
 /** Сколько поступлений отдаётся одной страницей ленты: шесть строк — макет v2. */
@@ -44,13 +41,24 @@ export const TOP_REGIONS_LIMIT = 10;
 export const HOME_REGIONS_LIMIT = 6;
 
 /**
- * Цифры сбора: общая цель, цель месяца, число платежей.
- *
- * TODO(api): GET {API_URL}/campaign
- * return apiGet<Campaign>("/campaign");
+ * Живые цифры: сумма, рейтинги, лента. 15 секунд — донатер, вернувшийся
+ * со «спасибо», видит свой платёж почти сразу, а бэкенд не отвечает
+ * на каждое открытие главной.
  */
+const LIVE_REVALIDATE_S = 15;
+
+/** Справочник регионов и галерея меняются редко — час. */
+const STATIC_REVALIDATE_S = 3600;
+
+/**
+ * Плашки галереи на случай, когда снимков нет или бэкенд недоступен:
+ * пустая сетка читается как сломанная страница.
+ */
+export const GALLERY_PLACEHOLDERS: readonly GalleryItem[] = FIXTURE_GALLERY;
+
+/** Цифры сбора: общая цель, цель месяца, число платежей. */
 export function getCampaign(): Promise<Campaign> {
-  return Promise.resolve(FIXTURE_CAMPAIGN);
+  return apiGet<Campaign>("/campaign", { revalidate: LIVE_REVALIDATE_S });
 }
 
 /**
@@ -58,44 +66,38 @@ export function getCampaign(): Promise<Campaign> {
  *
  * Два канала атрибуции — ссылка и селектор — вместо одного у референса,
  * где 93% денег не попали ни в одну строку рейтинга (CLAUDE.md).
- *
- * TODO(api): GET {API_URL}/regions
- * return apiGet<readonly Region[]>("/regions");
  */
 export function getRegions(): Promise<readonly Region[]> {
-  return Promise.resolve(FIXTURE_REGIONS);
+  return apiGet<readonly Region[]>("/regions", { revalidate: STATIC_REVALIDATE_S });
 }
 
 /**
- * Топ поддерживающих регионов и стран в одном списке.
- *
- * TODO(api): GET {API_URL}/regions/top
- * return apiGet<readonly RegionRankRow[]>("/regions/top");
+ * Один ответ на обе функции ниже. Второй вызов в том же серверном рендере
+ * сети не трогает: одинаковый GET с теми же опциями Next.js мемоизирует
+ * (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/fetch.md`,
+ * «Memoization»).
  */
-export function getTopRegions(): Promise<readonly RegionRankRow[]> {
-  return Promise.resolve(FIXTURE_TOP_REGIONS);
+function getTopRegionsResponse(): Promise<TopRegionsResponse> {
+  return apiGet<TopRegionsResponse>("/regions/top", { revalidate: LIVE_REVALIDATE_S });
+}
+
+/** Топ поддерживающих регионов и стран в одном списке. */
+export async function getTopRegions(): Promise<readonly RegionRankRow[]> {
+  return (await getTopRegionsResponse()).items;
 }
 
 /**
  * Сколько регионов справочника ещё без пожертвований. Показываем числом,
  * а не стеной пустых строк: пустая строка — вызов, 64 нуля подряд
  * читаются как «блок сломан».
- *
- * TODO(api): придёт полем ответа `GET /regions/top` — уточнить с бэкендом,
- * отдельный вызов ради одного числа не нужен.
  */
-export function getEmptyRegionsCount(): Promise<number> {
-  return Promise.resolve(FIXTURE_EMPTY_REGIONS_COUNT);
+export async function getEmptyRegionsCount(): Promise<number> {
+  return (await getTopRegionsResponse()).emptyCount;
 }
 
-/**
- * Топ донатеров — только снявшие анонимность сознательно.
- *
- * TODO(api): GET {API_URL}/donors/top
- * return apiGet<readonly DonorRankRow[]>("/donors/top");
- */
+/** Топ донатеров — только снявшие анонимность сознательно. */
 export function getTopDonors(): Promise<readonly DonorRankRow[]> {
-  return Promise.resolve(FIXTURE_TOP_DONORS);
+  return apiGet<readonly DonorRankRow[]>("/donors/top", { revalidate: LIVE_REVALIDATE_S });
 }
 
 /**
@@ -103,19 +105,17 @@ export function getTopDonors(): Promise<readonly DonorRankRow[]> {
  * а возвращает бэкенду как есть — иначе смена схемы пагинации потребует
  * правки клиента.
  *
- * TODO(api): GET {API_URL}/donations/feed?cursor=…
- * return apiGet<FeedPage>(`/donations/feed${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
+ * Кешируется только первая страница: продолжение запрашивает браузер
+ * («Показать ещё»), и там `next.revalidate` не действует.
  */
 export function getFeed(cursor?: string): Promise<FeedPage> {
-  const offset = cursor === undefined ? 0 : Number(cursor);
-  const start = Number.isNaN(offset) ? 0 : offset;
-  const items = FIXTURE_FEED.slice(start, start + FEED_PAGE_SIZE);
-  const nextOffset = start + items.length;
+  const query = new URLSearchParams({ limit: String(FEED_PAGE_SIZE) });
 
-  return Promise.resolve({
-    items,
-    nextCursor: nextOffset < FIXTURE_FEED.length ? String(nextOffset) : null,
-  });
+  if (cursor !== undefined) {
+    query.set("cursor", cursor);
+  }
+
+  return apiGet<FeedPage>(`/donations/feed?${query.toString()}`, { revalidate: LIVE_REVALIDATE_S });
 }
 
 /**
@@ -129,21 +129,20 @@ export function getBuildProgress(): Promise<BuildProgress> {
 
 /**
  * Ход строительства для таймлайна макета v2: семь этапов со статусом
- * и сметой. Как и `getBuildProgress`, в MVP это контент от заказчика.
- *
- * TODO(api): если этапы переедут в базу —
- * return apiGet<ConstructionTimeline>("/construction");
+ * и сметой. Как и `getBuildProgress`, в MVP это контент от заказчика —
+ * эндпоинта под него нет намеренно (docs/api-gaps.md §7).
  */
 export function getConstructionStages(): Promise<ConstructionTimeline> {
   return Promise.resolve(FIXTURE_CONSTRUCTION);
 }
 
 /**
- * Фотографии стройки. В базе под них есть `gallery_item`; эндпоинта пока нет,
- * да и самих фотографий тоже — блокер из CLAUDE.md.
- *
- * TODO(api): GET {API_URL}/gallery
+ * Фотографии стройки, хронологически с самых первых этапов (ТЗ, блок 6).
+ * Пока в базе нет ни одного снимка, показываем плашки с датами: пустая
+ * сетка читается как сломанная страница.
  */
-export function getGallery(): Promise<readonly GalleryItem[]> {
-  return Promise.resolve(FIXTURE_GALLERY);
+export async function getGallery(): Promise<readonly GalleryItem[]> {
+  const items = await apiGet<readonly GalleryItem[]>("/gallery", { revalidate: STATIC_REVALIDATE_S });
+
+  return items.length > 0 ? items : GALLERY_PLACEHOLDERS;
 }

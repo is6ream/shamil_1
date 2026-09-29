@@ -63,6 +63,8 @@ export const HERO = {
 export const COLLECTED = {
   label: "Собрано",
   updatedPrefix: "Обновлено",
+  /** Бэкенд недоступен: цифры появятся через несколько секунд, «0 ₽» не пишем. */
+  pending: "Обновляем данные сбора — цифры появятся через минуту",
 } as const;
 
 export const STATS = {

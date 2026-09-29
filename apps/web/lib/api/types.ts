@@ -16,6 +16,9 @@
    сверх этого списка — 400. Поэтому тип закрытый и тело собирается
    единственной функцией (lib/api/donation-body.ts).                      */
 
+/** Таб формы: онлайн или перевод по реквизитам. Зеркало `PAYMENT_CHANNELS` бэкенда. */
+export type DonationChannel = "online" | "transfer";
+
 /** Как регион попал в донат. Зеркало `PUBLIC_REGION_SOURCES` бэкенда. */
 export type RegionSource = "link" | "form";
 
@@ -36,6 +39,8 @@ export interface CreateDonationBody {
   readonly personalDataConsent?: boolean;
   /** Honeypot: скрытое поле, уходит пустым. */
   readonly antispam?: string;
+  /** Таб формы. Не передан — провайдер из `PAYMENT_PROVIDER` бэкенда. */
+  readonly channel?: DonationChannel;
 }
 
 /** Ответ на создание заказа. Статус доната он не подтверждает — только вебхук. */
@@ -61,8 +66,8 @@ export interface DonationStatusResponse {
 }
 
 /* ── Витринные данные ────────────────────────────────────────────────────
-   Эндпоинтов под них ещё НЕТ — контракты согласованы с бэкендом и описаны
-   в docs/api-gaps.md. Реализация сейчас на моках (lib/api/showcase.ts).   */
+   Первоисточник: apps/api/src/showcase/dto/showcase-response.dto.ts,
+   контракты описаны в docs/api-gaps.md. Вызовы — lib/api/showcase.ts.   */
 
 /** Цель месяца. Без неё общая шкала на старте показывает доли процента. */
 export interface MonthlyGoal {
@@ -106,8 +111,15 @@ export interface RegionRankRow {
   readonly slug: string;
   readonly name: string;
   readonly flagUrl: string | null;
+  /** Число платежей из региона, а не людей: ключа человека в публичных данных нет. */
   readonly donorsCount: number;
   readonly paidTotalKopecks: string;
+}
+
+/** `GET /regions/top`: строки рейтинга и число регионов без поступлений. */
+export interface TopRegionsResponse {
+  readonly items: readonly RegionRankRow[];
+  readonly emptyCount: number;
 }
 
 export interface DonorRankRow {

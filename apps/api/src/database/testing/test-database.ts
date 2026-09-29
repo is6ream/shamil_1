@@ -1,7 +1,10 @@
+import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 
+import type { AppConfig } from '../../config/configuration';
 import { PrismaClient } from '../../generated/prisma/client';
 import { DonationStatus, RegionType } from '../../generated/prisma/enums';
+import { PrismaService } from '../prisma.service';
 import { DB_TESTS_ENV_FLAG } from './global-setup';
 
 /**
@@ -42,6 +45,17 @@ export function createTestClient(): PrismaClient {
   });
 }
 
+/** Клиент в обёртке приложения — для тестов сервисов, которые ждут `PrismaService`. */
+export function createTestPrismaService(): PrismaService {
+  const url = process.env.TEST_DATABASE_URL;
+
+  if (url === undefined || url.length === 0) {
+    throw new Error('TEST_DATABASE_URL не задан');
+  }
+
+  return new PrismaService(new ConfigService<AppConfig, true>({ database: { url } }));
+}
+
 /**
  * TRUNCATE, а не DELETE: удалять оплаченные донаты запрещено триггером,
  * а TRUNCATE построчные триггеры не вызывает — как раз то, что нужно тестам.
@@ -53,10 +67,21 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   );
 }
 
-export async function seedFixtures(prisma: PrismaClient): Promise<TestFixtures> {
+export interface SeedFixturesOptions {
+  /**
+   * Слаг сбора. Витрина и создание доната ищут сбор по `CAMPAIGN_SLUG`,
+   * поэтому их тесты передают его сюда; тестам схемы слаг безразличен.
+   */
+  readonly campaignSlug?: string;
+}
+
+export async function seedFixtures(
+  prisma: PrismaClient,
+  options: SeedFixturesOptions = {},
+): Promise<TestFixtures> {
   const campaign = await prisma.campaign.create({
     data: {
-      slug: 'shamil-test',
+      slug: options.campaignSlug ?? 'shamil-test',
       title: 'Мечеть «Шамиль» (тест)',
       goalKopecks: 24_000_000_000n,
       monthlyGoals: {

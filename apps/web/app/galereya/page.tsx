@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 
 import { SimplePage } from "@/components/layout/SimplePage";
-import { getGallery } from "@/lib/api/showcase";
+import { GALLERY_PLACEHOLDERS, getGallery } from "@/lib/api/showcase";
+import { withFallback } from "@/lib/api/with-fallback";
 import { GALLERY_PAGE, PAGES } from "@/lib/content";
 
 import styles from "./page.module.css";
@@ -16,8 +17,11 @@ export const metadata: Metadata = {
  * этапов (требование ТЗ). Пока снимков нет, стоят плашки с подписью
  * и датой: пустая сетка читается как сломанная страница.
  */
+/** Снимки добавляются редко — страница перегенерируется раз в час. */
+export const revalidate = 3600;
+
 export default async function GalleryPage() {
-  const gallery = await getGallery();
+  const gallery = await withFallback(getGallery(), GALLERY_PLACEHOLDERS, "галерея");
 
   return (
     <SimplePage title={PAGES.gallery.title} lede={GALLERY_PAGE.lede}>

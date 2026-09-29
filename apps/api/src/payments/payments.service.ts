@@ -1,11 +1,9 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { MANUAL_CONFIRM_DEFAULT_METHOD, MANUAL_PROVIDER_CODE } from '../config/constants';
 import { PrismaService } from '../database/prisma.service';
 import { isEffectiveTransition } from '../donations/donation-status';
 import { DonationStatus } from '../generated/prisma/enums';
-import { PAYMENT_PROVIDER } from './payment-provider.interface';
-import type { PaymentProvider } from './payment-provider.interface';
 import type { ParsedWebhook, WebhookBody } from './payment-provider.types';
 import type {
   ApplyEventInput,
@@ -61,10 +59,7 @@ function toStoredPayload(body: WebhookBody): Record<string, string> {
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-    @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Применение проверенного колбэка.
@@ -79,13 +74,24 @@ export class PaymentsService {
   async applyWebhook(parsed: ParsedWebhook, body: WebhookBody): Promise<void> {
     const donation = await this.prisma.donation.findUnique({
       where: { invoiceNo: parsed.invoiceNo },
-      select: { id: true, amountKopecks: true },
+      select: { id: true, amountKopecks: true, provider: true },
     });
 
     if (donation === null) {
       await this.storeUnmatchedEvent(parsed, body);
 
       return;
+    }
+
+    if (donation.provider !== parsed.provider) {
+      // Подпись сошлась — деньги у агрегатора реально есть, и отказаться
+      // от них нельзя. Но донат создавался под другим провайдером (например,
+      // человек выбрал «Расчётный счёт»), и такое расхождение обязано быть
+      // видно сразу, а не при сверке выписки.
+      this.logger.warn(
+        `Донат ${donation.id} создан под «${donation.provider}», ` +
+          `а колбэк пришёл от «${parsed.provider}». Зачислено по колбэку.`,
+      );
     }
 
     if (donation.amountKopecks !== parsed.amountKopecks) {
@@ -100,7 +106,7 @@ export class PaymentsService {
 
     const outcome = await this.applyEvent({
       donationId: donation.id,
-      provider: this.provider.code,
+      provider: parsed.provider,
       providerEventId: parsed.providerEventId,
       status: parsed.status,
       amountKopecks: parsed.amountKopecks,
@@ -279,7 +285,7 @@ export class PaymentsService {
     try {
       await this.prisma.paymentEvent.create({
         data: {
-          provider: this.provider.code,
+          provider: parsed.provider,
           providerEventId: parsed.providerEventId,
           status: parsed.status,
           amountKopecks: parsed.amountKopecks,
