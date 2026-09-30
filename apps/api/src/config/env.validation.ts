@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsIn,
   IsInt,
+  IsOptional,
   IsString,
   IsUrl,
   Max,
@@ -22,6 +23,7 @@ import {
   DEFAULT_API_PORT,
   DEFAULT_THROTTLE_LIMIT,
   DEFAULT_THROTTLE_TTL_MS,
+  EMULATOR_LINK_SECRET_MIN_LENGTH,
   TAXATION_SYSTEMS,
   VAT_RATES,
 } from './constants';
@@ -30,6 +32,18 @@ import type { TaxationSystem, VatRate } from './constants';
 export enum NodeEnv {
   Development = 'development',
   Test = 'test',
+  Production = 'production',
+}
+
+/**
+ * Где запущено приложение. `NODE_ENV` отвечает за сборку и поведение библиотек,
+ * а стадия — за то, какие платёжные ограничения действуют. Разделены потому,
+ * что Vercel всегда отдаёт функции `NODE_ENV=production`, а демо-стенду нужен
+ * эмулятор оплаты. Только `demo` снимает запрет эмулятора в production.
+ */
+export enum DeployStage {
+  Local = 'local',
+  Demo = 'demo',
   Production = 'production',
 }
 
@@ -102,10 +116,24 @@ export class EnvVars {
   @IsEnum(NodeEnv)
   NODE_ENV: NodeEnv = NodeEnv.Development;
 
+  /** См. `DeployStage`. По умолчанию — локальный запуск. */
+  @IsEnum(DeployStage)
+  DEPLOY_STAGE: DeployStage = DeployStage.Local;
+
   @IsInt()
   @Min(MIN_PORT)
   @Max(MAX_PORT)
   API_PORT: number = DEFAULT_API_PORT;
+
+  /**
+   * Порт, который назначает хостинг (Vercel, PaaS). Если задан, приоритетнее
+   * `API_PORT`; локально его нет, и поведение не меняется.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(MIN_PORT)
+  @Max(MAX_PORT)
+  PORT?: number;
 
   /** Строка подключения к PostgreSQL. Секрет — только через окружение. */
   @IsString()
@@ -210,6 +238,16 @@ export class EnvVars {
   @IsBoolean()
   PAYMENT_EMULATOR_ENABLED: boolean = false;
 
+  /**
+   * HMAC-ключ ссылок сценариев эмулятора. Без него ключ случайный на каждый
+   * запуск процесса — локально это нормально, а в serverless разные инстансы
+   * и холодный старт превращают ссылку «Оплатить» в «ссылка недействительна».
+   */
+  @IsOptional()
+  @IsString()
+  @MinLength(EMULATOR_LINK_SECRET_MIN_LENGTH)
+  PAYMENT_EMULATOR_LINK_SECRET?: string;
+
   // ─── Фискализация (54-ФЗ), см. TODO в constants.ts ─────────────────────────
 
   /**
@@ -258,7 +296,10 @@ export class EnvVars {
  */
 function crossFieldErrors(env: EnvVars): readonly string[] {
   const errors: string[] = [];
-  const isProduction = env.NODE_ENV === NodeEnv.Production;
+  // Демо-стенд — единственное исключение из запретов production: эмулятор
+  // там и есть способ оплаты. Любая другая стадия при NODE_ENV=production
+  // проверяется ровно как боевой сайт.
+  const isProduction = env.NODE_ENV === NodeEnv.Production && env.DEPLOY_STAGE !== DeployStage.Demo;
 
   if (isProduction && env.PAYMENT_EMULATOR_ENABLED) {
     errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор оплаты в production запрещён');

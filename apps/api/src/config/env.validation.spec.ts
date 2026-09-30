@@ -1,5 +1,5 @@
 import { configuration } from './configuration';
-import { NodeEnv, PaymentProviderCode, validateEnv } from './env.validation';
+import { DeployStage, NodeEnv, PaymentProviderCode, validateEnv } from './env.validation';
 
 /**
  * Конфиг платежей проверяется тестом, а не доверием, по одной причине:
@@ -223,6 +223,65 @@ describe('эмулятор оплаты и адрес Robokassa', () => {
     expect(act).toThrow(/эмулятор требует PAYMENT_IS_TEST=true/);
   });
 
+  test('в production без демо-стадии эмулятор с адресом эмулятора не стартует', () => {
+    // Act
+    const act = (): unknown => validateEnv({ ...EMULATOR_ENV, ...PRODUCTION_ENV });
+
+    // Assert
+    expect(act).toThrow(/эмулятор оплаты в production запрещён/);
+  });
+
+  test('DEPLOY_STAGE=production не снимает запреты', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({ ...EMULATOR_ENV, ...PRODUCTION_ENV, DEPLOY_STAGE: DeployStage.Production });
+
+    // Assert
+    expect(act).toThrow(/эмулятор оплаты в production запрещён/);
+  });
+
+  test('демо-стенд: production + эмулятор + DEPLOY_STAGE=demo стартует', () => {
+    // Act
+    const env = validateEnv({ ...EMULATOR_ENV, ...PRODUCTION_ENV, DEPLOY_STAGE: DeployStage.Demo });
+
+    // Assert
+    expect(env.PAYMENT_EMULATOR_ENABLED).toBe(true);
+    expect(env.DEPLOY_STAGE).toBe(DeployStage.Demo);
+  });
+
+  test('в production адрес эмулятора без демо-стадии отвергается', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({ ...PRODUCTION_ENV, PAYMENT_ROBOKASSA_URL: EMULATOR_ENV.PAYMENT_ROBOKASSA_URL ?? '' });
+
+    // Assert
+    expect(act).toThrow(/PAYMENT_ROBOKASSA_URL/);
+  });
+
+  test('демо-стенд не отменяет обязательный ADMIN_API_TOKEN', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({
+        ...EMULATOR_ENV,
+        ...PRODUCTION_ENV,
+        ADMIN_API_TOKEN: undefined,
+        DEPLOY_STAGE: DeployStage.Demo,
+      });
+
+    // Assert
+    expect(act).toThrow(/ADMIN_API_TOKEN/);
+  });
+
+  test('неизвестная стадия не стартует', () => {
+    expect(() => validateEnv({ ...BASE_ENV, DEPLOY_STAGE: 'staging' })).toThrow(/DEPLOY_STAGE/);
+  });
+
+  test('короткий ключ ссылок эмулятора не стартует', () => {
+    expect(() => validateEnv({ ...EMULATOR_ENV, PAYMENT_EMULATOR_LINK_SECRET: 'short' })).toThrow(
+      /PAYMENT_EMULATOR_LINK_SECRET/,
+    );
+  });
+
   test('эмулятор без Robokassa не стартует — подпись проверять нечем', () => {
     // Act
     const act = (): unknown =>
@@ -281,6 +340,20 @@ describe('сборка конфига', () => {
     // Assert
     expect(config.publicUrls.apiUrl).toBe('https://mechetshamil.ru/api');
     expect(config.publicUrls.siteUrl).toBe('https://mechetshamil.ru');
+  });
+
+  test('PORT хостинга приоритетнее API_PORT, без него — API_PORT', () => {
+    expect(loadWith({ ...BASE_ENV, API_PORT: '4000', PORT: '8080' }).http.port).toBe(8080);
+    expect(loadWith({ ...BASE_ENV, API_PORT: '4000' }).http.port).toBe(4000);
+  });
+
+  test('стадия и ключ ссылок эмулятора попадают в конфиг', () => {
+    // Act
+    const config = loadWith({ ...ROBOKASSA_TEST_ENV, PAYMENT_EMULATOR_LINK_SECRET: 'k'.repeat(32) });
+
+    // Assert
+    expect(config.deployStage).toBe(DeployStage.Local);
+    expect(config.payment.emulatorLinkSecret).toBe('k'.repeat(32));
   });
 
   test('по умолчанию провайдер — ручной перевод, без секретов', () => {

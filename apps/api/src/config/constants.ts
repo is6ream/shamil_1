@@ -92,6 +92,9 @@ export const MAX_MANUAL_CONFIRM_KOPECKS = 24_000_000_000n;
  */
 export const ADMIN_TOKEN_MIN_LENGTH = 32;
 
+/** Минимальная длина HMAC-ключа ссылок эмулятора: те же 32 символа, что у админского токена. */
+export const EMULATOR_LINK_SECRET_MIN_LENGTH = 32;
+
 /** Код агрегатора РФ: СБП, SberPay, T-Pay и карты одним мерчант-аккаунтом. */
 export const ROBOKASSA_PROVIDER_CODE = 'robokassa';
 

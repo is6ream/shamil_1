@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
 import { API_GLOBAL_PREFIX } from './config/constants';
 import type { AppConfig } from './config/configuration';
-import { PaymentProviderCode } from './config/env.validation';
+import { DeployStage, PaymentProviderCode } from './config/env.validation';
 import { buildResultUrl } from './payments/robokassa/robokassa.constants';
 
 async function bootstrap(): Promise<void> {
@@ -20,6 +20,11 @@ async function bootstrap(): Promise<void> {
   const http = config.get('http', { infer: true });
 
   configureApp(app);
+
+  if (config.get('deployStage', { infer: true }) === DeployStage.Demo) {
+    // До listen: на serverless-хостинге строка после него может не успеть в лог.
+    Logger.warn('ДЕМО-СТЕНД: эмулятор оплаты разрешён в production, деньги не списываются', 'Bootstrap');
+  }
 
   await app.listen(http.port);
 

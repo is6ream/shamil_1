@@ -1,6 +1,6 @@
 import type { TaxationSystem, VatRate } from './constants';
 import { NodeEnv, validateEnv } from './env.validation';
-import type { EnvVars, PaymentHashAlgorithm, PaymentProviderCode } from './env.validation';
+import type { DeployStage, EnvVars, PaymentHashAlgorithm, PaymentProviderCode } from './env.validation';
 
 export interface HttpConfig {
   readonly port: number;
@@ -37,8 +37,13 @@ export interface PaymentConfig {
   readonly webhookSecret: string;
   /** Страница оплаты: боевая Robokassa или локальный эмулятор. */
   readonly paymentUrl: string;
-  /** Локальный эмулятор оплаты. В production выключен валидацией. */
+  /** Локальный эмулятор оплаты. В production выключен валидацией (кроме демо-стенда). */
   readonly emulatorEnabled: boolean;
+  /**
+   * HMAC-ключ ссылок сценариев эмулятора. `undefined` — ключ случайный на запуск
+   * процесса: локально достаточно, в serverless ссылки не переживут холодный старт.
+   */
+  readonly emulatorLinkSecret?: string;
   readonly receipt: ReceiptConfig;
 }
 
@@ -62,6 +67,7 @@ export interface ThrottleConfig {
 export interface AppConfig {
   readonly nodeEnv: NodeEnv;
   readonly isProduction: boolean;
+  readonly deployStage: DeployStage;
   readonly http: HttpConfig;
   readonly database: DatabaseConfig;
   readonly throttle: ThrottleConfig;
@@ -105,6 +111,7 @@ function buildPaymentConfig(env: EnvVars): PaymentConfig {
     webhookSecret: (isTest ? env.PAYMENT_TEST_WEBHOOK_SECRET : env.PAYMENT_WEBHOOK_SECRET) ?? '',
     paymentUrl: env.PAYMENT_ROBOKASSA_URL,
     emulatorEnabled: env.PAYMENT_EMULATOR_ENABLED,
+    emulatorLinkSecret: env.PAYMENT_EMULATOR_LINK_SECRET,
     receipt: {
       enabled: env.PAYMENT_RECEIPT_ENABLED,
       taxationSystem: env.PAYMENT_RECEIPT_SNO,
@@ -124,8 +131,10 @@ export function configuration(): AppConfig {
   return {
     nodeEnv: env.NODE_ENV,
     isProduction: env.NODE_ENV === NodeEnv.Production,
+    deployStage: env.DEPLOY_STAGE,
     http: {
-      port: env.API_PORT,
+      // Порт хостинга приоритетнее: Vercel и PaaS назначают его сами.
+      port: env.PORT ?? env.API_PORT,
       corsOrigins: parseOrigins(env.CORS_ORIGINS),
     },
     database: {
