@@ -32,19 +32,11 @@
 
 /* Круглый знак справа от заголовка. На телефоне в макете его нет. */
 .mark {
-  display: grid;
+  display: block;
   flex: none;
-  place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.mark svg {
-  width: 24px;
-  height: 24px;
 }
 
 @media (max-width: 767px) {

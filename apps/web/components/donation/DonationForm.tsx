@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
-import { MosqueMark } from "@/components/layout/MosqueMark";
 import { Checkbox } from "@/components/ui/Checkbox";
 import field from "@/components/ui/field.module.css";
 import type { Region } from "@/lib/api/types";
@@ -54,9 +54,14 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
           <h2 className={styles.title}>{DONATION_FORM.title}</h2>
           <p className={styles.subtitle}>{DONATION_FORM.subtitle}</p>
         </div>
-        <span className={styles.mark} aria-hidden="true">
-          <MosqueMark />
-        </span>
+        <Image
+          className={styles.mark}
+          src="/brand/logo.svg"
+          alt=""
+          width={52}
+          height={52}
+          unoptimized
+        />
       </div>
 
       <form className={styles.form} onSubmit={form.submit} noValidate>
