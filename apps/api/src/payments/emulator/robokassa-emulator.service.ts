@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { waitUntil } from '@vercel/functions';
 
 import { API_GLOBAL_PREFIX } from '../../config/constants';
 import type { AppConfig, PaymentConfig } from '../../config/configuration';
@@ -28,7 +29,7 @@ import type { CheckoutView } from './emulator-page';
 import { signScenario, verifyScenario } from './scenario-link';
 import type { ScenarioOrder, SignedScenario } from './scenario-link';
 
-/** HMAC-ключ ссылок сценариев: 32 случайных байта на запуск процесса. */
+/** HMAC-ключ ссылок сценариев без `PAYMENT_EMULATOR_LINK_SECRET`: 32 случайных байта на запуск. */
 const LINK_KEY_BYTES = 32;
 
 /** Путь Fail URL — главная (docs/robokassa-activation.md, блок 4). */
@@ -45,9 +46,13 @@ export class RobokassaEmulatorService implements OnModuleInit, OnModuleDestroy {
   private readonly resultUrl: string;
   private readonly siteUrl: string;
   private readonly apiUrl: string;
-  private readonly linkKey = randomBytes(LINK_KEY_BYTES);
-  /** Отложенные колбэки: гасятся при остановке, чтобы не стрелять в закрытое приложение. */
-  private readonly timers = new Set<NodeJS.Timeout>();
+  private readonly linkKey: Buffer;
+  /**
+   * Отложенные колбэки: гасятся при остановке, чтобы не стрелять в закрытое
+   * приложение. Значение — завершение промиса, отданного в `waitUntil`: погашенный
+   * таймер обязан его отпустить, иначе функция висела бы до своего лимита.
+   */
+  private readonly timers = new Map<NodeJS.Timeout, () => void>();
 
   constructor(config: ConfigService<AppConfig, true>) {
     this.payment = config.get('payment', { infer: true });
@@ -57,11 +62,19 @@ export class RobokassaEmulatorService implements OnModuleInit, OnModuleDestroy {
     this.apiUrl = publicUrls.apiUrl;
     this.siteUrl = publicUrls.siteUrl;
     this.resultUrl = buildResultUrl(publicUrls.apiUrl, API_GLOBAL_PREFIX);
+    this.linkKey =
+      this.payment.emulatorLinkSecret === undefined
+        ? randomBytes(LINK_KEY_BYTES)
+        : Buffer.from(this.payment.emulatorLinkSecret, 'utf8');
   }
 
   onModuleInit(): void {
     this.logger.warn('ЭМУЛЯТОР ОПЛАТЫ ВКЛЮЧЁН — деньги не списываются');
     this.logger.warn(`Колбэки эмулятора уходят на ${this.resultUrl}`);
+
+    if (this.payment.emulatorLinkSecret === undefined) {
+      this.logger.warn('PAYMENT_EMULATOR_LINK_SECRET не задан — ссылки эмулятора живут до перезапуска процесса');
+    }
 
     const checkoutUrl = buildEmulatorCheckoutUrl(this.apiUrl);
 
@@ -73,8 +86,9 @@ export class RobokassaEmulatorService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
-    for (const timer of this.timers) {
+    for (const [timer, release] of this.timers) {
       clearTimeout(timer);
+      release();
     }
 
     this.timers.clear();
@@ -129,18 +143,30 @@ export class RobokassaEmulatorService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** Отложенный колбэк: браузер ответа не ждёт, ошибки таймера логируются. */
+  /**
+   * Отложенный колбэк: браузер ответа не ждёт, ошибки таймера логируются.
+   *
+   * На Vercel функция может замёрзнуть сразу после ответа, и таймер не
+   * сработает никогда. `waitUntil` держит её живой до конца колбэка;
+   * вне Vercel он ничего не делает, и локально работает обычный таймер.
+   */
   private schedule(order: ScenarioOrder, options: CallbackOptions, delayMs: number): void {
-    const timer = setTimeout(() => {
-      this.timers.delete(timer);
-      this.sendCallback(order, options).catch((error: unknown) => {
-        this.logger.error(
-          `Отложенный колбэк по счёту ${order.invId} упал: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      });
-    }, delayMs);
+    const pending = new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        this.timers.delete(timer);
+        this.sendCallback(order, options)
+          .catch((error: unknown) => {
+            this.logger.error(
+              `Отложенный колбэк по счёту ${order.invId} упал: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          })
+          .finally(resolve);
+      }, delayMs);
 
-    this.timers.add(timer);
+      this.timers.set(timer, resolve);
+    });
+
+    waitUntil(pending);
     this.logger.log(`Колбэк по счёту ${order.invId} уйдёт через ${delayMs / 1000} с`);
   }
 

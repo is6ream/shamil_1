@@ -8,6 +8,7 @@ import { RobokassaProvider } from '../providers/robokassa.provider';
 import { buildCallbackBody, buildSuccessParams } from './callback-body';
 import { CheckoutRejectedError, parseCheckoutRequest } from './checkout-request';
 import { EMULATOR_PAYER_EMAIL } from './emulator.constants';
+import { RobokassaEmulatorService } from './robokassa-emulator.service';
 import { escapeHtml, renderCheckoutPage } from './emulator-page';
 import { ScenarioLinkError, signScenario, verifyScenario } from './scenario-link';
 
@@ -210,6 +211,61 @@ describe('эмулятор: ссылки сценариев', () => {
 
   test('устаревшая ссылка — отказ', () => {
     expect(() => verifyScenario(key, signScenario(key, { ...payload, expiresAt: 1 }))).toThrow(/устарела/);
+  });
+});
+
+describe('эмулятор: ключ ссылок из окружения', () => {
+  const SITE_URL = 'https://shamil-web.example';
+
+  function serviceWith(emulatorLinkSecret?: string): RobokassaEmulatorService {
+    return new RobokassaEmulatorService(
+      new ConfigService<AppConfig, true>({
+        payment: { ...PAYMENT, emulatorLinkSecret },
+        publicUrls: { apiUrl: 'https://shamil-api.example', siteUrl: SITE_URL },
+      }),
+    );
+  }
+
+  /** Ссылка «Отказаться»: сценарий без колбэка, сеть в тесте не нужна. */
+  function refuseLink(service: RobokassaEmulatorService): { p: string; s: string } {
+    const html = service.renderCheckout(checkoutQuery('md5'));
+    const href = /href="([^"]+)">Отказаться от оплаты/.exec(html)?.[1];
+
+    if (href === undefined) {
+      throw new Error('На странице эмулятора нет ссылки «Отказаться от оплаты»');
+    }
+
+    const url = new URL(href.replaceAll('&amp;', '&'));
+
+    return { p: url.searchParams.get('p') ?? '', s: url.searchParams.get('s') ?? '' };
+  }
+
+  test('ссылку одного инстанса принимает другой с тем же секретом', async () => {
+    // Arrange: два инстанса serverless-функции или холодный старт
+    const secret = 'a'.repeat(32);
+    const signed = refuseLink(serviceWith(secret));
+
+    // Act
+    const redirect = await serviceWith(secret).runScenario(signed);
+
+    // Assert
+    expect(redirect).toBe(`${SITE_URL}/`);
+  });
+
+  test('инстанс с другим секретом ссылку отклоняет', async () => {
+    // Arrange
+    const signed = refuseLink(serviceWith('a'.repeat(32)));
+
+    // Act & Assert
+    await expect(serviceWith('b'.repeat(32)).runScenario(signed)).rejects.toThrow(ScenarioLinkError);
+  });
+
+  test('без секрета ключ случайный: ссылка не переживает перезапуск', async () => {
+    // Arrange
+    const signed = refuseLink(serviceWith());
+
+    // Act & Assert
+    await expect(serviceWith().runScenario(signed)).rejects.toThrow(ScenarioLinkError);
   });
 });
 
