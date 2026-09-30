@@ -1,0 +1,34 @@
+# Что НЕ загружается на Vercel при `vercel deploy` из корня (docs/deploy-vercel-demo.md).
+# Vercel CLI не читает .gitignore, поэтому секреты и локальный мусор
+# перечислены здесь явно. Зависимости Vercel ставит сам по package-lock.json.
+
+# секреты и локальное окружение
+.env
+.env.*
+!.env.example
+
+# зависимости и артефакты сборки
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/*.tsbuildinfo
+apps/api/src/generated
+
+# локальные артефакты, документы и инструменты
+.git
+.claude
+**/.claude
+.worktrees
+Claude outputs
+.agents
+**/.agents
+.windsurf
+**/.windsurf
+**/skills-lock.json
+.docker-data
+uploads
+coverage
+docs
+scripts
+roadmap.md
