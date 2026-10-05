@@ -1,10 +1,23 @@
 import { ValidationPipe } from '@nestjs/common';
-import type { INestApplication } from '@nestjs/common';
+import type { INestApplication, ValidationPipeOptions } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 
 import { API_GLOBAL_PREFIX } from './config/constants';
 import type { AppConfig } from './config/configuration';
+
+/**
+ * Опции глобального `ValidationPipe`. `forbidNonWhitelisted` — не косметика:
+ * лишний ключ в теле (например, периодичность от старого клиента) даёт 400,
+ * а не молча отбрасывается. Пожертвования только разовые, и клиент должен
+ * узнать об этом, а не думать, что оформил подписку.
+ */
+export const VALIDATION_PIPE_OPTIONS: ValidationPipeOptions = {
+  whitelist: true,
+  forbidNonWhitelisted: true,
+  transform: true,
+  transformOptions: { enableImplicitConversion: true },
+};
 
 /**
  * Настройка HTTP-слоя приложения. Одна функция на `main.ts` и сквозные тесты:
@@ -18,14 +31,7 @@ export function configureApp(app: INestApplication): void {
   app.use(helmet());
   app.enableCors({ origin: [...http.corsOrigins], credentials: true });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
 
   app.enableShutdownHooks();
 }

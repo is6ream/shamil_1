@@ -21,18 +21,12 @@ interface Stat {
   readonly label: string;
 }
 
-/**
- * Сетка 2×2 под рендером (макет v2). Ячейка без данных не показывается:
- * «0 человек помогают каждый месяц» читается как провал.
- */
+/** Строка счётчиков сбора под рендером (макет v2). */
 export function StatsGrid({ campaign, regionsCount }: Props) {
   const stats: readonly Stat[] = [
     { value: kopecksToRubDisplay(campaign.collectedKopecks), label: STATS.collected },
     { value: formatCount(campaign.donationsCount), label: STATS.donations },
     { value: formatCount(regionsCount), label: STATS.regions },
-    ...(campaign.monthlyDonorsCount === null
-      ? []
-      : [{ value: formatCount(campaign.monthlyDonorsCount), label: STATS.monthlyDonors }]),
   ];
 
   return (

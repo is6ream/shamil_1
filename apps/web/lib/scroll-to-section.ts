@@ -2,9 +2,10 @@ import { SECTION_IDS } from "@/lib/content";
 
 /**
  * Первый контрол формы доната — на него ставит фокус кнопка «Помочь».
- * Выбранная радиокнопка «Как часто»: с неё начинается форма.
+ * Выбранный пресет суммы: с него начинается форма. Если человек ввёл
+ * свою сумму и пресет не выбран — поле суммы.
  */
-const DONATION_FIRST_CONTROL = 'input[name="recurrence"]:checked';
+const DONATION_FIRST_CONTROL = 'input[name="amount-preset"]:checked, input[name="amount"]';
 
 /**
  * Событие «секцию нужно показать»: на телефоне секции свёрнуты в аккордеон

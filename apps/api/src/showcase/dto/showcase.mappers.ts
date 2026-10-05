@@ -54,7 +54,6 @@ export function toCampaignResponse(
     donationsCount: stats?.paidCount ?? 0,
     lastPaidAt: stats?.lastPaidAt?.toISOString() ?? null,
     monthlyGoal: monthlyGoal === null ? null : toMonthlyGoalResponse(monthlyGoal),
-    monthlyDonorsCount: null,
   };
 }
 

@@ -85,14 +85,6 @@ export interface Campaign {
   readonly lastPaidAt: string | null;
   /** `null`, пока заказчик не назвал сумму и период (открытый вопрос). */
   readonly monthlyGoal: MonthlyGoal | null;
-  /**
-   * Сколько человек жертвуют ежемесячно — строка статистики макета v2.
-   * `null`, пока автоплатежа нет (вне MVP): ячейку тогда не показываем,
-   * «0 человек помогают каждый месяц» читается как провал.
-   *
-   * TODO(api): добавить в `GET /campaign` вместе с автоплатежом.
-   */
-  readonly monthlyDonorsCount: number | null;
 }
 
 /** Двухуровневый справочник: страна → субъект (CLAUDE.md, «Справочник»). */

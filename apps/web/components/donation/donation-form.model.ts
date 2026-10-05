@@ -28,16 +28,6 @@ export const AMOUNT_PRESETS_RUBLES = [100, 500, 1000, 5000] as const;
  */
 export type OnlineMethodId = "sbp" | "card" | "sberpay" | "tpay";
 
-/**
- * Как часто жертвовать. Живёт только в состоянии формы: автоплатежа в MVP
- * нет, и поля `recurrence` в `CreateDonationDto` тоже — отправка дала бы
- * 400 от `forbidNonWhitelisted`. Любой выбор сейчас проходит разовым
- * пожертвованием, форма честно об этом пишет.
- *
- * TODO(api): регулярные платежи — токенизация карты у Robokassa.
- */
-export type Recurrence = "once" | "daily" | "weekly" | "monthly";
-
 export interface DonationFormState {
   /** Онлайн или перевод по реквизитам. Уходит в запрос полем `channel`. */
   readonly channel: DonationChannel;
@@ -46,7 +36,6 @@ export interface DonationFormState {
   /** Выбранный пресет либо `null`, если сумма своя. */
   readonly selectedPreset: number | null;
   readonly onlineMethod: OnlineMethodId;
-  readonly recurrence: Recurrence;
   readonly isAnonymous: boolean;
   readonly donorName: string;
   readonly phone: string;
@@ -89,7 +78,6 @@ export const INITIAL_FORM_STATE: DonationFormState = {
   amountInput: String(MIN_DONATION_RUBLES),
   selectedPreset: MIN_DONATION_RUBLES,
   onlineMethod: "sbp",
-  recurrence: "once",
   // Включена по умолчанию: садака — скрытое поклонение (блок 9 ТЗ).
   isAnonymous: true,
   donorName: "",

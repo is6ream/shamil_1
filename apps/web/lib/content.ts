@@ -71,7 +71,6 @@ export const STATS = {
   collected: "собрано на стройку",
   donations: "пожертвований",
   regions: "регионов и стран",
-  monthlyDonors: "человек помогают каждый месяц",
 } as const;
 
 export interface ProjectFact {
@@ -141,14 +140,6 @@ export const HADITH_BAND = {
 export const DONATION_FORM = {
   title: "Внести вклад",
   subtitle: "Займёт меньше минуты",
-  recurrenceLegend: "Как часто",
-  recurrence: [
-    { id: "once", label: "Разово" },
-    { id: "daily", label: "Ежедневно" },
-    { id: "weekly", label: "Еженедельно" },
-    { id: "monthly", label: "Ежемесячно" },
-  ],
-  recurrenceHint: "Регулярные платежи скоро появятся. Сейчас пройдёт разовое пожертвование.",
   amountLegend: "Сумма",
   customAmountLabel: "Или своя сумма, ₽",
   customAmountPlaceholder: "Например, 2 500",

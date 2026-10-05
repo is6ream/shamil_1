@@ -14,7 +14,6 @@ import styles from "./DonationForm.module.css";
 import { selectValidAmount } from "./donation-form.model";
 import { DonorFields } from "./DonorFields";
 import { PaymentMethods } from "./PaymentMethods";
-import { RecurrenceToggle } from "./RecurrenceToggle";
 import { useDonationForm } from "./useDonationForm";
 
 interface Props {
@@ -65,13 +64,6 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
       </div>
 
       <form className={styles.form} onSubmit={form.submit} noValidate>
-        <RecurrenceToggle
-          value={state.recurrence}
-          onChange={(recurrence) => {
-            form.patch({ recurrence });
-          }}
-        />
-
         <div>
           <AmountPresets selectedPreset={state.selectedPreset} onSelect={form.selectPreset} />
 

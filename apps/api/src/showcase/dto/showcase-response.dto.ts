@@ -30,8 +30,6 @@ export interface CampaignResponse {
    * сейчас промежуток между периодами). Не нули: «0 из 0» читается как поломка.
    */
   readonly monthlyGoal: MonthlyGoalResponse | null;
-  /** Ежемесячных жертвователей без автоплатежа не бывает — он вне MVP. */
-  readonly monthlyDonorsCount: number | null;
 }
 
 export interface RegionResponse {

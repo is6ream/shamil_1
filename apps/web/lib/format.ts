@@ -127,7 +127,6 @@ const PAYMENT_METHOD_LABELS: Readonly<Record<string, string>> = {
   sberpay: "SberPay",
   tpay: "T-Pay",
   bank_transfer: "Перевод",
-  recurring: "Ежемесячно",
   cash: "Наличными",
 };
 

@@ -141,8 +141,8 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
           regionSlug: region.slug,
           regionSource: region.source,
           antispam: state.antispam,
-          // Канал выбирает провайдера на бэкенде. `recurrence` и
-          // `onlineMethod` в тело не уходят: в DTO их нет (вне MVP).
+          // Канал выбирает провайдера на бэкенде. `onlineMethod` в тело
+          // не уходит: в DTO его нет. Пожертвование всегда разовое.
           channel: state.channel,
         }),
       );

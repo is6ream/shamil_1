@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ER-диаграмма БД</title>
+<style>
+  :root { --bg:#f6f8fb; --fg:#0a3367; --muted:#4b5b73; --card:#ffffff; --line:#d5deea; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0b1626; --fg:#e6eefb; --muted:#9fb0c8; --card:#111f35; --line:#24364f; }
+  }
+  :root[data-theme="dark"] { --bg:#0b1626; --fg:#e6eefb; --muted:#9fb0c8; --card:#111f35; --line:#24364f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:1400px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  p { color:var(--muted); margin:0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; overflow:auto; }
+  .mermaid svg { max-width:none !important; height:auto; }
+  #err { color:#c0392b; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>ER-диаграмма БД mechetshamil.ru</h1>
+  <p>9 таблиц PostgreSQL по apps/api/prisma/schema.prisma и миграциям на 05.10.2026. Исходник: docs/db/er-diagram.md. Диаграмму можно прокручивать по горизонтали.</p>
+  <div class="card"><pre class="mermaid">
+erDiagram
+    campaign {
+        uuid id PK "gen_random_uuid()"
+        varchar slug UK "64"
+        varchar title "200"
+        bigint goal_kopecks "CHECK &gt; 0"
+        char currency "3, default RUB"
+        bigint min_donation_kopecks "default 10000"
+        boolean is_active "default true"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    campaign_stats {
+        uuid campaign_id PK, FK "1:1 с campaign"
+        bigint paid_total_kopecks "default 0, триггер"
+        int paid_count "default 0, триггер"
+        timestamptz last_paid_at "?"
+        timestamptz updated_at
+    }
+
+    campaign_monthly_goal {
+        uuid id PK
+        uuid campaign_id FK, UK "UK(campaign_id, period_start)"
+        date period_start UK
+        date period_end "EXCLUDE: периоды не пересекаются"
+        bigint goal_kopecks "CHECK &gt; 0"
+        bigint collected_kopecks "default 0, триггер"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    region {
+        uuid id PK
+        region_type type "enum: country | subject"
+        uuid parent_id FK "? субъект -&gt; страна"
+        char country_code UK "2, UK(country_code, code)"
+        varchar code UK "8, ? код субъекта"
+        varchar slug UK "32, сегмент URL"
+        varchar name "120"
+        varchar flag_url "500, ?"
+        int sort_order "default 100"
+        boolean is_active "default true"
+        boolean is_ranked "default true"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    region_stats {
+        uuid region_id PK, FK "1:1 с region"
+        bigint paid_total_kopecks "default 0, триггер"
+        int paid_count "default 0, триггер"
+        timestamptz last_paid_at "?"
+        timestamptz updated_at
+    }
+
+    donation {
+        uuid id PK "публичный order_id"
+        int invoice_no UK "SERIAL, InvId Robokassa"
+        uuid campaign_id FK
+        uuid region_id FK "? nullable намеренно"
+        donation_status status "enum: pending | paid | failed"
+        bigint amount_kopecks "сумма заказа, CHECK &gt; 0"
+        bigint paid_amount_kopecks "? из вебхука"
+        char charged_currency "3, default RUB"
+        bigint charged_amount_minor "?"
+        varchar provider UK "32, UK(provider, provider_payment_id)"
+        varchar method "32, ?"
+        varchar provider_payment_id UK "128, ?"
+        varchar donor_name "120, ? публичная подпись"
+        boolean is_anonymous "default true"
+        varchar region_source "16, ? link | form | admin"
+        uuid recurring_id "? резерв под автоплатёж"
+        timestamptz created_at
+        timestamptz updated_at
+        timestamptz paid_at "?"
+    }
+
+    donation_contact {
+        uuid donation_id PK, FK "1:1 с donation"
+        varchar phone_e164 "16, ? CHECK E.164"
+        varchar full_name "120, ?"
+        timestamptz personal_data_consent_at "NOT NULL"
+        inet consent_ip "?"
+        timestamptz created_at
+    }
+
+    payment_event {
+        uuid id PK
+        uuid donation_id FK "? пусто для неизвестного счёта"
+        varchar provider UK "32, UK(provider, provider_event_id)"
+        varchar provider_event_id UK "128, ключ идемпотентности"
+        donation_status status
+        bigint amount_kopecks "?"
+        jsonb payload "сырое тело, email скрыт"
+        timestamptz received_at
+        timestamptz applied_at "? пусто = дубль/без эффекта"
+    }
+
+    gallery_item {
+        uuid id PK
+        uuid campaign_id FK
+        varchar image_url "500"
+        varchar alt_text "200, ?"
+        varchar caption "300, ?"
+        date taken_on "?"
+        int width "?"
+        int height "?"
+        int sort_order "default 100"
+        boolean is_published "default true"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    campaign ||--o| campaign_stats : "витрина (CASCADE)"
+    campaign ||--o{ campaign_monthly_goal : "цели месяцев (CASCADE)"
+    campaign ||--o{ donation : "собирает (RESTRICT)"
+    campaign ||--o{ gallery_item : "фото стройки (CASCADE)"
+    region |o--o{ region : "страна -&gt; субъекты (RESTRICT)"
+    region ||--o| region_stats : "витрина рейтинга (CASCADE)"
+    region |o--o{ donation : "атрибуция (RESTRICT)"
+    donation ||--o| donation_contact : "ПДн (CASCADE)"
+    donation |o--o{ payment_event : "колбэки (RESTRICT)"
+</pre><div id="err"></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad:false, theme: dark ? "dark" : "default", er: { useMaxWidth:false } });
+  mermaid.run({ querySelector: ".mermaid" }).catch(e => { document.getElementById("err").textContent = "Ошибка рендера: " + e.message; });
+</script>
+</body>
+</html>

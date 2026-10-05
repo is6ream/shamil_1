@@ -23,7 +23,6 @@ describe('мапперы витрины', () => {
         donationsCount: 0,
         lastPaidAt: null,
         monthlyGoal: null,
-        monthlyDonorsCount: null,
       });
     });
 

@@ -334,12 +334,6 @@ select.input { appearance: none; cursor: pointer; padding-right: 42px;
   color: var(--bg);
 }
 .chip:has(:focus-visible) { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
-/* Вариант заявлен, но недоступен — например, автоплатёж вне MVP. Прятать
-   его нельзя: заказчик назвал автоплатёж одной из целей сайта, и пустое
-   место читалось бы как «забыли». */
-.chip[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
-.chip[aria-disabled="true"]:hover { border-color: var(--border); color: var(--text-strong); }
-.chip .tag { margin-left: 8px; font-size: var(--fs-micro); font-weight: 600; color: var(--accent-quiet); }
 
 /* Способ оплаты. СБП ставим первым: нулевая комиссия плательщику и оплата
    в два тапа — в живой ленте референса он лидирует. */
