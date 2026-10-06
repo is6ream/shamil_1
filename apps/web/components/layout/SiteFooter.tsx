@@ -6,7 +6,7 @@ import { ORGANIZATION, organizationDisplayName, toTelHref } from "@/lib/organiza
 import { BrandMark } from "./BrandMark";
 import styles from "./SiteFooter.module.css";
 
-const INFO_LINKS = [PAGES.privacy, PAGES.cookie, PAGES.reports] as const;
+const INFO_LINKS = [PAGES.privacy, PAGES.offer, PAGES.cookie, PAGES.reports] as const;
 
 /** На телефоне в макете только две ссылки из трёх. */
 const MOBILE_HIDDEN_HREF: string = PAGES.cookie.href;

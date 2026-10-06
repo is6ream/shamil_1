@@ -1,0 +1,55 @@
+.doc {
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  color: var(--text-strong);
+}
+
+.section + .section {
+  margin-top: var(--sp-10);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--fs-h3);
+}
+
+.paragraph {
+  margin: 0 0 var(--sp-3);
+}
+
+.bullets {
+  margin: 0 0 var(--sp-3);
+  padding-left: var(--sp-6);
+}
+
+.bullets li + li {
+  margin-top: var(--sp-1);
+}
+
+.clause {
+  display: grid;
+  grid-template-columns: 3.5em minmax(0, 1fr);
+  column-gap: var(--sp-2);
+}
+
+.clauseNumber {
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Вложенные пункты (3.1.1) уже одним отступом родителя. */
+.clauseBody > .clause {
+  grid-template-columns: 4em minmax(0, 1fr);
+}
+
+.clauseTitle {
+  margin: 0 0 var(--sp-3);
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .clause,
+  .clauseBody > .clause {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

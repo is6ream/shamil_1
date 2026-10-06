@@ -139,7 +139,7 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
               {DONATION_FORM.consentData}
             </Link>{" "}
             {DONATION_FORM.consentJoin}{" "}
-            <Link href={PAGES.paymentTerms.href} target="_blank" rel="noopener">
+            <Link href={PAGES.offer.href} target="_blank" rel="noopener">
               {DONATION_FORM.consentTerms}
             </Link>
           </Checkbox>

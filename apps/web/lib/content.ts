@@ -159,7 +159,7 @@ export const DONATION_FORM = {
   consentPrefix: "Согласен на",
   consentData: "обработку данных",
   consentJoin: "и",
-  consentTerms: "условия оплаты",
+  consentTerms: "условия публичной оферты",
   submit: "Пожертвовать",
   submitting: "Отправляем…",
   success: "Джазакаллаху хайран! Переходим на страницу оплаты…",
@@ -227,6 +227,7 @@ export const PAGES = {
   cookie: { href: "/cookie", title: "Использование cookie" },
   consent: { href: "/soglasie", title: "Согласие на обработку персональных данных" },
   paymentTerms: { href: "/usloviya-oplaty", title: "Условия оплаты" },
+  offer: { href: "/oferta", title: "Публичная оферта" },
   reports: { href: "/otchety", title: "Отчёты о расходах" },
   gallery: { href: "/galereya", title: "Фото и видео со стройки" },
 } as const;
