@@ -12,7 +12,7 @@
 
 import { rublesToKopecks } from "@/lib/money";
 
-import type { CreateDonationBody, DonationChannel, RegionSource } from "./types";
+import type { CreateDonationBody, DonationChannel, DonationUtm, RegionSource } from "./types";
 
 export type { DonationChannel } from "./types";
 
@@ -57,7 +57,10 @@ function trimmedOrUndefined(value: string): string | undefined {
  * `""` — это присланное значение, и для `fullName` оно создало бы строку
  * персональных данных на пустом месте.
  */
-export function buildCreateDonationBody(draft: DonationDraft): CreateDonationBody {
+export function buildCreateDonationBody(
+  draft: DonationDraft,
+  attribution: DonationUtm | null = null,
+): CreateDonationBody {
   const body: MutableDonationBody = {
     amountKopecks: rublesToKopecks(draft.amountRubles),
     isAnonymous: draft.isAnonymous,
@@ -103,6 +106,11 @@ export function buildCreateDonationBody(draft: DonationDraft): CreateDonationBod
   // и тогда `@IsEmpty()` на бэкенде отклоняет запрос. Подчистив значение
   // здесь, мы бы аккуратно провели бота через проверку.
   body.antispam = draft.antispam;
+
+  // Атрибуция — только если есть что передать: пустой объект в теле — шум.
+  if (attribution !== null && Object.keys(attribution).length > 0) {
+    body.utm = attribution;
+  }
 
   return body;
 }

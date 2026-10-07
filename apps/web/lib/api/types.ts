@@ -22,6 +22,17 @@ export type DonationChannel = "online" | "transfer";
 /** Как регион попал в донат. Зеркало `PUBLIC_REGION_SOURCES` бэкенда. */
 export type RegionSource = "link" | "form";
 
+/** Атрибуция first-touch. Зеркало `DonationUtmDto` бэкенда. */
+export interface DonationUtm {
+  readonly source?: string;
+  readonly medium?: string;
+  readonly campaign?: string;
+  readonly content?: string;
+  readonly term?: string;
+  readonly referrer?: string;
+  readonly landingPage?: string;
+}
+
 export interface CreateDonationBody {
   /** Целое число копеек, 10 000…1 000 000 000 (100 ₽ … 10 000 000 ₽). */
   readonly amountKopecks: number;
@@ -41,6 +52,8 @@ export interface CreateDonationBody {
   readonly antispam?: string;
   /** Таб формы. Не передан — провайдер из `PAYMENT_PROVIDER` бэкенда. */
   readonly channel?: DonationChannel;
+  /** UTM-метки первого захода. Не передаются, если меток нет. */
+  readonly utm?: DonationUtm;
 }
 
 /** Ответ на создание заказа. Статус доната он не подтверждает — только вебхук. */

@@ -204,6 +204,18 @@ model Donation {
   /// 'admin'. У референса атрибуция была ~7%, и понять это можно было только так.
   regionSource String? @map("region_source") @db.VarChar(16)
 
+  /// Атрибуция first-touch: метки первого захода на сайт (cookie на 30 дней).
+  /// Все поля необязательны — донат без меток обязан проходить, как и без региона.
+  utmSource   String? @map("utm_source") @db.VarChar(128)
+  utmMedium   String? @map("utm_medium") @db.VarChar(128)
+  utmCampaign String? @map("utm_campaign") @db.VarChar(128)
+  utmContent  String? @map("utm_content") @db.VarChar(128)
+  utmTerm     String? @map("utm_term") @db.VarChar(128)
+  /// Внешний Referer первого захода. Свой домен сюда не пишется.
+  referrer    String? @db.VarChar(512)
+  /// Путь страницы первого захода: `/02/`, `/?utm_source=…` без домена.
+  landingPage String? @map("landing_page") @db.VarChar(512)
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   paidAt    DateTime? @map("paid_at") @db.Timestamptz(3)
@@ -220,6 +232,8 @@ model Donation {
   @@index([regionId, status])
   /// Топ донатеров: только status=paid и is_anonymous=false.
   @@index([status, isAnonymous, paidAmountKopecks(sort: Desc)])
+  /// UTM-отчёт админки: разбивка оплаченных донатов по источнику и кампании.
+  @@index([status, utmSource, utmCampaign])
   @@map("donation")
 }
 

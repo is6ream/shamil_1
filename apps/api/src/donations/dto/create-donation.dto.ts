@@ -4,12 +4,14 @@ import {
   IsEmpty,
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
   Max,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
 
 import {
@@ -19,6 +21,7 @@ import {
   PUBLIC_REGION_SOURCES,
 } from '../../config/constants';
 import type { PaymentChannel, PublicRegionSource } from '../../config/constants';
+import { DonationUtmDto } from './donation-utm.dto';
 
 /** Слаг региона: тот же формат, что и CHECK `region_slug_format` в БД. */
 const REGION_SLUG_PATTERN = /^[a-z0-9-]+$/;
@@ -104,6 +107,16 @@ export class CreateDonationDto {
   @IsOptional()
   @IsIn(PAYMENT_CHANNELS)
   channel?: PaymentChannel;
+
+  /**
+   * UTM-метки, Referer и страница первого захода (first-touch, cookie на 30 дней).
+   * Необязательны: донат без атрибуции проходит так же, как без региона.
+   */
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => DonationUtmDto)
+  utm?: DonationUtmDto;
 
   /**
    * Honeypot против ботов: поле скрыто в вёрстке, человек его не заполняет.

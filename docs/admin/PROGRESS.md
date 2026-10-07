@@ -5,7 +5,7 @@
 | # | Шаг | Статус | Коммит | Примечание |
 | --- | --- | --- | --- | --- |
 | 0 | Анализ, фикс `.gitignore` | done | см. `git log --grep "docs(admin): анализ"` | |
-| 1 | Robokassa + UTM | todo | | |
+| 1 | Robokassa + UTM | done | см. `git log --grep "feat(payments): UTM"` | Robokassa по аудиту без изменений, см. ANALYSIS §3 |
 | 2 | Auth, роли | todo | | |
 | 3 | Audit log | todo | | |
 | 4 | Медиатека + StorageService | todo | | |

@@ -123,6 +123,47 @@ describeDatabase('создание доната', () => {
     expect(stored.regionSource).toBe('link');
   });
 
+  test('UTM-метки первого захода сохраняются в донате', async () => {
+    // Act
+    const created = await donations.create(
+      dto({
+        utm: {
+          source: 'vk',
+          medium: 'social',
+          campaign: 'рамадан-2026',
+          content: '  ',
+          referrer: 'https://vk.com/wall-1_2',
+          landingPage: '/02/?utm_source=vk',
+        },
+      }),
+    );
+
+    // Assert
+    const stored = await prisma.donation.findUniqueOrThrow({ where: { id: created.orderId } });
+
+    expect(stored).toMatchObject({
+      utmSource: 'vk',
+      utmMedium: 'social',
+      utmCampaign: 'рамадан-2026',
+      // Пустая метка — это «метки не было», а не пустая строка в отчёте
+      utmContent: null,
+      utmTerm: null,
+      referrer: 'https://vk.com/wall-1_2',
+      landingPage: '/02/?utm_source=vk',
+    });
+  });
+
+  test('донат без меток проходит с пустой атрибуцией', async () => {
+    // Act
+    const created = await donations.create(dto());
+
+    // Assert
+    const stored = await prisma.donation.findUniqueOrThrow({ where: { id: created.orderId } });
+
+    expect(stored.utmSource).toBeNull();
+    expect(stored.landingPage).toBeNull();
+  });
+
   test('неизвестный регион не роняет донат: платёж важнее статистики', async () => {
     // Act
     const created = await donations.create(dto({ regionSlug: 'несуществующий-регион' }));

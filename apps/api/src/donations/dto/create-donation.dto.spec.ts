@@ -40,3 +40,52 @@ describe('тело создания доната', () => {
     );
   });
 });
+
+describe('UTM-атрибуция в теле доната', () => {
+  test('корректные метки, Referer и страница входа проходят', async () => {
+    // Act
+    const dto = await transform({
+      ...VALID_BODY,
+      utm: {
+        source: 'vk',
+        medium: 'cpc',
+        campaign: 'рамадан 2026',
+        content: 'banner_1',
+        term: 'мечеть+уфа',
+        referrer: 'https://vk.com/feed',
+        landingPage: '/02/?utm_source=vk',
+      },
+    });
+
+    // Assert
+    expect(dto).toBeInstanceOf(CreateDonationDto);
+  });
+
+  test.each([
+    ['source', '<script>'],
+    ['campaign', 'x'.repeat(129)],
+    ['medium', 'a"b'],
+    ['referrer', 'javascript:alert(1)'],
+    ['landingPage', 'https://evil.example/'],
+    ['landingPage', '/путь с пробелом'],
+  ])('недопустимое значение %s отклоняется с 400', async (key, value) => {
+    // Act & Assert
+    await expect(transform({ ...VALID_BODY, utm: { [key]: value } })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
+  test('лишнее поле внутри utm отклоняется: список меток закрыт', async () => {
+    // Act & Assert
+    await expect(
+      transform({ ...VALID_BODY, utm: { source: 'vk', gclid: 'abc' } }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  test('utm не объект — 400', async () => {
+    // Act & Assert
+    await expect(transform({ ...VALID_BODY, utm: 'vk' })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+});

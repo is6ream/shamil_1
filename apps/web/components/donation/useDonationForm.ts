@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 
 import { ApiError, createDonation } from "@/lib/api/client";
 import { buildCreateDonationBody } from "@/lib/api/donation-body";
+import { readStoredAttribution } from "@/lib/attribution";
 import type { Region } from "@/lib/api/types";
 import { DONATION_FORM } from "@/lib/content";
 import { useRegionFromUrl } from "@/lib/hooks/useRegionFromUrl";
@@ -144,7 +145,7 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
           // Канал выбирает провайдера на бэкенде. `onlineMethod` в тело
           // не уходит: в DTO его нет. Пожертвование всегда разовое.
           channel: state.channel,
-        }),
+        }, readStoredAttribution()),
       );
 
       // Куда идти, решает сервер по каналу: онлайн — страница оплаты

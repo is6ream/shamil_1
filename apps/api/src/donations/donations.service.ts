@@ -4,6 +4,7 @@ import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import { PrismaService } from '../database/prisma.service';
 import { PaymentProviderResolver } from '../payments/payment-provider.resolver';
 import type { CreateDonationDto } from './dto/create-donation.dto';
+import type { DonationUtmDto } from './dto/donation-utm.dto';
 import type {
   CreatedDonationResponse,
   DonationStatusResponse,
@@ -15,6 +16,35 @@ const DEFAULT_REGION_SOURCE = 'form';
 interface ResolvedRegion {
   readonly regionId: string | null;
   readonly regionSource: string | null;
+}
+
+/** Колонки атрибуции доната. Пустые строки не пишем: «метки не было» — это `null`. */
+export interface AttributionColumns {
+  readonly utmSource: string | null;
+  readonly utmMedium: string | null;
+  readonly utmCampaign: string | null;
+  readonly utmContent: string | null;
+  readonly utmTerm: string | null;
+  readonly referrer: string | null;
+  readonly landingPage: string | null;
+}
+
+function nonEmpty(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+
+  return trimmed === undefined || trimmed.length === 0 ? null : trimmed;
+}
+
+export function toAttributionColumns(utm: DonationUtmDto | undefined): AttributionColumns {
+  return {
+    utmSource: nonEmpty(utm?.source),
+    utmMedium: nonEmpty(utm?.medium),
+    utmCampaign: nonEmpty(utm?.campaign),
+    utmContent: nonEmpty(utm?.content),
+    utmTerm: nonEmpty(utm?.term),
+    referrer: nonEmpty(utm?.referrer),
+    landingPage: nonEmpty(utm?.landingPage),
+  };
 }
 
 @Injectable()
@@ -73,6 +103,7 @@ export class DonationsService {
         // `donation_anonymous_has_no_public_name`: чего в таблице нет,
         // то невозможно показать по ошибке.
         donorName: isAnonymous ? null : (dto.donorName ?? null),
+        ...toAttributionColumns(dto.utm),
         ...(contact === null ? {} : { contact: { create: contact } }),
       },
       select: { id: true, invoiceNo: true },
