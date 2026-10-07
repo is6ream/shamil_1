@@ -203,9 +203,6 @@ model Donation {
   /// Откуда взялся регион: 'link' (региональная ссылка), 'form' (селектор),
   /// 'admin'. У референса атрибуция была ~7%, и понять это можно было только так.
   regionSource String? @map("region_source") @db.VarChar(16)
-  /// Место под автоплатёж: сам он за границами MVP, но боевую таблицу
-  /// потом мигрировать не хочется.
-  recurringId  String? @map("recurring_id") @db.Uuid
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -223,7 +220,6 @@ model Donation {
   @@index([regionId, status])
   /// Топ донатеров: только status=paid и is_anonymous=false.
   @@index([status, isAnonymous, paidAmountKopecks(sort: Desc)])
-  @@index([recurringId])
   @@map("donation")
 }
 

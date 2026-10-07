@@ -166,7 +166,6 @@ Prisma 7 работает через драйвер-адаптер (`@prisma/ada
 | `region_stats (paid_total_kopecks DESC)` | Топ регионов |
 | `region (type, sort_order, name)` | Селектор «откуда вы» |
 | `gallery_item (campaign_id, is_published, sort_order, taken_on)` | Галерея в хронологии стройки |
-| `donation (recurring_id)` | Автоплатёж, когда до него дойдёт дело |
 
 Запрос ленты, который пойдёт в API дня 6, зафиксирован тестом — страницы не пересекаются
 и не теряют строк при вставке новых донатов между запросами. Это то, чем keyset лучше

@@ -60,6 +60,7 @@ function requisites(): LegalNode[] {
     ["Полное наименование", ORGANIZATION.legalName],
     ["ИНН", ORGANIZATION.inn],
     ["ОГРН/ОГРНИП", ORGANIZATION.ogrn],
+    ["Юридический адрес", ORGANIZATION.address],
     ["Контактный телефон", ORGANIZATION.phone],
     ["Контактный e-mail", ORGANIZATION.email],
   ];

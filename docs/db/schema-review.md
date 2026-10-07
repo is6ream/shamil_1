@@ -106,7 +106,6 @@
 
 | Поле / объект | Использований в `apps/api/src` | Комментарий |
 | --- | --- | --- |
-| `donation.recurring_id` + `donation_recurring_id_idx` | 0 | см. раздел о регулярных пожертвованиях |
 | `donation.charged_currency` | 0 (всегда default `RUB`) | задел под Kaspi/Mbank |
 | `donation.charged_amount_minor` | 0 | задел под Kaspi/Mbank; курса пересчёта в схеме нет — понадобится при интеграции |
 | `campaign.currency` | только default | одна валюта учёта |
@@ -130,21 +129,16 @@ UK(`provider`, …). Рекомендация: CHECK со списком зна�
 - Nullable-поля, которые стоило бы сделать NOT NULL, не найдены. Все nullable поля обоснованы
   (`region_id`, `donor_name`, `payment_event.donation_id` для неизвестного счёта).
 
-## Поля регулярных пожертвований (кандидаты на удаление)
+## Поля регулярных пожертвований — удалены 05.10.2026
 
-В БД нет `frequency` / `subscription` / периодичности. Со стороны схемы остаётся только резерв:
+В БД нет `frequency` / `subscription` / периодичности. Последний резерв — колонка
+`donation.recurring_id` с индексом `donation_recurring_id_idx` — удалён миграцией
+`20261005120000_drop_donation_recurring_id` по решению заказчика (только разовые
+пожертвования). Миграция сначала проверяет, что колонка пуста, и падает, если нет:
+данные, записанные в обход приложения, молча не стираются.
 
-| Объект | Где |
-| --- | --- |
-| колонка `donation.recurring_id uuid NULL` | `schema.prisma` (`recurringId`), миграция `init` |
-| индекс `donation_recurring_id_idx` | `@@index([recurringId])`, миграция `init` |
-| `COMMENT ON COLUMN donation.recurring_id` | миграция `guards_and_stats` |
-
-Фронтенд и DTO уже очищены: `create-donation.dto.spec.ts` проверяет, что поля `recurrence` и
-`frequency` дают 400. Учтите, что CLAUDE.md («место под `recurring_id`») прямо требует
-оставить колонку, чтобы потом не мигрировать боевую таблицу. Удалять её — значит отменить
-это решение, и сделать это должен заказчик. Если удалять, то новой миграцией:
-`DROP INDEX` → `DROP COLUMN`; поле сейчас всегда `NULL`, данные не теряются.
+Фронтенд и DTO очищены: `create-donation.dto.spec.ts` проверяет, что поля `recurrence`,
+`frequency` и `period` дают 400.
 
 ## Расхождения
 
