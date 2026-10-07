@@ -1,0 +1,204 @@
+/* Белая карточка «Куда идут пожертвования» (макет v2). */
+
+.card {
+  padding: var(--card-pad);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-10);
+}
+
+.title {
+  max-width: 11em;
+  font-size: var(--fs-h2);
+}
+
+.updated {
+  flex: none;
+  max-width: 7em;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-soft);
+}
+
+/* ── Таймлайн ──────────────────────────────────────────────────────────── */
+
+.stages {
+  --marker: 28px;
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--marker) minmax(0, 1fr) auto;
+  gap: var(--sp-5);
+  padding-bottom: var(--sp-6);
+}
+
+/* Линия от маркера к следующему: синяя после выполненного этапа. */
+.stage:not(:last-child)::before {
+  position: absolute;
+  top: var(--marker);
+  bottom: 0;
+  left: calc(var(--marker) / 2 - 1px);
+  width: 2px;
+  background: var(--border);
+  content: "";
+}
+
+.stage[data-status="done"]:not(:last-child)::before {
+  background: var(--accent);
+}
+
+.marker {
+  display: grid;
+  place-items: center;
+  width: var(--marker);
+  height: var(--marker);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.markerDone {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.markerDone svg {
+  width: 14px;
+  height: 14px;
+}
+
+.markerCurrent {
+  border: 2px solid var(--accent);
+  background: radial-gradient(circle, var(--accent) 0 5px, var(--surface) 5.5px);
+}
+
+.markerUpcoming {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+}
+
+.stageText p {
+  margin: 0;
+}
+
+.stageTitle {
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.stageText .stageStatus {
+  margin-top: 2px;
+  font-size: 14.5px;
+  color: var(--accent);
+}
+
+.stage[data-status="upcoming"] .stageStatus {
+  color: var(--text-soft);
+}
+
+.stageAmount {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Медиа ─────────────────────────────────────────────────────────────── */
+
+.previews {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-4);
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preview {
+  position: relative;
+  aspect-ratio: 184 / 140;
+  overflow: hidden;
+  border-radius: var(--r-photo);
+  background: var(--surface-sunken);
+}
+
+.previewImage {
+  object-fit: cover;
+}
+
+.galleryLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: 50px;
+  margin-top: var(--sp-4);
+  padding: 0 var(--sp-6);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-field);
+  color: var(--text-strong);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color var(--dur-fast), color var(--dur-fast);
+}
+
+.galleryLink:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: 0;
+    background: transparent;
+  }
+
+  /* На телефоне заголовок — строка аккордеона; дата остаётся. */
+  .heading {
+    display: none;
+  }
+
+  .header {
+    margin-bottom: var(--sp-6);
+  }
+
+  .updated {
+    max-width: none;
+  }
+
+  .stage {
+    grid-template-columns: var(--marker) minmax(0, 1fr);
+    row-gap: var(--sp-1);
+  }
+
+  .stageAmount {
+    grid-column: 2;
+    font-weight: 600;
+    color: var(--text-soft);
+  }
+
+  .previews {
+    gap: var(--sp-2);
+  }
+
+  .galleryLink {
+    justify-content: center;
+    width: 100%;
+  }
+}

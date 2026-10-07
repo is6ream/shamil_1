@@ -1,0 +1,11 @@
+.galleryTitle {
+  margin-top: var(--sp-10);
+}
+
+/* Подпись на месте будущей фотографии. Не «изображение недоступно»:
+   человек должен понимать, что снимок будет, а не что он сломался. */
+.pending {
+  padding: 0 var(--sp-4);
+  text-align: center;
+  font-size: var(--fs-eyebrow);
+}
