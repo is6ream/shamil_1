@@ -303,12 +303,17 @@ model GalleryItem {
   height      Int?
   sortOrder   Int       @default(100) @map("sort_order")
   isPublished Boolean   @default(true) @map("is_published")
+  /// Фото из медиатеки. Пусто у строк, заведённых до админки (только image_url).
+  /// Ссылка на сайт строится от файла медиатеки — смена бакета не ломает галерею.
+  mediaAssetId String?  @map("media_asset_id") @db.Uuid
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign   Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  mediaAsset MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
 
   @@index([campaignId, isPublished, sortOrder, takenOn])
+  @@index([mediaAssetId])
   @@map("gallery_item")
 }
 
@@ -398,4 +403,55 @@ model AuditLog {
   @@index([actorId, occurredAt(sort: Desc)])
   @@index([action, occurredAt(sort: Desc)])
   @@map("audit_log")
+}
+
+// ─── Медиатека ──────────────────────────────────────────────────────────────
+
+/// Загруженное изображение. Оригинал не хранится: сервер пережимает его в WebP
+/// трёх размеров без EXIF (геометка с телефона — ПДн). Имя файла генерирует сервер.
+model MediaAsset {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Общая часть ключей в хранилище: `2026/10/<uuid>`; файл варианта — `<key>-<size>.webp`.
+  storageKey   String   @unique @map("storage_key") @db.VarChar(200)
+  /// Размеры вариантов: [{ size, width, height, bytes }]. Ключ варианта выводится из storage_key.
+  variants     Json     @db.JsonB
+  /// Размер самого крупного варианта — им фронт резервирует место под картинку.
+  width        Int
+  height       Int
+  bytes        Int
+  /// Имя файла, как его загрузили, — только для поиска в медиатеке. В ключ не попадает.
+  originalName String?  @map("original_name") @db.VarChar(200)
+  altText      String?  @map("alt_text") @db.VarChar(300)
+  /// Кто загрузил. Без внешнего ключа, как в журнале.
+  createdById  String?  @map("created_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  galleryItems GalleryItem[]
+  videoPosters VideoLink[]
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@map("media_asset")
+}
+
+/// Видео со стройки — только ссылки на VK Видео, Rutube, YouTube (D-13).
+/// Видео не хостим: embed_url строится сервером из ссылки по allowlist доменов.
+model VideoLink {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// 'vk' | 'rutube' | 'youtube' — CHECK в миграции.
+  provider      String   @db.VarChar(16)
+  sourceUrl     String   @map("source_url") @db.VarChar(500)
+  embedUrl      String   @map("embed_url") @db.VarChar(500)
+  title         String?  @db.VarChar(200)
+  posterMediaId String?  @map("poster_media_id") @db.Uuid
+  sortOrder     Int      @default(100) @map("sort_order")
+  isPublished   Boolean  @default(true) @map("is_published")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  poster MediaAsset? @relation(fields: [posterMediaId], references: [id], onDelete: Restrict)
+
+  @@index([isPublished, sortOrder])
+  @@index([posterMediaId])
+  @@map("video_link")
 }

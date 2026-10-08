@@ -17,6 +17,7 @@ import { CampaignService } from './campaign.service';
 import { DonorsService } from './donors.service';
 import { encodeFeedCursor } from './feed-cursor';
 import { FeedService } from './feed.service';
+import { LocalStorage } from '../media/storage/local-storage';
 import { GalleryService } from './gallery.service';
 import { RegionsService } from './regions.service';
 
@@ -303,7 +304,7 @@ describeDatabase('витринные эндпоинты', () => {
       });
 
       // Act
-      const gallery = await new GalleryService(prisma).getGallery();
+      const gallery = await new GalleryService(prisma, new LocalStorage('uploads', 'http://localhost:3001/media')).getGallery();
 
       // Assert
       expect(gallery.map(({ url, caption, takenAtLabel }) => ({ url, caption, takenAtLabel }))).toEqual([
@@ -314,7 +315,7 @@ describeDatabase('витринные эндпоинты', () => {
     });
 
     test('фотографий нет — пустой массив', async () => {
-      expect(await new GalleryService(prisma).getGallery()).toEqual([]);
+      expect(await new GalleryService(prisma, new LocalStorage('uploads', 'http://localhost:3001/media')).getGallery()).toEqual([]);
     });
   });
 });

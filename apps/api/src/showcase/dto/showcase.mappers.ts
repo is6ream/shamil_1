@@ -171,6 +171,9 @@ export interface GalleryRow {
   readonly caption: string | null;
   readonly altText: string | null;
   readonly takenOn: Date | null;
+  readonly width?: number | null;
+  readonly height?: number | null;
+  readonly thumbUrl?: string;
 }
 
 export function toGalleryItemResponse(row: GalleryRow): GalleryItemResponse {
@@ -179,5 +182,9 @@ export function toGalleryItemResponse(row: GalleryRow): GalleryItemResponse {
     url: row.imageUrl,
     caption: row.caption ?? row.altText ?? '',
     takenAtLabel: formatTakenAtLabel(row.takenOn),
+    thumbUrl: row.thumbUrl ?? null,
+    alt: row.altText ?? row.caption ?? '',
+    width: row.width ?? null,
+    height: row.height ?? null,
   };
 }

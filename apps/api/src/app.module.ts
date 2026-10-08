@@ -11,6 +11,7 @@ import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { DonationsModule } from './donations/donations.module';
 import { HealthModule } from './health/health.module';
+import { MediaModule } from './media/media.module';
 import {
   PaymentEmulatorModule,
   isPaymentEmulatorEnabled,
@@ -42,6 +43,7 @@ import { ShowcaseModule } from './showcase/showcase.module';
     AuthModule,
     AuditModule,
     AdminModule,
+    MediaModule,
     ShowcaseModule,
     // Эмулятор оплаты — только локально: в production флаг запрещён
     // валидацией окружения, и маршрутов `/api/dev/…` там нет (404).

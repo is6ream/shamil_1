@@ -88,4 +88,11 @@ export interface GalleryItemResponse {
   readonly caption: string;
   /** «июнь 2026»; пустая строка, если дата съёмки неизвестна. */
   readonly takenAtLabel: string;
+  /** Превью до 480 px (медиатека); `null` у фото, заведённых до админки. */
+  readonly thumbUrl: string | null;
+  /** Текст для `alt`: описание из медиатеки или подпись. */
+  readonly alt: string;
+  /** Размеры крупного варианта — Next.js резервирует под картинку место. */
+  readonly width: number | null;
+  readonly height: number | null;
 }

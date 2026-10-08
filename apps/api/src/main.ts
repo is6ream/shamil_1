@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
@@ -10,7 +11,7 @@ import { DeployStage, PaymentProviderCode } from './config/env.validation';
 import { buildResultUrl } from './payments/robokassa/robokassa.constants';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     // Вебхуки платёжных провайдеров подписывают именно сырое тело запроса.
     // Подпись проверяется до разбора JSON, поэтому сырой буфер нужен всегда.
     rawBody: true,

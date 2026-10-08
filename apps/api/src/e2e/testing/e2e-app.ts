@@ -1,7 +1,7 @@
 import { createServer } from 'node:net';
 
-import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 
 import { configureApp } from '../../bootstrap';
 
@@ -16,7 +16,7 @@ import { configureApp } from '../../bootstrap';
  */
 
 export interface E2eApp {
-  readonly app: INestApplication;
+  readonly app: NestExpressApplication;
   /** `http://127.0.0.1:<port>/api` */
   readonly apiUrl: string;
   readonly close: () => Promise<void>;
@@ -72,7 +72,7 @@ export async function startE2eApp(
   });
 
   const { AppModule } = await import('../../app.module');
-  const app = await NestFactory.create(AppModule, { rawBody: true, logger: ['error', 'warn'] });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true, logger: ['error', 'warn'] });
 
   configureApp(app);
   await app.listen(port, '127.0.0.1');

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../database/database.module';
+import { StorageModule } from '../media/storage/storage.module';
 import { CampaignService } from './campaign.service';
 import { DonorsService } from './donors.service';
 import { FeedService } from './feed.service';
@@ -15,7 +16,7 @@ import { ShowcaseController } from './showcase.controller';
  * запрос в своём файле и тесте.
  */
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, StorageModule],
   controllers: [ShowcaseController],
   providers: [CampaignService, RegionsService, DonorsService, FeedService, GalleryService],
 })

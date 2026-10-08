@@ -83,6 +83,8 @@ const TRUNCATED_TABLES = [
   'admin_refresh_token',
   'admin_user',
   'audit_log',
+  'video_link',
+  'media_asset',
 ] as const;
 
 /**

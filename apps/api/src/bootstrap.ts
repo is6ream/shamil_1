@@ -1,11 +1,15 @@
 import { ValidationPipe } from '@nestjs/common';
-import type { INestApplication, ValidationPipeOptions } from '@nestjs/common';
+import type { ValidationPipeOptions } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { Express } from 'express';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { Express, Response } from 'express';
 import helmet from 'helmet';
 
 import { API_GLOBAL_PREFIX } from './config/constants';
+import { MEDIA_ROUTE_PREFIX } from './config/configuration';
 import type { AppConfig } from './config/configuration';
+import { StorageDriver } from './config/env.validation';
+import { IMMUTABLE_CACHE_CONTROL } from './media/storage/storage.types';
 
 /**
  * Сколько обратных прокси стоит перед приложением. На Timeweb Cloud App Platform
@@ -36,8 +40,10 @@ export const VALIDATION_PIPE_OPTIONS: ValidationPipeOptions = {
  * тест, поднимающий приложение без того же префикса, helmet и ValidationPipe,
  * проверял бы другое приложение.
  */
-export function configureApp(app: INestApplication): void {
-  const http = app.get(ConfigService<AppConfig, true>).get('http', { infer: true });
+export function configureApp(app: NestExpressApplication): void {
+  const config = app.get(ConfigService<AppConfig, true>);
+  const http = config.get('http', { infer: true });
+  const media = config.get('media', { infer: true });
 
   const express: Express = app.getHttpAdapter().getInstance();
   express.set('trust proxy', TRUSTED_PROXY_HOPS);
@@ -46,7 +52,31 @@ export function configureApp(app: INestApplication): void {
   app.use(helmet());
   app.enableCors({ origin: [...http.corsOrigins], credentials: true });
 
+  if (media.driver === StorageDriver.Local) {
+    serveLocalMedia(app, media.localDir);
+  }
+
   app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
 
   app.enableShutdownHooks();
+}
+
+/**
+ * Раздача медиатеки с диска — только при `STORAGE_DRIVER=local` (dev/test).
+ * В production картинки отдаёт бакет S3 по `S3_PUBLIC_BASE_URL` (D-16, пересмотрено).
+ *
+ * `Cross-Origin-Resource-Policy: cross-origin` перекрывает `same-origin` от helmet:
+ * картинки грузит сайт с другого порта/домена.
+ */
+function serveLocalMedia(app: NestExpressApplication, localDir: string): void {
+  app.useStaticAssets(localDir, {
+    prefix: MEDIA_ROUTE_PREFIX,
+    index: false,
+    dotfiles: 'deny',
+    fallthrough: true,
+    setHeaders: (response: Response) => {
+      response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      response.setHeader('Cache-Control', IMMUTABLE_CACHE_CONTROL);
+    },
+  });
 }
