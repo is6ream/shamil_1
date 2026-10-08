@@ -7,6 +7,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client';
 import { RegionType } from '../../generated/prisma/enums';
 import { seedSuperAdmin } from './admin.seed';
+import { seedContent } from './content.seed';
 import {
   CAMPAIGN_SEED,
   MONTHLY_GOAL_PLACEHOLDER_KOPECKS,
@@ -21,7 +22,8 @@ import {
 } from './regions.data';
 
 /**
- * Справочные данные: сбор, цель месяца, страны и субъекты РФ, первый суперадмин
+ * Справочные данные: сбор, цель месяца, страны и субъекты РФ, стартовый контент
+ * главной (тексты и этапы из хардкода фронта), первый суперадмин
  * админки (из ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD).
  *
  * Запуск в разработке:  npm run db:seed --workspace @shamil/api
@@ -140,6 +142,7 @@ async function main(): Promise<void> {
   try {
     const regionsCount = await seedRegions(prisma);
     await seedCampaign(prisma);
+    await seedContent(prisma);
     await seedSuperAdmin(prisma, process.env);
 
     const period = currentMonthPeriod();

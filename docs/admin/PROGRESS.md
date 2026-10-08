@@ -18,7 +18,7 @@
 | B2 | Auth и роли | done | см. `git log --grep "(B2, B3)"` | login/refresh/logout/me/password, ротация и reuse-detection, блокировка, `token_version` (D-19), матрица D-06, пользователи, сид суперадмина, D-07 |
 | B3 | Audit log | done | см. `git log --grep "(B2, B3)"` | `audit_log` append-only, дифф с маскированием ПДн, в транзакции изменения; `GET /admin/audit` |
 | B4 | Медиатека, галерея, видео | done | см. `git log --grep "(B4)"` | `StorageDriver` local/s3 (ленивый SDK), сигнатура + sharp → WebP×3 без EXIF, 409 на используемое, галерея CRUD/порядок, видео по allowlist, `/media` только при local, ревалидация `gallery`/`video` |
-| B5 | Контент, этапы, новости, ревалидация | todo | | |
+| B5 | Контент, этапы, новости, ревалидация | done | см. `git log --grep "(B5)"` | блоки hero/about/requisites/contacts/faq со своими DTO, этапы с фото и сметой в копейках, новости (markdown без HTML), публичные `/content`, `/construction`, `/news`; сид из хардкода фронта; ревалидация тегами |
 | B6 | Пожертвования в админке | todo | | |
 | B7 | Дашборд | todo | | |
 | B8 | Health ready | todo | | |

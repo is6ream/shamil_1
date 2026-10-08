@@ -7,6 +7,7 @@ import { AdminModule } from './admin/admin.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { configuration } from './config/configuration';
+import { ContentModule } from './content/content.module';
 import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { DonationsModule } from './donations/donations.module';
@@ -44,6 +45,7 @@ import { ShowcaseModule } from './showcase/showcase.module';
     AuditModule,
     AdminModule,
     MediaModule,
+    ContentModule,
     ShowcaseModule,
     // Эмулятор оплаты — только локально: в production флаг запрещён
     // валидацией окружения, и маршрутов `/api/dev/…` там нет (404).

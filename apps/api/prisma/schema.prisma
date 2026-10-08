@@ -429,6 +429,8 @@ model MediaAsset {
 
   galleryItems GalleryItem[]
   videoPosters VideoLink[]
+  stagePhotos  ConstructionStagePhoto[]
+  newsCovers   NewsPost[]
 
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("media_asset")
@@ -454,4 +456,93 @@ model VideoLink {
   @@index([isPublished, sortOrder])
   @@index([posterMediaId])
   @@map("video_link")
+}
+
+// ─── Контент сайта ──────────────────────────────────────────────────────────
+
+/// Тексты главной, которые правит заказчик: hero, about, requisites, contacts, faq.
+/// Структура каждого ключа — свой DTO (content/dto). Хадисы и юридические тексты
+/// сюда не входят и через API не редактируются (D-10).
+/// Картинки — id файлов медиатеки внутри JSON (поиск использования — по тексту JSON).
+model ContentBlock {
+  /// CHECK в миграции: только известные ключи.
+  key         String   @id @db.VarChar(32)
+  data        Json     @db.JsonB
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("content_block")
+}
+
+/// Статус этапа стройки на таймлайне главной.
+enum ConstructionStageStatus {
+  done
+  current
+  upcoming
+
+  @@map("construction_stage_status")
+}
+
+/// Этап стройки (таймлайн макета v2): смета и освоено — в копейках, как все деньги.
+model ConstructionStage {
+  id            String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String                  @db.VarChar(200)
+  description   String?                 @db.Text
+  status        ConstructionStageStatus @default(upcoming)
+  /// Смета этапа. Пусто — сумма ещё не названа, сайт её не показывает.
+  budgetKopecks BigInt?                 @map("budget_kopecks")
+  /// Освоено по этапу. Не связано с суммой сбора — это отчёт о расходах.
+  spentKopecks  BigInt?                 @map("spent_kopecks")
+  sortOrder     Int                     @default(100) @map("sort_order")
+  createdAt     DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  photos ConstructionStagePhoto[]
+
+  @@index([sortOrder])
+  @@map("construction_stage")
+}
+
+/// Фото этапа — из медиатеки, в заданном порядке.
+model ConstructionStagePhoto {
+  stageId      String @map("stage_id") @db.Uuid
+  mediaAssetId String @map("media_asset_id") @db.Uuid
+  sortOrder    Int    @default(0) @map("sort_order")
+
+  stage      ConstructionStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  mediaAsset MediaAsset        @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  @@id([stageId, mediaAssetId])
+  @@index([mediaAssetId])
+  @@map("construction_stage_photo")
+}
+
+enum NewsStatus {
+  draft
+  published
+
+  @@map("news_status")
+}
+
+/// Новость / отчёт (D-12). Текст — markdown без HTML: сервер отклоняет теги
+/// и опасные ссылки, сайт рендерит без raw HTML.
+model NewsPost {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String     @unique @db.VarChar(120)
+  title        String     @db.VarChar(200)
+  excerpt      String?    @db.VarChar(500)
+  bodyMarkdown String     @map("body_markdown") @db.Text
+  coverMediaId String?    @map("cover_media_id") @db.Uuid
+  status       NewsStatus @default(draft)
+  /// Заполнено ровно у опубликованных — CHECK в миграции.
+  publishedAt  DateTime?  @map("published_at") @db.Timestamptz(3)
+  createdById  String?    @map("created_by_id") @db.Uuid
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  cover MediaAsset? @relation(fields: [coverMediaId], references: [id], onDelete: Restrict)
+
+  @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
+  @@index([coverMediaId])
+  @@map("news_post")
 }
