@@ -76,14 +76,18 @@ export interface S3StorageConfig {
   readonly endpoint: string;
   readonly accessKeyId: string;
   readonly secretAccessKey: string;
-  readonly publicUrl: string;
+  readonly publicBaseUrl: string;
+  readonly forcePathStyle: boolean;
 }
 
 export interface MediaConfig {
   readonly driver: StorageDriver;
   /** Абсолютный путь каталога медиатеки для `local`. */
   readonly localDir: string;
-  /** Адрес, от которого строятся публичные ссылки на файлы `local`. */
+  /**
+   * Адрес, от которого строятся публичные ссылки на файлы: у `s3` — бакет
+   * (`S3_PUBLIC_BASE_URL`), у `local` — `MEDIA_PUBLIC_URL` или `${PUBLIC_API_URL}/media`.
+   */
   readonly publicUrl: string;
   readonly maxUploadBytes: number;
   readonly s3?: S3StorageConfig;
@@ -94,12 +98,6 @@ export interface RevalidationConfig {
   readonly secret?: string;
   /** Route handler Next.js: `${PUBLIC_SITE_URL}/api/revalidate`. */
   readonly url: string;
-}
-
-export interface TelegramConfig {
-  /** `undefined` — уведомления выключены. */
-  readonly botToken?: string;
-  readonly chatId?: string;
 }
 
 export interface ThrottleConfig {
@@ -120,7 +118,6 @@ export interface AppConfig {
   readonly adminAuth: AdminAuthConfig;
   readonly media: MediaConfig;
   readonly revalidation: RevalidationConfig;
-  readonly telegram: TelegramConfig;
 }
 
 const BYTES_IN_MB = 1024 * 1024;
@@ -154,14 +151,16 @@ function buildMediaConfig(env: EnvVars, apiUrl: string): MediaConfig {
           endpoint: env.S3_ENDPOINT ?? '',
           accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
           secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
-          publicUrl: trimTrailingSlash(env.S3_PUBLIC_URL ?? ''),
+          publicBaseUrl: trimTrailingSlash(env.S3_PUBLIC_BASE_URL ?? ''),
+          forcePathStyle: env.S3_FORCE_PATH_STYLE,
         }
       : undefined;
 
   return {
     driver: env.STORAGE_DRIVER,
     localDir: resolvePath(env.MEDIA_LOCAL_DIR),
-    publicUrl: trimTrailingSlash(env.MEDIA_PUBLIC_URL ?? `${apiUrl}${MEDIA_ROUTE_PREFIX}`),
+    publicUrl:
+      s3?.publicBaseUrl ?? trimTrailingSlash(env.MEDIA_PUBLIC_URL ?? `${apiUrl}${MEDIA_ROUTE_PREFIX}`),
     maxUploadBytes: env.MEDIA_MAX_UPLOAD_MB * BYTES_IN_MB,
     s3,
   };
@@ -255,11 +254,7 @@ export function configuration(): AppConfig {
     media: buildMediaConfig(env, apiUrl),
     revalidation: {
       secret: env.REVALIDATE_SECRET,
-      url: `${siteUrl}${REVALIDATE_PATH}`,
-    },
-    telegram: {
-      botToken: env.TELEGRAM_BOT_TOKEN,
-      chatId: env.TELEGRAM_CHAT_ID,
+      url: trimTrailingSlash(env.WEB_REVALIDATE_URL ?? `${siteUrl}${REVALIDATE_PATH}`),
     },
   };
 }

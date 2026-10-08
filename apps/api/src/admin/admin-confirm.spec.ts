@@ -17,6 +17,7 @@ import {
 } from '../database/testing/test-database';
 import type { TestFixtures } from '../database/testing/test-database';
 import { DonationStatus } from '../generated/prisma/enums';
+import { AuditService } from '../audit/audit.service';
 import { PaymentsService } from '../payments/payments.service';
 
 /**
@@ -45,7 +46,7 @@ describeDatabase('подтверждение ручного перевода', (
 
   beforeAll(() => {
     prisma = createPrisma();
-    payments = new PaymentsService(prisma);
+    payments = new PaymentsService(prisma, new AuditService(prisma));
   });
 
   afterAll(async () => {

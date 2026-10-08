@@ -148,6 +148,43 @@ describe('валидация окружения', () => {
     expect(act).toThrow(/ADMIN_JWT_SECRET/);
   });
 
+  test('в production медиатека только в S3: диск контейнера эфемерен', () => {
+    // Arrange
+    const production = {
+      ...BASE_ENV,
+      NODE_ENV: NodeEnv.Production,
+      ADMIN_API_TOKEN: 'x'.repeat(32),
+      ADMIN_JWT_SECRET: 'y'.repeat(32),
+    };
+    const s3 = {
+      STORAGE_DRIVER: 's3',
+      S3_BUCKET: 'shamil-media',
+      S3_REGION: 'ru-1',
+      S3_ENDPOINT: 'https://s3.timeweb.cloud',
+      S3_ACCESS_KEY_ID: 'key',
+      S3_SECRET_ACCESS_KEY: 'secret',
+      S3_PUBLIC_BASE_URL: 'https://s3.timeweb.cloud/shamil-media',
+    };
+
+    // Act
+    const local = (): unknown => validateEnv({ ...production, STORAGE_DRIVER: 'local' });
+    const env = validateEnv({ ...production, ...s3 });
+
+    // Assert
+    expect(local).toThrow(/STORAGE_DRIVER/);
+    expect(env.STORAGE_DRIVER).toBe('s3');
+    expect(env.S3_FORCE_PATH_STYLE).toBe(true);
+  });
+
+  test('S3 без публичного адреса бакета не стартует', () => {
+    // Act
+    const act = (): unknown =>
+      validateEnv({ ...BASE_ENV, STORAGE_DRIVER: 's3', S3_BUCKET: 'b', S3_REGION: 'ru-1' });
+
+    // Assert
+    expect(act).toThrow(/S3_PUBLIC_BASE_URL/);
+  });
+
   test('включённая фискализация требует СНО, наименование позиции и ставку НДС', () => {
     // Act
     const act = (): unknown =>

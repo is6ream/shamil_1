@@ -25,7 +25,7 @@ interface RequestWithHeaders {
  * токена по времени ответа. Дайджесты всегда 32 байта — сравнивать можно
  * что угодно с чем угодно.
  */
-function isSameSecret(given: string, expected: string): boolean {
+export function isSameSecret(given: string, expected: string): boolean {
   return timingSafeEqual(
     createHash('sha256').update(given, 'utf8').digest(),
     createHash('sha256').update(expected, 'utf8').digest(),

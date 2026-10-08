@@ -1,20 +1,18 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '../audit/audit.module';
+import { AuthCoreModule } from '../auth/auth-core.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { AdminDonationsController } from './admin-donations.controller';
 import { AdminDonationsService } from './admin-donations.service';
-import { AdminTokenGuard } from './admin-token.guard';
 
 /**
- * Админские эндпоинты. UI в MVP не планируется (CLAUDE.md): заказчик и разработчик
- * дёргают их напрямую, авторизация — статический токен из окружения.
- *
- * Модуль намеренно тонкий: вся работа с донатами идёт через `PaymentsService`,
- * здесь только маршрут, гард и разбор тела запроса.
+ * Пожертвования в админке. Перевод `pending → paid` идёт через `PaymentsService`
+ * — ту же машинерию, что и вебхук; здесь маршруты, гарды и журнал.
  */
 @Module({
-  imports: [PaymentsModule],
+  imports: [AuthCoreModule, AuditModule, PaymentsModule],
   controllers: [AdminDonationsController],
-  providers: [AdminDonationsService, AdminTokenGuard],
+  providers: [AdminDonationsService],
 })
 export class AdminModule {}

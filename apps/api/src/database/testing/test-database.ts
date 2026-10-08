@@ -1,9 +1,11 @@
 import { ConfigService } from '@nestjs/config';
+import { hash } from 'bcryptjs';
 import { PrismaPg } from '@prisma/adapter-pg';
 
+import { BCRYPT_COST } from '../../auth/auth.constants';
 import type { AppConfig } from '../../config/configuration';
 import { PrismaClient } from '../../generated/prisma/client';
-import { DonationStatus, RegionType } from '../../generated/prisma/enums';
+import { AdminRole, DonationStatus, RegionType } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma.service';
 import { DB_TESTS_ENV_FLAG } from './global-setup';
 
@@ -61,10 +63,57 @@ export function createTestPrismaService(): PrismaService {
  * а TRUNCATE построчные триггеры не вызывает — как раз то, что нужно тестам.
  */
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
-  await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "payment_event", "donation_contact", "donation", "gallery_item", ' +
-      '"campaign_monthly_goal", "campaign_stats", "region_stats", "campaign", "region" CASCADE',
-  );
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${TRUNCATED_TABLES.map((name) => `"${name}"`).join(', ')} CASCADE`);
+}
+
+/**
+ * Все таблицы приложения. Новая таблица обязана попасть сюда — иначе тесты
+ * начнут видеть данные друг друга. `_prisma_migrations` не трогаем.
+ */
+const TRUNCATED_TABLES = [
+  'payment_event',
+  'donation_contact',
+  'donation',
+  'gallery_item',
+  'campaign_monthly_goal',
+  'campaign_stats',
+  'region_stats',
+  'campaign',
+  'region',
+  'admin_refresh_token',
+  'admin_user',
+  'audit_log',
+] as const;
+
+/**
+ * Хеш пароля `TEST_ADMIN_PASSWORD`, посчитанный один раз на процесс:
+ * bcrypt с cost 12 — это сотни миллисекунд на каждый вызов.
+ */
+let testPasswordHash: Promise<string> | undefined;
+
+export const TEST_ADMIN_PASSWORD = 'correct-horse-battery';
+
+export interface TestAdminOptions {
+  readonly email?: string;
+  readonly role?: AdminRole;
+  readonly isActive?: boolean;
+}
+
+export async function createTestAdmin(
+  prisma: PrismaClient,
+  options: TestAdminOptions = {},
+): Promise<{ id: string; email: string; role: AdminRole }> {
+  testPasswordHash ??= hash(TEST_ADMIN_PASSWORD, BCRYPT_COST);
+
+  return prisma.adminUser.create({
+    data: {
+      email: options.email ?? 'admin@example.test',
+      passwordHash: await testPasswordHash,
+      role: options.role ?? AdminRole.SUPER_ADMIN,
+      isActive: options.isActive ?? true,
+    },
+    select: { id: true, email: true, role: true },
+  });
 }
 
 export interface SeedFixturesOptions {

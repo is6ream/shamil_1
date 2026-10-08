@@ -4,6 +4,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminModule } from './admin/admin.module';
+import { AuditModule } from './audit/audit.module';
+import { AuthModule } from './auth/auth.module';
 import { configuration } from './config/configuration';
 import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
@@ -37,6 +39,8 @@ import { ShowcaseModule } from './showcase/showcase.module';
     DatabaseModule,
     HealthModule,
     DonationsModule,
+    AuthModule,
+    AuditModule,
     AdminModule,
     ShowcaseModule,
     // Эмулятор оплаты — только локально: в production флаг запрещён

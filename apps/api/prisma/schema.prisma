@@ -340,6 +340,9 @@ model AdminUser {
   failedLoginCount Int       @default(0) @map("failed_login_count")
   lockedUntil      DateTime? @map("locked_until") @db.Timestamptz(3)
   lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(3)
+  /// Версия сессий. Входит в access-JWT и растёт при смене пароля, роли или
+  /// деактивации: старые access-токены перестают приниматься сразу, а не через 15 минут.
+  tokenVersion     Int       @default(0) @map("token_version")
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -367,4 +370,32 @@ model AdminRefreshToken {
   @@index([userId])
   @@index([familyId])
   @@map("admin_refresh_token")
+}
+
+/// Журнал действий админки. Только дописывается: UPDATE и DELETE запрещены
+/// триггером. Пишется в той же транзакции, что и само изменение, — правка
+/// без записи в журнале не фиксируется. ПДн в before/after замаскированы.
+model AuditLog {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  occurredAt DateTime   @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  /// 'user' — пользователь админки; 'system' — вебхук, статический токен, сид.
+  actorType  String     @map("actor_type") @db.VarChar(16)
+  /// Без внешнего ключа намеренно: журнал переживает любые правки пользователей.
+  actorId    String?    @map("actor_id") @db.Uuid
+  actorRole  AdminRole? @map("actor_role")
+  /// Снимок «кто»: e-mail на момент действия или имя системного источника.
+  actorLabel String?    @map("actor_label") @db.VarChar(254)
+  action     String     @db.VarChar(64)
+  entityType String     @map("entity_type") @db.VarChar(64)
+  entityId   String?    @map("entity_id") @db.VarChar(128)
+  before     Json?      @db.JsonB
+  after      Json?      @db.JsonB
+  ip         String?    @db.Inet
+  userAgent  String?    @map("user_agent") @db.VarChar(256)
+
+  @@index([occurredAt(sort: Desc), id(sort: Desc)])
+  @@index([entityType, entityId])
+  @@index([actorId, occurredAt(sort: Desc)])
+  @@index([action, occurredAt(sort: Desc)])
+  @@map("audit_log")
 }

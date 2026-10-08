@@ -1,5 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
+import { AuditService } from '../audit/audit.service';
+import type { AuditActor } from '../audit/audit.types';
+import type { RequestMeta } from '../auth/auth.types';
 import { KOPECKS_IN_RUBLE, MAX_MANUAL_CONFIRM_KOPECKS } from '../config/constants';
 import { PaymentsService } from '../payments/payments.service';
 import type { ManualConfirmation } from '../payments/payments.types';
@@ -16,12 +19,32 @@ import type { ConfirmedDonationResponse } from './dto/admin-donation-response.dt
  */
 @Injectable()
 export class AdminDonationsService {
-  constructor(private readonly payments: PaymentsService) {}
+  constructor(
+    private readonly payments: PaymentsService,
+    private readonly audit: AuditService,
+  ) {}
 
-  async confirm(donationId: string, dto: ConfirmDonationDto): Promise<ConfirmedDonationResponse> {
+  /** Журнал пишется в транзакции зачисления — и только если зачисление состоялось. */
+  async confirm(
+    donationId: string,
+    dto: ConfirmDonationDto,
+    actor: AuditActor,
+    meta: RequestMeta,
+  ): Promise<ConfirmedDonationResponse> {
+    const amountKopecks = this.parseAmount(dto.amountKopecks);
     const confirmation = await this.payments.confirmManual(donationId, {
-      amountKopecks: this.parseAmount(dto.amountKopecks),
+      amountKopecks,
       method: dto.method,
+      onApplied: (tx) =>
+        this.audit.record(tx, {
+          actor,
+          action: 'donation.confirm',
+          entityType: 'donation',
+          entityId: donationId,
+          before: { status: 'pending' },
+          after: { status: 'paid', paidAmountKopecks: amountKopecks ?? null, method: dto.method ?? null },
+          meta,
+        }),
     });
 
     return toResponse(confirmation);

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { MANUAL_CONFIRM_DEFAULT_METHOD, MANUAL_PROVIDER_CODE } from '../config/constants';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
 import { isEffectiveTransition } from '../donations/donation-status';
 import { DonationStatus } from '../generated/prisma/enums';
@@ -59,7 +60,10 @@ function toStoredPayload(body: WebhookBody): Record<string, string> {
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   /**
    * Применение проверенного колбэка.
@@ -119,6 +123,35 @@ export class PaymentsService {
       // идемпотентности донат задвоился бы и в сумме сбора, и в рейтинге.
       this.logger.log(`Повтор колбэка по счёту ${parsed.invoiceNo} — уже обработан`);
     }
+
+    if (outcome === 'applied' && donation.amountKopecks !== parsed.amountKopecks) {
+      await this.recordAmountMismatch(donation.id, donation.amountKopecks, parsed);
+    }
+  }
+
+  /**
+   * D-03: расхождение суммы заказа и оплаты — системная запись в журнал,
+   * чтобы бухгалтер увидел её в админке, а не только в логах.
+   *
+   * Пишется после зачисления и отдельно от него: сбой журнала не должен
+   * откатывать деньги, которые провайдер уже подтвердил подписью.
+   */
+  private async recordAmountMismatch(donationId: string, orderKopecks: bigint, parsed: ParsedWebhook): Promise<void> {
+    try {
+      await this.audit.record(undefined, {
+        actor: { type: 'system', label: `webhook:${parsed.provider}` },
+        action: 'donation.amount_mismatch',
+        entityType: 'donation',
+        entityId: donationId,
+        before: { amountKopecks: orderKopecks },
+        after: { paidAmountKopecks: parsed.amountKopecks },
+      });
+    } catch (error: unknown) {
+      this.logger.error(
+        `Не удалось записать расхождение суммы доната ${donationId} в журнал`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   /**
@@ -177,6 +210,7 @@ export class PaymentsService {
         confirmedAmountKopecks: amountKopecks.toString(),
         orderAmountKopecks: donation.amountKopecks.toString(),
       },
+      onApplied: options.onApplied,
     });
 
     this.logger.log(`Ручной донат ${donation.id}: подтверждение — ${outcome}`);
@@ -237,6 +271,10 @@ export class PaymentsService {
             ...(input.method === undefined ? {} : { method: input.method }),
           },
         });
+
+        if (input.onApplied !== undefined) {
+          await input.onApplied(tx);
+        }
 
         return 'applied';
       });

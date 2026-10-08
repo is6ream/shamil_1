@@ -321,7 +321,10 @@ export class EnvVars {
 
   // ─── Медиатека ─────────────────────────────────────────────────────────────
 
-  /** Где лежат загруженные файлы: `local` (каталог на диске) или `s3`. */
+  /**
+   * Где лежат загруженные файлы: `local` (каталог на диске, для dev/test) или `s3`.
+   * В production — только `s3`, см. `crossFieldErrors`.
+   */
   @IsEnum(StorageDriver)
   STORAGE_DRIVER: StorageDriver = StorageDriver.Local;
 
@@ -355,7 +358,7 @@ export class EnvVars {
   @MinLength(1)
   S3_REGION?: string;
 
-  /** Эндпоинт S3-совместимого хранилища (Yandex Object Storage, Selectel, MinIO). */
+  /** Эндпоинт S3-совместимого хранилища: `https://s3.timeweb.cloud`, MinIO локально. */
   @ValidateIf(whenS3)
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   S3_ENDPOINT?: string;
@@ -370,10 +373,23 @@ export class EnvVars {
   @MinLength(1)
   S3_SECRET_ACCESS_KEY?: string;
 
-  /** Публичный адрес бакета, от которого строятся ссылки на файлы. */
+  /**
+   * Публичный адрес бакета, от которого строятся ссылки на файлы:
+   * `https://<bucket>.s3.timeweb.cloud` или CDN перед ним. Картинки сайт
+   * берёт отсюда напрямую — через Nest они в production не идут.
+   */
   @ValidateIf(whenS3)
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
-  S3_PUBLIC_URL?: string;
+  S3_PUBLIC_BASE_URL?: string;
+
+  /**
+   * Адресация бакета: `true` — `https://endpoint/bucket/key` (path-style),
+   * `false` — `https://bucket.endpoint/key`. Timeweb S3 понимает обе;
+   * path-style не зависит от DNS-записи на каждый бакет.
+   */
+  @envBoolean(true)
+  @IsBoolean()
+  S3_FORCE_PATH_STYLE: boolean = true;
 
   // ─── Ревалидация фронтенда ─────────────────────────────────────────────────
 
@@ -386,19 +402,13 @@ export class EnvVars {
   @MinLength(REVALIDATE_SECRET_MIN_LENGTH)
   REVALIDATE_SECRET?: string;
 
-  // ─── Telegram-уведомления ──────────────────────────────────────────────────
-
-  /** Токен бота. Не задан — уведомления выключены, приложение работает. */
+  /**
+   * Куда слать запрос ревалидации. По умолчанию — `${PUBLIC_SITE_URL}/api/revalidate`;
+   * отдельная переменная нужна, когда API ходит к фронту по внутреннему адресу.
+   */
   @IsOptional()
-  @IsString()
-  @MinLength(1)
-  TELEGRAM_BOT_TOKEN?: string;
-
-  /** Чат или канал для уведомлений. Нужен вместе с токеном. */
-  @ValidateIf((env: EnvVars) => env.TELEGRAM_BOT_TOKEN !== undefined)
-  @IsString()
-  @MinLength(1)
-  TELEGRAM_CHAT_ID?: string;
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
+  WEB_REVALIDATE_URL?: string;
 }
 
 /** Условие «поле обязательно, потому что медиатека в S3». */
@@ -436,6 +446,12 @@ function crossFieldErrors(env: EnvVars): readonly string[] {
 
   if (env.PAYMENT_EMULATOR_ENABLED && env.PAYMENT_IS_TEST !== true) {
     errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор требует PAYMENT_IS_TEST=true');
+  }
+
+  if (isProduction && env.STORAGE_DRIVER !== StorageDriver.S3) {
+    // Диск контейнера Timeweb App Platform эфемерен: загруженные фото пропали
+    // бы при первом же деплое, а ссылки на них остались бы в галерее битыми.
+    errors.push('STORAGE_DRIVER: в production допустим только s3 — диск контейнера эфемерен');
   }
 
   return errors;

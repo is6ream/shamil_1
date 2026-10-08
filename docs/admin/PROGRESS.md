@@ -15,8 +15,8 @@
 
 | # | Шаг | Статус | Коммит | Примечание |
 | --- | --- | --- | --- | --- |
-| B2 | Auth и роли | in progress | | Схема, конфиг, Dockerfile.api, `trust proxy` — сделаны |
-| B3 | Audit log | todo | | |
+| B2 | Auth и роли | done | см. `git log --grep "(B2, B3)"` | login/refresh/logout/me/password, ротация и reuse-detection, блокировка, `token_version` (D-19), матрица D-06, пользователи, сид суперадмина, D-07 |
+| B3 | Audit log | done | см. `git log --grep "(B2, B3)"` | `audit_log` append-only, дифф с маскированием ПДн, в транзакции изменения; `GET /admin/audit` |
 | B4 | Медиатека, галерея, видео | todo | | |
 | B5 | Контент, этапы, новости, ревалидация | todo | | |
 | B6 | Пожертвования в админке | todo | | |

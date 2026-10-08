@@ -1,4 +1,12 @@
+import type { Prisma } from '../generated/prisma/client';
 import type { DonationStatus } from '../generated/prisma/enums';
+
+/**
+ * Действие внутри транзакции зачисления — запись журнала админки.
+ * Вызывается, только если событие реально перевело донат в новый статус,
+ * и откатывается вместе с ним.
+ */
+export type OnEventApplied = (tx: Prisma.TransactionClient) => Promise<void>;
 
 /**
  * Словарь применения платёжных событий. Отдельно от `payment-provider.types.ts`:
@@ -31,6 +39,7 @@ export interface ApplyEventInput {
   readonly method?: string;
   /** Тело события для разбора спорных платежей. ПДн сюда не попадают. */
   readonly payload: Readonly<Record<string, string>>;
+  readonly onApplied?: OnEventApplied;
 }
 
 /**
@@ -46,6 +55,8 @@ export interface ManualConfirmationOptions {
   readonly amountKopecks?: bigint;
   /** Как пришли деньги: перевод по реквизитам, СБП, наличные. */
   readonly method?: string;
+  /** Запись журнала в транзакции подтверждения (B3). */
+  readonly onApplied?: OnEventApplied;
 }
 
 export interface ManualConfirmation {

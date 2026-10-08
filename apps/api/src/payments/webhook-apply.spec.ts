@@ -14,6 +14,7 @@ import {
 import type { TestFixtures } from '../database/testing/test-database';
 import { DonationStatus } from '../generated/prisma/enums';
 import type { ParsedWebhook, WebhookBody } from './payment-provider.types';
+import { AuditService } from '../audit/audit.service';
 import { PaymentsService } from './payments.service';
 
 /**
@@ -70,7 +71,7 @@ describeDatabase('применение колбэка', () => {
 
   beforeAll(() => {
     prisma = createPrisma();
-    payments = new PaymentsService(prisma);
+    payments = new PaymentsService(prisma, new AuditService(prisma));
   });
 
   afterAll(async () => {
