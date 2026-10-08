@@ -1,10 +1,22 @@
 import { ValidationPipe } from '@nestjs/common';
 import type { INestApplication, ValidationPipeOptions } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { Express } from 'express';
 import helmet from 'helmet';
 
 import { API_GLOBAL_PREFIX } from './config/constants';
 import type { AppConfig } from './config/configuration';
+
+/**
+ * Сколько обратных прокси стоит перед приложением. На Timeweb Cloud App Platform
+ * запросы приходят через их балансировщик. Без `trust proxy` Express видит
+ * в `req.ip` адрес прокси, и `@nestjs/throttler` считает всех посетителей
+ * одним клиентом: лимит заканчивается на весь сайт сразу.
+ *
+ * Ровно 1, а не `true`: при `true` Express берёт самый левый адрес из
+ * `X-Forwarded-For`, который клиент подставляет сам, и обходит лимит.
+ */
+export const TRUSTED_PROXY_HOPS = 1;
 
 /**
  * Опции глобального `ValidationPipe`. `forbidNonWhitelisted` — не косметика:
@@ -26,6 +38,9 @@ export const VALIDATION_PIPE_OPTIONS: ValidationPipeOptions = {
  */
 export function configureApp(app: INestApplication): void {
   const http = app.get(ConfigService<AppConfig, true>).get('http', { infer: true });
+
+  const express: Express = app.getHttpAdapter().getInstance();
+  express.set('trust proxy', TRUSTED_PROXY_HOPS);
 
   app.setGlobalPrefix(API_GLOBAL_PREFIX);
   app.use(helmet());
