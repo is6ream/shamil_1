@@ -311,3 +311,60 @@ model GalleryItem {
   @@index([campaignId, isPublished, sortOrder, takenOn])
   @@map("gallery_item")
 }
+
+// ─── Админ-панель ───────────────────────────────────────────────────────────
+
+/// Роли админки. SUPER_ADMIN — разработчик, EDITOR — заказчик (контент),
+/// ACCOUNTANT — бухгалтер (платежи только на чтение плюс ручные поступления).
+/// Права ролей — docs/admin/DECISIONS.md, D-06.
+enum AdminRole {
+  SUPER_ADMIN
+  EDITOR
+  ACCOUNTANT
+
+  @@map("admin_role")
+}
+
+/// Пользователь админки. Публичной регистрации нет: первого суперадмина
+/// создаёт сид из окружения, остальных — суперадмин.
+model AdminUser {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Всегда в нижнем регистре — CHECK в миграции.
+  email            String    @unique @db.VarChar(254)
+  /// bcrypt-хеш. Сам пароль нигде не хранится и не логируется.
+  passwordHash     String    @map("password_hash") @db.VarChar(100)
+  role             AdminRole
+  displayName      String?   @map("display_name") @db.VarChar(120)
+  isActive         Boolean   @default(true) @map("is_active")
+  /// Неудачные попытки входа подряд; при пороге выставляется locked_until.
+  failedLoginCount Int       @default(0) @map("failed_login_count")
+  lockedUntil      DateTime? @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  refreshTokens AdminRefreshToken[]
+
+  @@map("admin_user")
+}
+
+/// Refresh-токены с ротацией. В базе только SHA-256 токена: утечка таблицы
+/// не даёт войти. Все токены одной цепочки ротаций — одно семейство:
+/// повторное предъявление уже использованного токена отзывает семейство целиком.
+model AdminRefreshToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  familyId  String    @map("family_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  /// Заполнен — токен использован (ротирован) или отозван.
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  userAgent String?   @map("user_agent") @db.VarChar(256)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("admin_refresh_token")
+}

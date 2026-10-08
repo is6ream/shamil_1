@@ -1,0 +1,20 @@
+# Зависимости и сборка ставятся внутри образа, хостовые только мешают
+**/node_modules
+**/dist
+**/.next
+# С incremental: true старый tsbuildinfo без dist заставит tsc пропустить
+# сборку — в образе не окажется dist/main.js
+**/*.tsbuildinfo
+# Клиент Prisma генерирует prebuild
+apps/api/src/generated
+
+# Секреты — только через env контейнера
+.env
+.env.*
+!.env.example
+
+.git
+.claude
+Claude outputs
+docs
+coverage

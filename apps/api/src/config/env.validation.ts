@@ -19,8 +19,12 @@ import {
   ROBOKASSA_PRODUCTION_URL_PREFIX,
 } from '../payments/robokassa/robokassa.constants';
 import {
+  ADMIN_JWT_SECRET_MIN_LENGTH,
   ADMIN_TOKEN_MIN_LENGTH,
   DEFAULT_API_PORT,
+  DEFAULT_MAX_UPLOAD_MB,
+  MAX_UPLOAD_MB_CEILING,
+  REVALIDATE_SECRET_MIN_LENGTH,
   DEFAULT_THROTTLE_LIMIT,
   DEFAULT_THROTTLE_TTL_MS,
   EMULATOR_LINK_SECRET_MIN_LENGTH,
@@ -51,6 +55,12 @@ export enum DeployStage {
 export enum PaymentProviderCode {
   Manual = 'manual',
   Robokassa = 'robokassa',
+}
+
+/** Хранилище медиатеки. `local` — каталог на диске хостинга, без внешних сервисов. */
+export enum StorageDriver {
+  Local = 'local',
+  S3 = 's3',
 }
 
 /** Алгоритм подписи выбирается в кабинете мерчанта; строка подписи от него не зависит. */
@@ -286,6 +296,114 @@ export class EnvVars {
   @IsString()
   @MinLength(ADMIN_TOKEN_MIN_LENGTH)
   ADMIN_API_TOKEN?: string;
+
+  // ─── Админ-панель: сессии ──────────────────────────────────────────────────
+
+  /**
+   * Ключ подписи access-JWT админки. Обязателен в production. Локально может
+   * отсутствовать: тогда ключ случайный на запуск процесса, и сессии
+   * не переживают перезапуск — для разработки это честнее, чем общий
+   * «dev-секрет» в репозитории.
+   */
+  @ValidateIf((env: EnvVars) => env.NODE_ENV === NodeEnv.Production || env.ADMIN_JWT_SECRET !== undefined)
+  @IsString()
+  @MinLength(ADMIN_JWT_SECRET_MIN_LENGTH)
+  ADMIN_JWT_SECRET?: string;
+
+  /**
+   * Флаг `Secure` у cookie refresh-токена. По умолчанию — как `NODE_ENV=production`:
+   * локально сайт ходит по http, и Secure-cookie браузер бы не сохранил.
+   */
+  @IsOptional()
+  @envBoolean()
+  @IsBoolean()
+  ADMIN_COOKIE_SECURE?: boolean;
+
+  // ─── Медиатека ─────────────────────────────────────────────────────────────
+
+  /** Где лежат загруженные файлы: `local` (каталог на диске) или `s3`. */
+  @IsEnum(StorageDriver)
+  STORAGE_DRIVER: StorageDriver = StorageDriver.Local;
+
+  /** Каталог медиатеки для `local`. Относительный путь — от рабочего каталога процесса. */
+  @IsString()
+  @MinLength(1)
+  MEDIA_LOCAL_DIR: string = 'uploads';
+
+  /**
+   * Публичный адрес, по которому отдаются файлы медиатеки. По умолчанию —
+   * сам бэкенд: `${PUBLIC_API_URL}/media`. На хостинге каталог лучше отдавать
+   * веб-сервером напрямую — тогда здесь его адрес.
+   */
+  @IsOptional()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
+  MEDIA_PUBLIC_URL?: string;
+
+  /** Лимит размера загружаемого изображения, МБ. */
+  @IsInt()
+  @Min(1)
+  @Max(MAX_UPLOAD_MB_CEILING)
+  MEDIA_MAX_UPLOAD_MB: number = DEFAULT_MAX_UPLOAD_MB;
+
+  @ValidateIf(whenS3)
+  @IsString()
+  @MinLength(1)
+  S3_BUCKET?: string;
+
+  @ValidateIf(whenS3)
+  @IsString()
+  @MinLength(1)
+  S3_REGION?: string;
+
+  /** Эндпоинт S3-совместимого хранилища (Yandex Object Storage, Selectel, MinIO). */
+  @ValidateIf(whenS3)
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
+  S3_ENDPOINT?: string;
+
+  @ValidateIf(whenS3)
+  @IsString()
+  @MinLength(1)
+  S3_ACCESS_KEY_ID?: string;
+
+  @ValidateIf(whenS3)
+  @IsString()
+  @MinLength(1)
+  S3_SECRET_ACCESS_KEY?: string;
+
+  /** Публичный адрес бакета, от которого строятся ссылки на файлы. */
+  @ValidateIf(whenS3)
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
+  S3_PUBLIC_URL?: string;
+
+  // ─── Ревалидация фронтенда ─────────────────────────────────────────────────
+
+  /**
+   * Общий секрет с Next.js (`REVALIDATE_SECRET` во фронтенде). Не задан —
+   * ревалидация выключена: правки появятся на сайте по истечении кеша (до часа).
+   */
+  @IsOptional()
+  @IsString()
+  @MinLength(REVALIDATE_SECRET_MIN_LENGTH)
+  REVALIDATE_SECRET?: string;
+
+  // ─── Telegram-уведомления ──────────────────────────────────────────────────
+
+  /** Токен бота. Не задан — уведомления выключены, приложение работает. */
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  TELEGRAM_BOT_TOKEN?: string;
+
+  /** Чат или канал для уведомлений. Нужен вместе с токеном. */
+  @ValidateIf((env: EnvVars) => env.TELEGRAM_BOT_TOKEN !== undefined)
+  @IsString()
+  @MinLength(1)
+  TELEGRAM_CHAT_ID?: string;
+}
+
+/** Условие «поле обязательно, потому что медиатека в S3». */
+function whenS3(env: EnvVars): boolean {
+  return env.STORAGE_DRIVER === StorageDriver.S3;
 }
 
 /**

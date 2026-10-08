@@ -1,5 +1,7 @@
+import { randomBytes } from 'node:crypto';
+import { resolve as resolvePath } from 'node:path';
 import type { TaxationSystem, VatRate } from './constants';
-import { NodeEnv, validateEnv } from './env.validation';
+import { NodeEnv, StorageDriver, validateEnv } from './env.validation';
 import type { DeployStage, EnvVars, PaymentHashAlgorithm, PaymentProviderCode } from './env.validation';
 
 export interface HttpConfig {
@@ -59,6 +61,47 @@ export interface AdminConfig {
   readonly apiToken: string;
 }
 
+export interface AdminAuthConfig {
+  /**
+   * Ключ подписи access-JWT. Без `ADMIN_JWT_SECRET` (разрешено только вне
+   * production) — случайный на запуск процесса.
+   */
+  readonly jwtSecret: string;
+  readonly cookieSecure: boolean;
+}
+
+export interface S3StorageConfig {
+  readonly bucket: string;
+  readonly region: string;
+  readonly endpoint: string;
+  readonly accessKeyId: string;
+  readonly secretAccessKey: string;
+  readonly publicUrl: string;
+}
+
+export interface MediaConfig {
+  readonly driver: StorageDriver;
+  /** Абсолютный путь каталога медиатеки для `local`. */
+  readonly localDir: string;
+  /** Адрес, от которого строятся публичные ссылки на файлы `local`. */
+  readonly publicUrl: string;
+  readonly maxUploadBytes: number;
+  readonly s3?: S3StorageConfig;
+}
+
+export interface RevalidationConfig {
+  /** `undefined` — ревалидация выключена. */
+  readonly secret?: string;
+  /** Route handler Next.js: `${PUBLIC_SITE_URL}/api/revalidate`. */
+  readonly url: string;
+}
+
+export interface TelegramConfig {
+  /** `undefined` — уведомления выключены. */
+  readonly botToken?: string;
+  readonly chatId?: string;
+}
+
 export interface ThrottleConfig {
   readonly ttlMs: number;
   readonly limit: number;
@@ -74,6 +117,54 @@ export interface AppConfig {
   readonly publicUrls: PublicUrlsConfig;
   readonly payment: PaymentConfig;
   readonly admin: AdminConfig;
+  readonly adminAuth: AdminAuthConfig;
+  readonly media: MediaConfig;
+  readonly revalidation: RevalidationConfig;
+  readonly telegram: TelegramConfig;
+}
+
+const BYTES_IN_MB = 1024 * 1024;
+
+/** Публичный путь, под которым Nest отдаёт каталог медиатеки (`local`). */
+export const MEDIA_ROUTE_PREFIX = '/media';
+
+/** Маршрут ревалидации во фронтенде. */
+const REVALIDATE_PATH = '/api/revalidate';
+
+/**
+ * Случайный ключ JWT на запуск процесса — только вне production, это уже
+ * гарантировала валидация окружения. Генерируется один раз на процесс:
+ * `configuration()` вызывается при каждом создании модуля конфига в тестах,
+ * и разные ключи в одном процессе ломали бы проверку только что выданного токена.
+ */
+let processJwtSecret: string | undefined;
+
+function ephemeralJwtSecret(): string {
+  processJwtSecret ??= randomBytes(32).toString('hex');
+
+  return processJwtSecret;
+}
+
+function buildMediaConfig(env: EnvVars, apiUrl: string): MediaConfig {
+  const s3 =
+    env.STORAGE_DRIVER === StorageDriver.S3
+      ? {
+          bucket: env.S3_BUCKET ?? '',
+          region: env.S3_REGION ?? '',
+          endpoint: env.S3_ENDPOINT ?? '',
+          accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
+          secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
+          publicUrl: trimTrailingSlash(env.S3_PUBLIC_URL ?? ''),
+        }
+      : undefined;
+
+  return {
+    driver: env.STORAGE_DRIVER,
+    localDir: resolvePath(env.MEDIA_LOCAL_DIR),
+    publicUrl: trimTrailingSlash(env.MEDIA_PUBLIC_URL ?? `${apiUrl}${MEDIA_ROUTE_PREFIX}`),
+    maxUploadBytes: env.MEDIA_MAX_UPLOAD_MB * BYTES_IN_MB,
+    s3,
+  };
 }
 
 function parseOrigins(value: string): readonly string[] {
@@ -127,10 +218,13 @@ function buildPaymentConfig(env: EnvVars): PaymentConfig {
  */
 export function configuration(): AppConfig {
   const env = validateEnv(process.env as Record<string, unknown>);
+  const isProduction = env.NODE_ENV === NodeEnv.Production;
+  const apiUrl = trimTrailingSlash(env.PUBLIC_API_URL);
+  const siteUrl = trimTrailingSlash(env.PUBLIC_SITE_URL);
 
   return {
     nodeEnv: env.NODE_ENV,
-    isProduction: env.NODE_ENV === NodeEnv.Production,
+    isProduction,
     deployStage: env.DEPLOY_STAGE,
     http: {
       // Порт хостинга приоритетнее: Vercel и PaaS назначают его сами.
@@ -145,14 +239,27 @@ export function configuration(): AppConfig {
       limit: env.THROTTLE_LIMIT,
     },
     publicUrls: {
-      apiUrl: trimTrailingSlash(env.PUBLIC_API_URL),
-      siteUrl: trimTrailingSlash(env.PUBLIC_SITE_URL),
+      apiUrl,
+      siteUrl,
     },
     payment: buildPaymentConfig(env),
     admin: {
       // Вне production переменной может не быть — и это не повод пропускать
       // запросы: пустой токен гард трактует как «закрыто наглухо».
       apiToken: env.ADMIN_API_TOKEN ?? '',
+    },
+    adminAuth: {
+      jwtSecret: env.ADMIN_JWT_SECRET ?? ephemeralJwtSecret(),
+      cookieSecure: env.ADMIN_COOKIE_SECURE ?? isProduction,
+    },
+    media: buildMediaConfig(env, apiUrl),
+    revalidation: {
+      secret: env.REVALIDATE_SECRET,
+      url: `${siteUrl}${REVALIDATE_PATH}`,
+    },
+    telegram: {
+      botToken: env.TELEGRAM_BOT_TOKEN,
+      chatId: env.TELEGRAM_CHAT_ID,
     },
   };
 }

@@ -92,6 +92,18 @@ export const MAX_MANUAL_CONFIRM_KOPECKS = 24_000_000_000n;
  */
 export const ADMIN_TOKEN_MIN_LENGTH = 32;
 
+/** Ключ подписи JWT админки: 32 символа, как у остальных секретов. */
+export const ADMIN_JWT_SECRET_MIN_LENGTH = 32;
+
+/** Общий секрет ревалидации Next.js. */
+export const REVALIDATE_SECRET_MIN_LENGTH = 32;
+
+/** Лимит размера фото по умолчанию: снимок с телефона — 3–8 МБ. */
+export const DEFAULT_MAX_UPLOAD_MB = 15;
+
+/** Потолок настройки лимита: больше sharp держит в памяти уже ощутимо. */
+export const MAX_UPLOAD_MB_CEILING = 50;
+
 /** Минимальная длина HMAC-ключа ссылок эмулятора: те же 32 символа, что у админского токена. */
 export const EMULATOR_LINK_SECRET_MIN_LENGTH = 32;
 
