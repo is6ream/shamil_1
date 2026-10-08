@@ -138,6 +138,16 @@ describe('валидация окружения', () => {
     expect(env.ADMIN_API_TOKEN).toBeUndefined();
   });
 
+  test('в production без ADMIN_JWT_SECRET приложение не поднимается', () => {
+    // Arrange: случайный ключ на процесс допустим только локально — на проде
+    // он разлогинивал бы админов при каждом рестарте и расходился между инстансами
+    const act = (): unknown =>
+      validateEnv({ ...BASE_ENV, NODE_ENV: NodeEnv.Production, ADMIN_API_TOKEN: 'x'.repeat(32) });
+
+    // Assert
+    expect(act).toThrow(/ADMIN_JWT_SECRET/);
+  });
+
   test('включённая фискализация требует СНО, наименование позиции и ставку НДС', () => {
     // Act
     const act = (): unknown =>
@@ -159,6 +169,7 @@ describe('эмулятор оплаты и адрес Robokassa', () => {
     ...BASE_ENV,
     NODE_ENV: NodeEnv.Production,
     ADMIN_API_TOKEN: 'x'.repeat(32),
+    ADMIN_JWT_SECRET: 'j'.repeat(32),
   };
 
   test('по умолчанию эмулятор выключен, адрес — боевая Robokassa', () => {
