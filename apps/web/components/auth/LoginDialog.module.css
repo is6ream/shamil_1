@@ -1,0 +1,29 @@
+/* Окно входа поверх публичного сайта. Размеры и отступы — от Modal. */
+
+.form {
+  display: grid;
+}
+
+.lead {
+  margin: calc(-1 * var(--sp-3)) 0 var(--sp-5);
+  color: var(--text-soft);
+}
+
+/* Fieldset — только чтобы выключать оба поля разом на время запроса. */
+.fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.submit {
+  margin-top: var(--sp-6);
+}
+
+.already {
+  margin-top: var(--sp-4);
+  color: var(--text-soft);
+  font-size: 14px;
+  text-align: center;
+}

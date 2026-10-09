@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
-import { CloseIcon } from "@/components/icons/Icons";
+import { CloseIcon, UserIcon } from "@/components/icons/Icons";
 import { NAV_ITEMS } from "@/lib/content";
 import { ORGANIZATION, toTelHref } from "@/lib/organization";
 
@@ -14,9 +14,16 @@ interface Props {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onNavigate: (event: ReactMouseEvent<HTMLAnchorElement>, id: string) => void;
+  /** Вход для сотрудников — пункт виден только там, где иконке нет места в шапке. */
+  readonly onLoginOpen: () => void;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** Скрытые через CSS (`display: none`) элементы фокус не принимают — в ловушку их не берём. */
+function isVisible(element: HTMLElement): boolean {
+  return element.getClientRects().length > 0;
+}
 
 /**
  * Выезжающее меню телефона.
@@ -28,7 +35,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
  * В DOM всегда (скрыто через `hidden`), чтобы ссылки были доступны
  * поисковику и не было вспышки при первом открытии.
  */
-export function MobileMenu({ id, isOpen, onClose, onNavigate }: Props) {
+export function MobileMenu({ id, isOpen, onClose, onNavigate, onLoginOpen }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,7 +59,7 @@ export function MobileMenu({ id, isOpen, onClose, onNavigate }: Props) {
         return;
       }
 
-      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(isVisible);
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
 
@@ -115,6 +122,11 @@ export function MobileMenu({ id, isOpen, onClose, onNavigate }: Props) {
             {ORGANIZATION.phone}
           </a>
         )}
+
+        <button className={styles.login} type="button" aria-haspopup="dialog" onClick={onLoginOpen}>
+          <UserIcon />
+          Вход для сотрудников
+        </button>
       </div>
     </div>
   );

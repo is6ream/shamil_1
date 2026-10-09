@@ -54,6 +54,9 @@ export function Modal({ isOpen, title, onClose, isDismissible = false, children 
 
     if (isOpen && !dialog.open) {
       dialog.showModal();
+      // `autoFocus` React выполняет при монтировании тела, когда окно ещё
+      // закрыто, и фокус не встаёт. Поле с `data-autofocus` фокусируем сами.
+      dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     } else if (!isOpen && dialog.open) {
       dialog.close();
     }

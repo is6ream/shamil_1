@@ -86,6 +86,16 @@ export function MenuIcon(props: IconProps) {
   );
 }
 
+/** Силуэт человека — вход для сотрудников в шапке. */
+export function UserIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M4.8 20c.9-3.6 3.7-5.6 7.2-5.6s6.3 2 7.2 5.6" />
+    </Svg>
+  );
+}
+
 export function CloseIcon(props: IconProps) {
   return (
     <Svg {...props} strokeWidth="2">
