@@ -180,7 +180,7 @@ export function checkContacts(block: ContactsBlock): BlockCheck<ContactsBlock> {
   const telegram = (block.telegramChannel ?? "").trim().replace(/^@/, "").replace(/^https?:\/\/t\.me\//i, "");
 
   return c.result<ContactsBlock>({
-    phone: c.pattern("phone", block.phone, /^[\d\s()+-]{5,30}$/, "Цифры, пробелы, скобки, + и -; от 5 до 30 знаков."),
+    phone: c.pattern("phone", block.phone, /^\+?[0-9 ()-]{5,30}$/, "Цифры, пробелы, скобки и дефис, + только в начале; от 5 до 30 знаков."),
     email: c.pattern("email", block.email, /^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Проверьте адрес почты."),
     telegramChannel: c.pattern(
       "telegramChannel",

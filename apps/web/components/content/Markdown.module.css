@@ -1,0 +1,58 @@
+.markdown {
+  max-width: var(--measure);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  margin: 1.4em 0 0.5em;
+  line-height: var(--lh-tight);
+}
+
+.markdown h1 {
+  font-size: var(--fs-h3);
+}
+
+.markdown h2 {
+  font-size: 24px;
+}
+
+.markdown h3 {
+  font-size: 20px;
+}
+
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown blockquote {
+  margin: 0 0 1em;
+}
+
+.markdown ul,
+.markdown ol {
+  padding-left: 1.4em;
+}
+
+.markdown blockquote {
+  padding-left: var(--sp-4);
+  border-left: 3px solid var(--border);
+  color: var(--text-soft);
+}
+
+.markdown a {
+  color: var(--accent);
+}
+
+.markdown hr {
+  margin: 2em 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
