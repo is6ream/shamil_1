@@ -11,6 +11,8 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export type AdminPermission =
   | "content"
+  /** Реквизиты счёта — только суперадмин (D-17). */
+  | "requisites"
   | "goals"
   | "manualDonations"
   | "donations"
@@ -22,6 +24,7 @@ export type AdminPermission =
 const PERMISSIONS: Readonly<Record<AdminRole, ReadonlySet<AdminPermission>>> = {
   SUPER_ADMIN: new Set<AdminPermission>([
     "content",
+    "requisites",
     "goals",
     "manualDonations",
     "donations",
@@ -41,7 +44,7 @@ const PERMISSIONS: Readonly<Record<AdminRole, ReadonlySet<AdminPermission>>> = {
 };
 
 export const ROLE_LABELS: Readonly<Record<AdminRole, string>> = {
-  SUPER_ADMIN: "Администратор",
+  SUPER_ADMIN: "Суперадмин",
   EDITOR: "Редактор",
   ACCOUNTANT: "Бухгалтер",
 };

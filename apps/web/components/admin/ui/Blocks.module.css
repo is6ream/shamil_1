@@ -1,0 +1,158 @@
+.section {
+  padding: var(--sp-5);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.section + .section {
+  margin-top: var(--sp-5);
+}
+
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 20px;
+}
+
+.sectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-4);
+}
+
+/* Внутри сетки отступы между полями задаёт gap. */
+.grid > * + * {
+  margin-top: 0 !important;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+.kv {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: var(--fs-small);
+}
+
+.kvRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 34%) 1fr;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: var(--stroke) solid var(--border);
+}
+
+.kvRow dt {
+  color: var(--text-soft);
+}
+
+.kvRow dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-strong);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.neutral {
+  background: var(--surface-sunken);
+  color: var(--text-soft);
+}
+
+.success {
+  background: #e3f3e8;
+  color: #1d6b35;
+}
+
+.warning {
+  background: #fdf1d8;
+  color: #7a5200;
+}
+
+.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.info {
+  background: #e3eef8;
+  color: var(--accent);
+}
+
+.note {
+  margin: var(--sp-4) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-field);
+  background: #eef4fa;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+
+.noteWarning {
+  border-left-color: #b77900;
+  background: #fdf6e7;
+}
+
+.note p {
+  margin: 0;
+}
+
+.note p + p {
+  margin-top: var(--sp-2);
+}
+
+@media (min-width: 720px) {
+  .section {
+    padding: var(--sp-6);
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .formActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .formActions > * {
+    flex: 1 1 100%;
+  }
+
+  .kvRow {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

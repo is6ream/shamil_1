@@ -6,13 +6,15 @@ interface Props {
   readonly title: string;
   readonly lead?: ReactNode;
   readonly actions?: ReactNode;
+  /** Таблицы с многими столбцами — на всю ширину рабочей области. */
+  readonly isWide?: boolean;
   readonly children: ReactNode;
 }
 
 /** Заголовок экрана админки и колонка контента. */
-export function AdminPage({ title, lead, actions, children }: Props) {
+export function AdminPage({ title, lead, actions, isWide = false, children }: Props) {
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${isWide ? styles.wide : ""}`}>
       <div className={styles.head}>
         <div>
           <h1 className={styles.title}>{title}</h1>
