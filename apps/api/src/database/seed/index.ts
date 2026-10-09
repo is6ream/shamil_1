@@ -98,11 +98,10 @@ async function seedCampaign(prisma: PrismaClient): Promise<void> {
       currency: CAMPAIGN_SEED.currency,
       minDonationKopecks: CAMPAIGN_SEED.minDonationKopecks,
     },
-    // Цель и название приходят из ТЗ, их обновляем. Минимальный донат могли
-    // изменить через админку — оставляем как есть.
+    // Цель сбора правится в админке (B6) — повторный сид её не перетирает,
+    // как и минимальный донат. Название и валюта приходят из ТЗ.
     update: {
       title: CAMPAIGN_SEED.title,
-      goalKopecks: CAMPAIGN_SEED.goalKopecks,
       currency: CAMPAIGN_SEED.currency,
     },
     select: { id: true },

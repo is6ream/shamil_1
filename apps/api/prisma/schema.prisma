@@ -216,6 +216,10 @@ model Donation {
   /// Путь страницы первого захода: `/02/`, `/?utm_source=…` без домена.
   landingPage String? @map("landing_page") @db.VarChar(512)
 
+  /// Комментарий админа к ручному поступлению («перевод по выписке от 08.10»).
+  /// Обязателен для ручного поступления; ПДн сюда не пишут — подсказка в админке.
+  adminComment String? @map("admin_comment") @db.VarChar(500)
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   paidAt    DateTime? @map("paid_at") @db.Timestamptz(3)
