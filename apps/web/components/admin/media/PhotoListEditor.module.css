@@ -62,3 +62,9 @@
   color: var(--danger);
   font-size: var(--fs-small);
 }
+
+.fieldActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
