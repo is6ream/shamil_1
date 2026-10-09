@@ -1,0 +1,37 @@
+.page {
+  max-width: 960px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.title {
+  font-size: var(--fs-h2);
+}
+
+.lead {
+  margin: var(--sp-2) 0 0;
+  max-width: 38em;
+  color: var(--text-soft);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+/* Формы — одной колонкой и не шире строки чтения. */
+.form {
+  max-width: 34em;
+}
+
+.submit {
+  margin-top: var(--sp-6);
+}

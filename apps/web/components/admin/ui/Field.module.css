@@ -1,0 +1,31 @@
+.field + .field {
+  margin-top: var(--sp-5);
+}
+
+.textarea {
+  height: auto;
+  min-height: 120px;
+  padding-block: var(--sp-3);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.formErrors {
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--stroke) solid var(--danger);
+  border-radius: var(--r-field);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--fs-small);
+  line-height: 1.45;
+}
+
+.formErrors p,
+.formErrors ul {
+  margin: 0;
+}
+
+.formErrors ul {
+  padding-left: var(--sp-5);
+}

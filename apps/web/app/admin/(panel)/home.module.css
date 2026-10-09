@@ -1,0 +1,33 @@
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-height: 96px;
+  padding: var(--sp-5);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-strong);
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color var(--dur-fast);
+}
+
+.tile:hover {
+  border-color: var(--accent);
+}
+
+.tile small {
+  color: var(--text-soft);
+  font-weight: 400;
+}

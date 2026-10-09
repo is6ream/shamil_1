@@ -1,0 +1,72 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+}
+
+.table th,
+.table td {
+  padding: var(--sp-3) var(--sp-3);
+  border-bottom: var(--stroke) solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--text-soft);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table th.numeric,
+.table td.numeric {
+  text-align: right;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+  font-size: var(--fs-small);
+  color: var(--text-soft);
+}
+
+@media (max-width: 720px) {
+  .table thead {
+    display: none;
+  }
+
+  .table tr {
+    display: block;
+    padding: var(--sp-3) 0;
+    border-bottom: var(--stroke) solid var(--border);
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-1) 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--text-soft);
+    text-align: left;
+  }
+
+  .table td.numeric {
+    white-space: normal;
+  }
+}

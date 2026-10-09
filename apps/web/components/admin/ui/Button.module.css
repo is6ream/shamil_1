@@ -1,0 +1,7 @@
+.danger {
+  background: var(--danger);
+}
+
+.danger:hover {
+  background: #8c1d17;
+}

@@ -1,0 +1,23 @@
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--sp-4);
+}
+
+.card {
+  width: min(100%, 420px);
+}
+
+.title {
+  font-size: var(--fs-h3);
+}
+
+.lead {
+  margin: var(--sp-1) 0 var(--sp-6);
+  color: var(--text-soft);
+}
+
+.submit {
+  margin-top: var(--sp-6);
+}
