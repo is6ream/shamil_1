@@ -69,7 +69,13 @@ export function Modal({ isOpen, title, onClose, isDismissible = false, isWide = 
       ref={ref}
       className={`${styles.dialog} ${isWide ? styles.wide : ""}`}
       aria-labelledby={titleId}
-      onClose={onClose}
+      onClose={(event) => {
+        // React доводит onClose вложенного окна (выбор фото, подтверждение)
+        // и до родительского <dialog> — закрываем только своё.
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
       onClick={
         isDismissible
           ? (event) => {

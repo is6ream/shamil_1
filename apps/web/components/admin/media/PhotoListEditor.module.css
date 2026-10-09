@@ -1,0 +1,64 @@
+.editor {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+
+.label {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+  font-weight: 500;
+}
+
+.empty {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+}
+
+.list {
+  display: grid;
+  gap: var(--sp-2);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-field);
+}
+
+.thumb {
+  width: 96px;
+  height: 72px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--surface-sunken);
+}
+
+.position {
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--fs-small);
+}

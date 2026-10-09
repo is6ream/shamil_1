@@ -18,7 +18,7 @@ export const ADMIN_LOGIN = "/admin/login";
 export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { href: ADMIN_HOME, label: "Главная", permission: null, isReady: true },
   { href: "/admin/donations", label: "Пожертвования", permission: "donations", isReady: true },
-  { href: "/admin/stages", label: "Ход стройки", permission: "content", isReady: false },
+  { href: "/admin/stages", label: "Ход стройки", permission: "content", isReady: true },
   { href: "/admin/content", label: "Тексты сайта", permission: "content", isReady: false },
   { href: "/admin/news", label: "Новости", permission: "content", isReady: false },
   { href: "/admin/media", label: "Фото", permission: "content", isReady: true },

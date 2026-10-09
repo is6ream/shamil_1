@@ -1,0 +1,10 @@
+.group {
+  display: inline-flex;
+  gap: var(--sp-1);
+}
+
+.button {
+  min-width: var(--control-h-sm);
+  padding: 0;
+  font-size: 18px;
+}
