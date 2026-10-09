@@ -38,7 +38,7 @@ export default function LoginPage() {
     setErrors([]);
 
     try {
-      await login({ email: email.trim().toLowerCase(), password });
+      await login({ email, password });
     } catch (error: unknown) {
       setErrors(error instanceof AdminApiError ? error.messages : [errorMessage(error)]);
       setIsSubmitting(false);

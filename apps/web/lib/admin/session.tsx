@@ -9,7 +9,7 @@ import { createAdminClient } from "./api-client";
 import type { AdminClient } from "./api-client";
 import { AUTH_PATHS, parseAccessToken, parseAdminUser } from "./endpoints";
 import type { AdminUser, LoginBody } from "./endpoints";
-import { AdminApiError } from "./errors";
+import { loginRequest } from "./login";
 import { can } from "./roles";
 import type { AdminPermission } from "./roles";
 
@@ -36,8 +36,6 @@ interface SessionContextValue {
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
-
-const WRONG_CREDENTIALS = "Неверная почта или пароль.";
 
 async function loadMe(client: AdminClient): Promise<AdminUser> {
   return parseAdminUser(await client.request<unknown>(AUTH_PATHS.me));
@@ -81,17 +79,7 @@ export function AdminSessionProvider({ children }: { readonly children: ReactNod
 
   const login = useCallback(
     async (body: LoginBody) => {
-      let response: unknown;
-
-      try {
-        response = await client.request<unknown>(AUTH_PATHS.login, { body, skipAuthRetry: true });
-      } catch (error: unknown) {
-        if (error instanceof AdminApiError && error.status === 401) {
-          throw new AdminApiError(401, [WRONG_CREDENTIALS]);
-        }
-
-        throw error;
-      }
+      const response = await loginRequest(client, body);
 
       client.setAccessToken(parseAccessToken(response));
 
