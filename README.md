@@ -139,8 +139,35 @@ node scripts/smoke-test-payment.mjs
 | `npm run db:up` / `npm run db:down` | Поднять / остановить PostgreSQL |
 | `npm run db:migrate --workspace @shamil/api` | Создать миграцию по изменённой схеме |
 | `npm run db:migrate:deploy --workspace @shamil/api` | Применить миграции |
-| `npm run db:seed --workspace @shamil/api` | Справочные данные: регионы, сбор, цель месяца |
+| `npm run db:seed --workspace @shamil/api` | Справочные данные: регионы, сбор, цель месяца, стартовый контент главной, первый суперадмин |
 | `npm run db:studio --workspace @shamil/api` | Посмотреть данные глазами |
+
+## API админ-панели
+
+Полный контракт — [docs/admin/API.md](docs/admin/API.md): маршруты, роли, формы ответов, ошибки,
+схема сессии, лимиты загрузки, теги ревалидации. Решения — [docs/admin/DECISIONS.md](docs/admin/DECISIONS.md),
+что выставить на хостинге — [docs/admin/REPORT-backend.md](docs/admin/REPORT-backend.md).
+
+Коротко:
+
+- все маршруты админки — `/api/admin/*`, вход `POST /api/admin/auth/login`; access-JWT 15 минут в памяти
+  вкладки, refresh — в httpOnly-cookie с ротацией;
+- роли `SUPER_ADMIN` / `EDITOR` / `ACCOUNTANT` (матрица D-06 — в `apps/api/src/auth/roles.ts`);
+- каждое изменение пишется в журнал `audit_log` в той же транзакции; ПДн в журнале замаскированы;
+- медиатека: JPEG/PNG/WebP → WebP трёх размеров без EXIF; в production — только S3 (`STORAGE_DRIVER=s3`);
+- хадисы и юридические тексты через API не редактируются.
+
+Первый вход локально:
+
+```bash
+# в .env: ADMIN_SEED_EMAIL=you@example.com, ADMIN_SEED_PASSWORD=<не короче 12 символов>
+npm run db:seed --workspace @shamil/api
+curl -i -X POST http://localhost:3001/api/admin/auth/login \
+  -H 'Content-Type: application/json' -d '{"email":"you@example.com","password":"…"}'
+```
+
+Старый статический `ADMIN_API_TOKEN` по-прежнему принимается только подтверждением перевода
+`POST /api/admin/donations/:id/confirm` (D-07).
 
 Тесты схемы работают с настоящим PostgreSQL. Базу для них создаёт сам прогон,
 адрес — `TEST_DATABASE_URL`; если сервер недоступен, эти тесты пропускаются
@@ -159,6 +186,10 @@ node scripts/smoke-test-payment.mjs
 - **`overrides: { "multer": "^2.4.0" }` в корневом package.json.** `@nestjs/platform-express@11`
   тянет multer 2.2.0 с четырьмя DoS-уязвимостями (GHSA-wc9g-mqfw-jrwm и др.). 2.4.0 совместим
   по API. Загрузка фото в галерею пойдёт именно через multer — оставлять было нельзя.
+- **`@nestjs/jwt` 11, а не 12.** По той же причине, что и NestJS 11: двенадцатая — ESM-only,
+  Jest на CommonJS её не загружает (D-18).
+- **`Dockerfile.api` на `node:22-bookworm-slim`, не alpine.** `sharp` ставит готовые бинарники
+  libvips для glibc; на musl их нет.
 
 ## Правила, которые не отменяются сроком
 

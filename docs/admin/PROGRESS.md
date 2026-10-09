@@ -22,7 +22,7 @@
 | B6 | Пожертвования в админке | done | см. `git log --grep "(B6)"` | список с фильтрами/сортировкой/пагинацией, маска ПДн по ролям, потоковый CSV (BOM, `;`, защита от формул), ручное поступление сразу в `paid` с ключом идемпотентности, цель сбора и цели месяца с пересчётом «собрано» |
 | B7 | Дашборд | done | см. `git log --grep "(B7)"` | `GET /admin/dashboard?from&to`: собрано/цель, цель месяца, сумма/количество/средний чек за период, по дням (Уфа), по UTM и способам, последние 10 — агрегации в SQL |
 | B8 | Health ready | done | см. `git log --grep "(B8)"` | `/api/health/ready`: `SELECT 1` + `HeadBucket` (s3) / каталог (local), таймаут 3 с, 503 без деталей; `Dockerfile.api` на bookworm-slim (glibc для sharp) |
-| B9 | Контракт API.md, e2e, отчёт | todo | | |
+| B9 | Контракт API.md, e2e, отчёт | done | см. `git log --grep "(B9)"` | [API.md](API.md) сверен с роутером; e2e админки (14 сценариев); README; [REPORT-backend.md](REPORT-backend.md); 441 тест зелёный, `docker build` проверен |
 
 Telegram-оповещения (бывший шаг 8 PLAN) исключены из объёма — см. D-03.
 
