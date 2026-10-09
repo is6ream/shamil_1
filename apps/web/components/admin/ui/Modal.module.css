@@ -62,3 +62,13 @@
     flex: 1 1 100%;
   }
 }
+
+.wide {
+  width: min(calc(100vw - 2 * var(--sp-4)), 960px);
+}
+
+@media (max-width: 480px) {
+  .dialog {
+    padding: var(--sp-5) var(--sp-4);
+  }
+}

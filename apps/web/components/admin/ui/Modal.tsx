@@ -18,6 +18,8 @@ interface ModalProps {
    * потерять (вход); подтверждения опасных действий закрываются только явно.
    */
   readonly isDismissible?: boolean;
+  /** Сетки (выбор из медиатеки) — окно шире формы. */
+  readonly isWide?: boolean;
   readonly children: ReactNode;
 }
 
@@ -41,7 +43,7 @@ function isBackdropClick(event: ReactMouseEvent<HTMLDialogElement>): boolean {
  * Модальное окно на нативном `<dialog>`: ловушка фокуса, Esc и возврат
  * фокуса на кнопку-открывашку браузер делает сам.
  */
-export function Modal({ isOpen, title, onClose, isDismissible = false, children }: ModalProps) {
+export function Modal({ isOpen, title, onClose, isDismissible = false, isWide = false, children }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -65,7 +67,7 @@ export function Modal({ isOpen, title, onClose, isDismissible = false, children 
   return (
     <dialog
       ref={ref}
-      className={styles.dialog}
+      className={`${styles.dialog} ${isWide ? styles.wide : ""}`}
       aria-labelledby={titleId}
       onClose={onClose}
       onClick={

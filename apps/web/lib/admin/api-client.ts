@@ -23,6 +23,14 @@ export interface AdminClientOptions {
   readonly onSessionExpired?: () => void;
   /** Взаимоисключение refresh между вкладками; по умолчанию Web Locks API. */
   readonly withRefreshLock?: RefreshLock;
+  /** Подменяется в тестах загрузки. */
+  readonly xhrFactory?: () => XMLHttpRequest;
+}
+
+/** Ответ XHR в том виде, в каком его разбирает клиент. */
+interface RawResponse {
+  readonly status: number;
+  readonly body: unknown;
 }
 
 export type RefreshLock = <T>(task: () => Promise<T>) => Promise<T>;
@@ -60,6 +68,11 @@ export interface AdminClient {
   request<T>(path: string, options?: RequestOptions): Promise<T>;
   /** Файл (CSV): тело ответа как `Blob`. */
   download(path: string, options?: RequestOptions): Promise<Blob>;
+  /**
+   * Загрузка multipart с прогрессом (`fetch` прогресса отправки не даёт).
+   * Тот же Bearer и тот же один refresh на 401, что у `request`.
+   */
+  upload<T>(path: string, form: FormData, onProgress?: (fraction: number) => void, signal?: AbortSignal): Promise<T>;
   /** Обновляет access по refresh-cookie; `false` — сессии нет. */
   refresh(): Promise<boolean>;
   setAccessToken(token: string | null): void;
@@ -111,6 +124,7 @@ export function createAdminClient({
   fetchImpl = (input, init) => fetch(input, init),
   onSessionExpired,
   withRefreshLock = webLocksRefresh,
+  xhrFactory = () => new XMLHttpRequest(),
 }: AdminClientOptions): AdminClient {
   let accessToken: string | null = null;
   let refreshing: Promise<boolean> | null = null;
@@ -204,9 +218,81 @@ export function createAdminClient({
     return response.blob();
   }
 
+  function sendXhr(
+    path: string,
+    form: FormData,
+    token: string | null,
+    onProgress?: (fraction: number) => void,
+    signal?: AbortSignal,
+  ): Promise<RawResponse> {
+    return new Promise((resolve, reject) => {
+      const xhr = xhrFactory();
+
+      xhr.open("POST", `${baseUrl}${path}`);
+      xhr.withCredentials = true;
+      // Content-Type не задаём: boundary multipart браузер ставит сам.
+      if (token !== null) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      }
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          onProgress?.(event.loaded / event.total);
+        }
+      };
+      xhr.onload = () => {
+        let body: unknown = null;
+
+        try {
+          body = xhr.responseText === "" ? null : (JSON.parse(xhr.responseText) as unknown);
+        } catch {
+          body = null;
+        }
+
+        resolve({ status: xhr.status, body });
+      };
+      xhr.onerror = () => reject(networkError());
+      xhr.onabort = () => reject(new DOMException("Загрузка отменена", "AbortError"));
+      signal?.addEventListener("abort", () => xhr.abort(), { once: true });
+      xhr.send(form);
+    });
+  }
+
+  async function upload<T>(
+    path: string,
+    form: FormData,
+    onProgress?: (fraction: number) => void,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    const usedToken = accessToken;
+    let response = await sendXhr(path, form, usedToken, onProgress, signal);
+
+    if (response.status === UNAUTHORIZED) {
+      const isRefreshed = accessToken !== null && accessToken !== usedToken ? true : await refresh();
+
+      if (!isRefreshed) {
+        expire();
+        throw toAdminApiError(UNAUTHORIZED, response.body);
+      }
+
+      response = await sendXhr(path, form, accessToken, onProgress, signal);
+
+      if (response.status === UNAUTHORIZED) {
+        expire();
+      }
+    }
+
+    if (response.status < 200 || response.status >= 300) {
+      throw toAdminApiError(response.status, response.body);
+    }
+
+    return response.body as T;
+  }
+
   return {
     request,
     download,
+    upload,
     refresh,
     setAccessToken(token) {
       accessToken = token;

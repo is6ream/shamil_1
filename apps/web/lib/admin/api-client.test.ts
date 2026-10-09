@@ -196,3 +196,71 @@ describe("createAdminClient", () => {
     });
   });
 });
+
+/** XHR, который пускает только `Bearer fresh-1` и шлёт два события прогресса. */
+function fakeXhrFactory(sent: string[]) {
+  return () => {
+    const headers = new Map<string, string>();
+    const xhr = {
+      status: 0,
+      responseText: "",
+      withCredentials: false,
+      upload: { onprogress: null as ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) | null },
+      onload: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
+      open() {},
+      abort() {},
+      setRequestHeader(name: string, value: string) {
+        headers.set(name, value);
+      },
+      send() {
+        const auth = headers.get("Authorization") ?? "";
+
+        sent.push(auth);
+        setTimeout(() => {
+          if (auth === "Bearer fresh-1") {
+            xhr.upload.onprogress?.({ lengthComputable: true, loaded: 50, total: 100 });
+            xhr.upload.onprogress?.({ lengthComputable: true, loaded: 100, total: 100 });
+            xhr.status = 201;
+            xhr.responseText = JSON.stringify({ id: "m1" });
+          } else {
+            xhr.status = 401;
+            xhr.responseText = JSON.stringify({ message: "Требуется вход" });
+          }
+
+          xhr.onload?.();
+        }, 1);
+      },
+    };
+
+    return xhr as unknown as XMLHttpRequest;
+  };
+}
+
+describe("upload", () => {
+  test("401 → один refresh → повтор с новым токеном, прогресс доходит до 1", async () => {
+    const api = fakeApi({ refreshOk: true });
+    const sent: string[] = [];
+    const progress: number[] = [];
+    const client = createAdminClient({ baseUrl: BASE, fetchImpl: api.fetchImpl, xhrFactory: fakeXhrFactory(sent) });
+
+    const result = await client.upload<{ id: string }>("/admin/media", new FormData(), (fraction) =>
+      progress.push(fraction),
+    );
+
+    assert.deepEqual(result, { id: "m1" });
+    assert.deepEqual(sent, ["", "Bearer fresh-1"]);
+    assert.equal(api.refreshCount(), 1);
+    assert.deepEqual(progress, [0.5, 1]);
+  });
+
+  test("ошибка сервера приходит AdminApiError с телом", async () => {
+    const api = fakeApi({ refreshOk: false });
+    const client = createAdminClient({ baseUrl: BASE, fetchImpl: api.fetchImpl, xhrFactory: fakeXhrFactory([]) });
+
+    await assert.rejects(client.upload("/admin/media", new FormData()), (error: unknown) => {
+      return error instanceof AdminApiError && error.status === 401;
+    });
+  });
+});

@@ -21,7 +21,7 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { href: "/admin/stages", label: "Ход стройки", permission: "content", isReady: false },
   { href: "/admin/content", label: "Тексты сайта", permission: "content", isReady: false },
   { href: "/admin/news", label: "Новости", permission: "content", isReady: false },
-  { href: "/admin/media", label: "Фото", permission: "content", isReady: false },
+  { href: "/admin/media", label: "Фото", permission: "content", isReady: true },
   { href: "/admin/gallery", label: "Галерея", permission: "content", isReady: false },
   { href: "/admin/video", label: "Видео", permission: "content", isReady: false },
   { href: "/admin/goals", label: "Цели сбора", permission: "campaign", isReady: true },
