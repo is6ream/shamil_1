@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+
+import { CloseIcon } from "@/components/icons/Icons";
 
 import { Button } from "./Button";
 import { TextField } from "./Field";
@@ -11,14 +13,35 @@ interface ModalProps {
   readonly isOpen: boolean;
   readonly title: string;
   readonly onClose: () => void;
+  /**
+   * Крестик в углу и закрытие кликом по фону. Для форм, которые не жалко
+   * потерять (вход); подтверждения опасных действий закрываются только явно.
+   */
+  readonly isDismissible?: boolean;
   readonly children: ReactNode;
+}
+
+/** Клик пришёлся на `::backdrop`: у него нет своего узла, целью будет сам `<dialog>`. */
+function isBackdropClick(event: ReactMouseEvent<HTMLDialogElement>): boolean {
+  if (event.target !== event.currentTarget) {
+    return false;
+  }
+
+  const rect = event.currentTarget.getBoundingClientRect();
+
+  return (
+    event.clientX < rect.left ||
+    event.clientX > rect.right ||
+    event.clientY < rect.top ||
+    event.clientY > rect.bottom
+  );
 }
 
 /**
  * Модальное окно на нативном `<dialog>`: ловушка фокуса, Esc и возврат
  * фокуса на кнопку-открывашку браузер делает сам.
  */
-export function Modal({ isOpen, title, onClose, children }: ModalProps) {
+export function Modal({ isOpen, title, onClose, isDismissible = false, children }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -37,10 +60,34 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
   }, [isOpen]);
 
   return (
-    <dialog ref={ref} className={styles.dialog} aria-labelledby={titleId} onClose={onClose}>
-      <h2 id={titleId} className={styles.title}>
+    <dialog
+      ref={ref}
+      className={styles.dialog}
+      aria-labelledby={titleId}
+      onClose={onClose}
+      onClick={
+        isDismissible
+          ? (event) => {
+              if (isBackdropClick(event)) {
+                event.currentTarget.close();
+              }
+            }
+          : undefined
+      }
+    >
+      <h2 id={titleId} className={`${styles.title} ${isDismissible ? styles.titleWithClose : ""}`}>
         {title}
       </h2>
+      {isDismissible ? (
+        <button
+          type="button"
+          className={styles.close}
+          aria-label="Закрыть"
+          onClick={() => ref.current?.close()}
+        >
+          <CloseIcon />
+        </button>
+      ) : null}
       {isOpen ? children : null}
     </dialog>
   );

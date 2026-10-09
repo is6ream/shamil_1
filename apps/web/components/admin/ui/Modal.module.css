@@ -18,6 +18,32 @@
   font-size: var(--fs-h3);
 }
 
+/* Место под крестик, чтобы длинный заголовок не залез под него. */
+.titleWithClose {
+  padding-right: var(--control-h-sm);
+}
+
+.close {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+  display: grid;
+  place-items: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 22px;
+  cursor: pointer;
+  transition: color var(--dur-fast);
+}
+
+.close:hover {
+  color: var(--text-strong);
+}
+
 .body {
   margin-bottom: var(--sp-5);
   color: var(--text-soft);
