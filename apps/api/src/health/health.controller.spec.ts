@@ -3,6 +3,7 @@ import type { TestingModule } from '@nestjs/testing';
 
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
+import { ReadinessService } from './readiness.service';
 
 describe('HealthController', () => {
   let controller: HealthController;
@@ -11,7 +12,8 @@ describe('HealthController', () => {
     // Arrange
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
-      providers: [HealthService],
+      // Живость не трогает зависимости — готовность подменяется пустышкой.
+      providers: [HealthService, { provide: ReadinessService, useValue: {} }],
     }).compile();
 
     controller = module.get(HealthController);

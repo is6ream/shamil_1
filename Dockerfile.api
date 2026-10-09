@@ -1,13 +1,31 @@
-FROM node:22-alpine
+# API для Timeweb Cloud App Platform.
+#
+# Образ на glibc (Debian bookworm-slim), а не alpine: sharp ставит готовые
+# бинарники libvips для linux-x64 glibc; на musl он требует сборки из исходников.
+# openssl нужен движку миграций Prisma (`prisma migrate deploy`).
+
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci --workspace @shamil/api
+RUN npm ci --workspace @shamil/api --include-workspace-root=false
 COPY apps/api apps/api
 RUN npm run build --workspace @shamil/api
+
+FROM node:22-bookworm-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
+# Целиком: prisma CLI (devDependency) нужен в рантайме для `migrate deploy`.
+COPY --from=build --chown=node:node /app /app
 WORKDIR /app/apps/api
+USER node
 EXPOSE 3001
-# Миграции накатываются при каждом старте: prisma migrate deploy идемпотентен
+# Миграции накатываются при каждом старте: prisma migrate deploy идемпотентен.
+# Сиды (справочники, контент, первый суперадмин) — отдельной командой:
+#   node dist/database/seed/index.js
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
