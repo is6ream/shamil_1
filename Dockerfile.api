@@ -26,6 +26,9 @@ WORKDIR /app/apps/api
 USER node
 EXPOSE 3001
 # Миграции накатываются при каждом старте: prisma migrate deploy идемпотентен.
-# Сиды (справочники, контент, первый суперадмин) — отдельной командой:
-#   node dist/database/seed/index.js
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+#
+# Сиды (справочники, контент, первый суперадмин) — только при RUN_SEED=true.
+# Консоли в контейнере App Platform нет, поэтому первый запуск делается флагом.
+# Каждый старт сидить нельзя: upsert сбора перезаписал бы цель и настройки,
+# поменянные в админке. После первого успешного деплоя — RUN_SEED=false.
+CMD ["sh", "-c", "npx prisma migrate deploy && if [ \"$RUN_SEED\" = \"true\" ]; then node dist/database/seed/index.js; fi && node dist/main.js"]
