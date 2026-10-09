@@ -10,6 +10,8 @@ import { AdminDonationsController } from './admin-donations.controller';
 import { AdminDonationsService } from './admin-donations.service';
 import { CampaignAdminController } from './campaign-admin.controller';
 import { CampaignAdminService } from './campaign-admin.service';
+import { DashboardController } from './dashboard.controller';
+import { DashboardService } from './dashboard.service';
 import { ManualDonationService } from './manual-donation.service';
 
 /**
@@ -19,7 +21,7 @@ import { ManualDonationService } from './manual-donation.service';
  */
 @Module({
   imports: [AuthCoreModule, AuditModule, PaymentsModule, RevalidationModule],
-  controllers: [AdminDonationsController, AdminDonationsListController, CampaignAdminController],
-  providers: [AdminDonationsService, AdminDonationsQueryService, ManualDonationService, CampaignAdminService],
+  controllers: [AdminDonationsController, AdminDonationsListController, CampaignAdminController, DashboardController],
+  providers: [AdminDonationsService, AdminDonationsQueryService, ManualDonationService, CampaignAdminService, DashboardService],
 })
 export class AdminModule {}
