@@ -53,7 +53,7 @@ const RECENT_COLUMNS: readonly Column<RecentRow>[] = [
   {
     key: "invoice",
     header: "№",
-    render: (row) => <Link href={`/admin/donations/${row.id}`}>{`№00A0${row.invoiceNo}`}</Link>,
+    render: (row) => <Link href={`/admin/donations/${row.id}`}>{`№ ${row.invoiceNo}`}</Link>,
   },
   { key: "paidAt", header: "Оплачено", render: (row) => formatDateTime(row.paidAt) },
   { key: "amount", header: "Сумма", isNumeric: true, render: (row) => formatKopecks(row.paidAmountKopecks) },
