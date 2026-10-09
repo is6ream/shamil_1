@@ -1,0 +1,41 @@
+.total {
+  margin: 0 0 var(--sp-3);
+}
+
+.goalForm {
+  max-width: 24em;
+  margin-top: var(--sp-5);
+}
+
+.goals {
+  display: grid;
+  gap: var(--sp-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goalRow {
+  padding-bottom: var(--sp-4);
+  border-bottom: var(--stroke) solid var(--border);
+}
+
+.goalHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-small);
+}
+
+.goalHead span {
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.goalActions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
