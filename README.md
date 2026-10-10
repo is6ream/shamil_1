@@ -188,7 +188,7 @@ curl -i -X POST http://localhost:3001/api/admin/auth/login \
   по API. Загрузка фото в галерею пойдёт именно через multer — оставлять было нельзя.
 - **`@nestjs/jwt` 11, а не 12.** По той же причине, что и NestJS 11: двенадцатая — ESM-only,
   Jest на CommonJS её не загружает (D-18).
-- **`Dockerfile.api` на `node:22-bookworm-slim`, не alpine.** `sharp` ставит готовые бинарники
+- **`Dockerfile` на `node:22-bookworm-slim`, не alpine.** `sharp` ставит готовые бинарники
   libvips для glibc; на musl их нет.
 
 ## Правила, которые не отменяются сроком

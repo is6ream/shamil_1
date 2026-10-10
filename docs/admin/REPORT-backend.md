@@ -15,19 +15,19 @@
 | `8c6750d` | B5 | Блоки главной (свой DTO на ключ), этапы с фото и сметой, новости (markdown без HTML), публичные `/content`, `/construction`, `/news`; сид из хардкода фронта |
 | `9b4fc29` | B6 | Список пожертвований с фильтрами и маской ПДн, потоковый CSV, ручное поступление с идемпотентностью, цель сбора и цели месяца |
 | `64505f6` | B7 | Дашборд: агрегации в SQL |
-| `b5da475` | B8 | `/health/ready`; `Dockerfile.api` на bookworm-slim |
+| `b5da475` | B8 | `/health/ready`; `Dockerfile` на bookworm-slim |
 | `2652dd0` | B9 | e2e админки |
 | этот коммит | B9 | API.md, README, этот отчёт |
 
 Проверено: `typecheck`, `lint` — чисто; **441 тест, 40 наборов — зелёные**, включая тесты на реальном
-PostgreSQL 17 (Docker) и e2e на живом приложении. `docker build -f Dockerfile.api` — собирается; в образе
+PostgreSQL 17 (Docker) и e2e на живом приложении. `docker build` — собирается; в образе
 `sharp` (libvips 8.18.7) пережимает картинку, контейнер против локальной БД применяет миграции и отвечает
 `/api/health/ready` → `ok`.
 
 ## Миграции для `prisma migrate deploy`
 
 Все аддитивные (новые таблицы, enum'ы, nullable-колонки, колонка с DEFAULT). Ни одного DROP/RENAME, триггеры
-и CHECK сбора не тронуты. `Dockerfile.api` накатывает их при каждом старте.
+и CHECK сбора не тронуты. `Dockerfile` накатывает их при каждом старте.
 
 | Миграция | Что добавляет |
 | --- | --- |
@@ -43,7 +43,7 @@ PostgreSQL 17 (Docker) и e2e на живом приложении. `docker buil
 
 ## Что выставить на Timeweb Cloud
 
-API (App Platform, `Dockerfile.api`, порт 3001 или `PORT` хостинга):
+API (App Platform, `Dockerfile`, порт 3001 или `PORT` хостинга):
 
 | Переменная | Значение |
 | --- | --- |

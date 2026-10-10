@@ -1,4 +1,6 @@
-# API для Timeweb Cloud App Platform.
+# API для Timeweb Cloud App Platform. Файл называется именно `Dockerfile`
+# и лежит в корне: App Platform не даёт указать другое имя, а контекст
+# сборки — корень монорепо (общий package-lock.json).
 #
 # Образ на glibc (Debian bookworm-slim), а не alpine: sharp ставит готовые
 # бинарники libvips для linux-x64 glibc; на musl он требует сборки из исходников.
