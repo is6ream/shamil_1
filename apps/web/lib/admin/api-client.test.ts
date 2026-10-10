@@ -264,3 +264,43 @@ describe("upload", () => {
     });
   });
 });
+
+describe("refresh: временный сбой не выводит из админки", () => {
+  function apiWithRefreshStatus(status: number) {
+    let refreshCalls = 0;
+    const fetchImpl: typeof fetch = async (input) => {
+      if (String(input).endsWith("/admin/auth/refresh")) {
+        refreshCalls += 1;
+        return json(status, { message: "ThrottlerException: Too Many Requests" });
+      }
+
+      return json(401, { message: "Unauthorized" });
+    };
+
+    return { fetchImpl, refreshCalls: () => refreshCalls };
+  }
+
+  test("429 на refresh — ошибка лимита, сессия не истекает", async () => {
+    const api = apiWithRefreshStatus(429);
+    let expiredCount = 0;
+    const client = createAdminClient({ baseUrl: BASE, fetchImpl: api.fetchImpl, onSessionExpired: () => (expiredCount += 1) });
+    client.setAccessToken("stale");
+
+    await assert.rejects(client.request("/admin/a"), (error: unknown) => {
+      return error instanceof AdminApiError && error.status === 429 && error.message.includes("Подождите");
+    });
+    assert.equal(expiredCount, 0);
+  });
+
+  test("503 на refresh при загрузке — исключение, а не «сессии нет»", async () => {
+    const client = createAdminClient({ baseUrl: BASE, fetchImpl: apiWithRefreshStatus(503).fetchImpl });
+
+    await assert.rejects(client.refresh(), (error: unknown) => error instanceof AdminApiError && error.status === 503);
+  });
+
+  test("401 на refresh — по-прежнему «сессии нет»", async () => {
+    const client = createAdminClient({ baseUrl: BASE, fetchImpl: apiWithRefreshStatus(401).fetchImpl });
+
+    assert.equal(await client.refresh(), false);
+  });
+});

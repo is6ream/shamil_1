@@ -73,7 +73,11 @@ export interface AdminClient {
    * Тот же Bearer и тот же один refresh на 401, что у `request`.
    */
   upload<T>(path: string, form: FormData, onProgress?: (fraction: number) => void, signal?: AbortSignal): Promise<T>;
-  /** Обновляет access по refresh-cookie; `false` — сессии нет. */
+  /**
+   * Обновляет access по refresh-cookie; `false` — сессии нет (401/400/403).
+   * Временный сбой (429 лимит, 5xx, сеть) — исключение `AdminApiError`:
+   * cookie при этом жива, и выкидывать человека из админки нельзя.
+   */
   refresh(): Promise<boolean>;
   setAccessToken(token: string | null): void;
   hasAccessToken(): boolean;
@@ -81,6 +85,9 @@ export interface AdminClient {
 
 const UNAUTHORIZED = 401;
 const NO_CONTENT = 204;
+
+/** Ответы refresh, после которых сессии точно нет: cookie нет, истекла или отозвана. */
+const SESSION_GONE_STATUSES: ReadonlySet<number> = new Set([400, 401, 403]);
 
 async function readJson(response: Response): Promise<unknown> {
   if (response.status === NO_CONTENT) {
@@ -142,20 +149,21 @@ export function createAdminClient({
   }
 
   async function doRefresh(): Promise<boolean> {
-    try {
-      const response = await send(AUTH_PATHS.refresh, { method: "POST" }, null);
+    // Сетевой сбой пробрасывается как есть (`send` уже превратил его в AdminApiError).
+    const response = await send(AUTH_PATHS.refresh, { method: "POST" }, null);
 
-      if (!response.ok) {
-        accessToken = null;
-        return false;
-      }
-
-      accessToken = parseAccessToken(await readJson(response));
-      return true;
-    } catch {
+    if (SESSION_GONE_STATUSES.has(response.status)) {
       accessToken = null;
       return false;
     }
+
+    if (!response.ok) {
+      // 429 (лимит 20/мин с IP — в офисе за одним NAT его легко выбрать) или 5xx.
+      throw toAdminApiError(response.status, await readJson(response));
+    }
+
+    accessToken = parseAccessToken(await readJson(response));
+    return true;
   }
 
   function refresh(): Promise<boolean> {
