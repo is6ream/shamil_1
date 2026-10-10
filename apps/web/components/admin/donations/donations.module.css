@@ -110,3 +110,35 @@
     text-align: right;
   }
 }
+
+.auditList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auditItem {
+  padding: var(--sp-3) 0;
+  border-bottom: var(--stroke) solid var(--border);
+  font-size: var(--fs-small);
+}
+
+.auditHead {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+@media (min-width: 900px) {
+  .auditHead {
+    grid-template-columns: 150px 1.4fr 1.4fr 1fr auto;
+    gap: var(--sp-3);
+    align-items: baseline;
+  }
+}
+
+.filterGrid:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
