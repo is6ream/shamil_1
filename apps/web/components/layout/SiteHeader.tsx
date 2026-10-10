@@ -56,7 +56,13 @@ function LoginButton({ className, onOpen }: { readonly className: string; readon
  *
  * На телефоне и планшете навигация уезжает в выдвижное меню.
  */
-export function SiteHeader() {
+interface Props {
+  /** Телефон и текст кнопки из админки; по умолчанию — хардкод. */
+  readonly phone?: string | null;
+  readonly helpButton?: string;
+}
+
+export function SiteHeader({ phone = ORGANIZATION.phone, helpButton = HERO.helpButton }: Props = {}) {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isLoginOpen, setLoginOpen] = useState(false);
   // Окно смонтировано с первого открытия: так чанк не грузится заранее,
@@ -121,9 +127,9 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        {ORGANIZATION.phone === null ? null : (
-          <a className={styles.phone} href={toTelHref(ORGANIZATION.phone)}>
-            {ORGANIZATION.phone}
+        {phone === null ? null : (
+          <a className={styles.phone} href={toTelHref(phone)}>
+            {phone}
           </a>
         )}
 
@@ -136,7 +142,7 @@ export function SiteHeader() {
             onNavigate(event, SECTION_IDS.donate);
           }}
         >
-          {HERO.helpButton}
+          {helpButton}
         </a>
 
         <LoginButton className={styles.loginMobile} onOpen={openLogin} />
@@ -162,6 +168,7 @@ export function SiteHeader() {
         onClose={closeMenu}
         onNavigate={onNavigate}
         onLoginOpen={openLoginFromMenu}
+        phone={phone}
       />
 
       {hasLoginOpened ? <LoginDialog isOpen={isLoginOpen} onClose={closeLogin} /> : null}

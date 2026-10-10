@@ -194,4 +194,9 @@ export interface GalleryItem {
   readonly caption: string;
   /** Подпись с датой съёмки: «июнь 2026». */
   readonly takenAtLabel: string;
+  /** Превью 480 px из медиатеки; `null`/нет — у старых строк и плашек. */
+  readonly thumbUrl?: string | null;
+  readonly alt?: string | null;
+  readonly width?: number | null;
+  readonly height?: number | null;
 }

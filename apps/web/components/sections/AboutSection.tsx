@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import type { AboutContent } from "@/lib/api/site-content";
 import { ABOUT, SECTION_IDS } from "@/lib/content";
 import type { ProjectFact } from "@/lib/content";
 
@@ -18,29 +19,30 @@ function isKnown(fact: ProjectFact): fact is ProjectFact & { readonly value: str
  * Абзац и неизвестные факты — `null` в lib/content.ts и не выводятся:
  * «[ГОД]» или «[S] м²» на живом сайте хуже пустого места.
  */
-export function AboutSection() {
-  const facts = ABOUT.facts.filter(isKnown);
+/** `about` — тексты из админки; по умолчанию хардкод `ABOUT`. */
+export function AboutSection({ about = ABOUT }: { readonly about?: AboutContent }) {
+  const facts = about.facts.filter(isKnown);
 
   return (
     <section className={styles.section} id={SECTION_IDS.about} aria-labelledby="about-title">
-      <Eyebrow>{ABOUT.eyebrow}</Eyebrow>
+      <Eyebrow>{about.eyebrow}</Eyebrow>
       <h2 className={styles.title} id="about-title">
-        {ABOUT.title}
+        {about.title}
       </h2>
-      {ABOUT.text === null ? null : <p className={styles.text}>{ABOUT.text}</p>}
+      {about.text === null ? null : <p className={styles.text}>{about.text}</p>}
 
       <div className={styles.body}>
         <figure className={styles.arch}>
-          {ABOUT.facadeUrl === null ? null : (
+          {about.facadeUrl === null ? null : (
             <Image
               className={styles.image}
-              src={ABOUT.facadeUrl}
-              alt={ABOUT.facadeCaption}
+              src={about.facadeUrl}
+              alt={about.facadeCaption}
               fill
               sizes="260px"
             />
           )}
-          <figcaption className={styles.caption}>{ABOUT.facadeCaption}</figcaption>
+          <figcaption className={styles.caption}>{about.facadeCaption}</figcaption>
         </figure>
 
         <dl className={styles.facts}>

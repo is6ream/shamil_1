@@ -4,6 +4,8 @@ import Link from "next/link";
 import { BankDetails } from "@/components/donation/BankDetails";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { ShareLinks } from "@/components/share/ShareLinks";
+import { FALLBACK_CONTENT, getSiteContent } from "@/lib/api/site-content";
+import { withFallback } from "@/lib/api/with-fallback";
 import { ORDER_QUERY_PARAM, THANKS_PATH, buildOrderUrl } from "@/lib/routes";
 
 import styles from "./page.module.css";
@@ -26,10 +28,12 @@ export default async function TransferPage({ searchParams }: PageProps<"/donate/
   const params = await searchParams;
   const raw = params[ORDER_QUERY_PARAM];
   const orderId = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null);
+  // Реквизиты — из админки (правит только суперадмин, D-17); без API — хардкод.
+  const content = await withFallback(getSiteContent(), FALLBACK_CONTENT, "реквизиты");
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader phone={content.contacts.phone} helpButton={content.hero.helpButton} />
 
       <main className={styles.page}>
         <h1 className={styles.title}>Перевод по реквизитам</h1>
@@ -53,7 +57,7 @@ export default async function TransferPage({ searchParams }: PageProps<"/donate/
         )}
 
         <div className="card">
-          <BankDetails orderId={orderId ?? undefined} />
+          <BankDetails orderId={orderId ?? undefined} bank={content.bank} />
         </div>
 
         <div className={styles.actions}>

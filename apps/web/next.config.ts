@@ -17,7 +17,8 @@ function mediaPatterns(): URL[] {
     try {
       const url = new URL(source);
 
-      return [new URL(`${url.origin}${url.pathname.replace(/\/$/, "")}/**`)];
+      // Локальные медиа Nest отдаёт с `/media/**` того же хоста, что и `/api` (D-16, D-F12).
+      return [new URL(`${url.origin}${url.pathname.replace(/\/$/, "")}/**`), new URL(`${url.origin}/media/**`)];
     } catch {
       return [];
     }
@@ -38,6 +39,10 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: mediaPatterns(),
+    // Next 16 не оптимизирует картинки с локальных и частных IP (защита от SSRF).
+    // В dev медиа отдаёт Nest на localhost/192.168.* — разрешаем только вне
+    // production; в проде картинки идут с публичного домена S3 (D-F12).
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
   },
   // Админка не индексируется. В robots.txt её не перечисляем: Disallow
   // помешал бы роботу увидеть noindex и выдал бы адрес входа.

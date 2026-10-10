@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import { BANK_DETAILS, ORGANIZATION, hasBankDetails } from "@/lib/organization";
+import type { BankDetails as BankDetailsData } from "@/lib/organization";
 
 import styles from "./BankDetails.module.css";
 
@@ -16,6 +17,8 @@ interface Props {
    * сопоставляет поступление в выписке с донатом.
    */
   readonly orderId?: string;
+  /** Реквизиты из админки; по умолчанию — хардкод `BANK_DETAILS`. */
+  readonly bank?: BankDetailsData;
 }
 
 interface RowProps {
@@ -44,8 +47,8 @@ function Row({ label, value }: RowProps) {
  * Пока реквизитов нет, компонент честно говорит об этом и не печатает
  * правдоподобных цифр: номер счёта из воздуха — это деньги в никуда.
  */
-export function BankDetails({ orderId }: Props) {
-  const isReady = hasBankDetails();
+export function BankDetails({ orderId, bank = BANK_DETAILS }: Props) {
+  const isReady = hasBankDetails(bank);
 
   return (
     <div className={styles.wrap}>
@@ -59,22 +62,22 @@ export function BankDetails({ orderId }: Props) {
       <dl className={styles.list}>
         <Row label="Получатель" value={ORGANIZATION.legalName} />
         <Row label="ИНН" value={ORGANIZATION.inn} />
-        <Row label="КПП" value={BANK_DETAILS.kpp} />
-        <Row label="Расчётный счёт" value={BANK_DETAILS.accountNumber} />
-        <Row label="Банк" value={BANK_DETAILS.bankName} />
-        <Row label="БИК" value={BANK_DETAILS.bik} />
-        <Row label="Корр. счёт" value={BANK_DETAILS.correspondentAccount} />
+        <Row label="КПП" value={bank.kpp} />
+        <Row label="Расчётный счёт" value={bank.accountNumber} />
+        <Row label="Банк" value={bank.bankName} />
+        <Row label="БИК" value={bank.bik} />
+        <Row label="Корр. счёт" value={bank.correspondentAccount} />
         {orderId === undefined ? null : (
           <Row label="Назначение платежа" value={`Пожертвование, заказ ${orderId}`} />
         )}
       </dl>
 
-      {BANK_DETAILS.sbpQrUrl === null ? (
+      {bank.sbpQrUrl === null ? (
         <p className="micro">QR-код СБП появится здесь вместе с реквизитами.</p>
       ) : (
         <Image
           className={styles.qr}
-          src={BANK_DETAILS.sbpQrUrl}
+          src={bank.sbpQrUrl}
           alt="QR-код СБП для перевода пожертвования"
           width={QR_SIZE_PX}
           height={QR_SIZE_PX}

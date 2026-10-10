@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { FOOTER, PAGES, SECTION_IDS } from "@/lib/content";
+import type { ContactsContent } from "@/lib/api/site-content";
 import { ORGANIZATION, organizationDisplayName, toTelHref } from "@/lib/organization";
 
 import { BrandMark } from "./BrandMark";
@@ -18,8 +19,8 @@ const MOBILE_HIDDEN_HREF: string = PAGES.cookie.href;
  * lib/organization.ts с TODO(заказчик): строка с `null` не выводится,
  * плейсхолдеры макета в квадратных скобках на сайт не попадают.
  */
-export function SiteFooter() {
-  const { phone, mosqueAddress, telegramChannel } = ORGANIZATION;
+export function SiteFooter({ contacts = ORGANIZATION }: { readonly contacts?: ContactsContent } = {}) {
+  const { phone, mosqueAddress, telegramChannel } = contacts;
 
   return (
     <footer className={styles.footer} id={SECTION_IDS.contacts}>

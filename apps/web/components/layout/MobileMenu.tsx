@@ -16,6 +16,7 @@ interface Props {
   readonly onNavigate: (event: ReactMouseEvent<HTMLAnchorElement>, id: string) => void;
   /** Вход для сотрудников — пункт виден только там, где иконке нет места в шапке. */
   readonly onLoginOpen: () => void;
+  readonly phone?: string | null;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -35,7 +36,7 @@ function isVisible(element: HTMLElement): boolean {
  * В DOM всегда (скрыто через `hidden`), чтобы ссылки были доступны
  * поисковику и не было вспышки при первом открытии.
  */
-export function MobileMenu({ id, isOpen, onClose, onNavigate, onLoginOpen }: Props) {
+export function MobileMenu({ id, isOpen, onClose, onNavigate, onLoginOpen, phone = ORGANIZATION.phone }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,9 +118,9 @@ export function MobileMenu({ id, isOpen, onClose, onNavigate, onLoginOpen }: Pro
           </ul>
         </nav>
 
-        {ORGANIZATION.phone === null ? null : (
-          <a className={styles.phone} href={toTelHref(ORGANIZATION.phone)}>
-            {ORGANIZATION.phone}
+        {phone === null ? null : (
+          <a className={styles.phone} href={toTelHref(phone)}>
+            {phone}
           </a>
         )}
 
