@@ -19,7 +19,9 @@ RUN npm run build --workspace @shamil/api
 
 FROM node:22-bookworm-slim
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
+# curl нужен проверке состояния App Platform: она дёргает путь health-check
+# с localhost внутри контейнера, а в bookworm-slim нет ни curl, ни wget.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl \
   && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 # Целиком: prisma CLI (devDependency) нужен в рантайме для `migrate deploy`.
