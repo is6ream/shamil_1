@@ -122,9 +122,16 @@
     max-height: calc(100vh - var(--sticky-top) - var(--sticky-bottom));
     max-height: calc(100dvh - var(--sticky-top) - var(--sticky-bottom));
     overflow-y: auto;
-    scrollbar-width: thin;
     padding: 0 var(--shadow-gap) var(--shadow-gap);
     margin: 0 calc(-1 * var(--shadow-gap)) calc(-1 * var(--shadow-gap));
+
+    /* Полосу прокрутки прячем: колесо, тачпад, клавиатура и переход
+       фокуса по полям продолжают прокручивать форму. */
+    scrollbar-width: none;
+  }
+
+  .asideSticky::-webkit-scrollbar {
+    display: none;
   }
 
   .band { grid-row: 5; }
