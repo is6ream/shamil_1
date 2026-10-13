@@ -1,0 +1,96 @@
+/*
+ * Мечеть на картинке стоит справа, слева — ровное тёмно-синее небо под текст.
+ * Поэтому кадр якорим к правому краю: на любой ширине мечеть остаётся
+ * в кадре, а обрезается пустое небо слева.
+ *
+ * `.shade` затемняет там, где текст ложится поверх мечети (планшет, телефон).
+ * На десктопе текст стоит на пустом небе — тень лёгкая.
+ */
+
+.backdrop {
+  position: relative;
+  overflow: hidden;
+  background: var(--hero-bg-fill);
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+}
+
+.image {
+  object-fit: cover;
+  object-position: right 30%;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(8, 47, 86, 0.45) 0%, rgba(8, 47, 86, 0.1) 55%, transparent 75%);
+}
+
+/*
+ * Десктоп: справа лежит форма, и при обычном `cover` она закрывает мечеть.
+ * Поэтому кадр ставим так, чтобы мечеть (её центр ≈ 76% ширины картинки)
+ * стояла на стыке текста и формы — как в макете. Высота кадра = высоте
+ * экрана, ширина — из пропорций картинки, сдвиг — через `translateX`
+ * (проценты от собственной ширины, без JS и без магических пикселей).
+ *
+ * Левый край картинки совпадает по цвету с `--hero-bg-fill`, поэтому шва
+ * слева нет; правый край растворяем маской в ту же заливку.
+ */
+@media (min-width: 1024px) {
+  .backdrop {
+    --content-w: calc(var(--col-main) + var(--col-gap) + var(--col-aside));
+    --aside-left: calc(max(var(--gutter), (100% - var(--content-w)) / 2) + var(--col-main) + var(--col-gap));
+  }
+
+  .frame {
+    inset: 0 auto 0 calc(var(--aside-left) - var(--sp-12));
+    aspect-ratio: 1804 / 872;
+    transform: translateX(-76%);
+    mask-image: linear-gradient(90deg, #000 82%, transparent 100%);
+  }
+
+  .image {
+    object-position: center;
+  }
+}
+
+/* Планшет: одна колонка, текст во всю ширину заходит на мечеть. */
+@media (max-width: 1023px) {
+  .shade {
+    background: linear-gradient(
+      90deg,
+      rgba(8, 47, 86, 0.8) 0%,
+      rgba(8, 47, 86, 0.55) 55%,
+      rgba(8, 47, 86, 0.35) 100%
+    );
+  }
+}
+
+/*
+ * Телефон: блок высокий и узкий, и `cover` на всю его высоту раздул бы
+ * картинку в несколько раз. Кадр ограничен по высоте и стоит сверху:
+ * мечеть за заголовком, ниже кадр растворяется в сплошном синем —
+ * «Собрано» и пункты доверия читаются на ровном фоне.
+ */
+@media (max-width: 767px) {
+  .frame {
+    inset: 0 0 auto;
+    height: min(100%, 150vw);
+  }
+
+  .image {
+    object-position: 80% top;
+  }
+
+  .shade {
+    background: linear-gradient(
+      180deg,
+      rgba(8, 47, 86, 0.2) 0%,
+      rgba(8, 47, 86, 0.45) 50%,
+      var(--hero-bg-fill) 100%
+    );
+  }
+}

@@ -25,6 +25,28 @@
   scroll-margin-top: calc(var(--header-h) + var(--sp-4));
 }
 
+/*
+ * Фон первого экрана: во всю ширину окна, в той же строке сетки, что и
+ * `head`, — высота фона всегда равна высоте текста, без магических чисел.
+ * Форма на десктопе лежит поверх фона и уходит ниже, как в макете.
+ */
+.backdrop {
+  grid-column: full;
+  grid-row: 1;
+}
+
+.head {
+  position: relative;
+  z-index: 1;
+  grid-row: 1;
+  padding-bottom: var(--sp-12);
+}
+
+.aside {
+  position: relative;
+  z-index: 1;
+}
+
 .band {
   grid-column: full;
   margin-top: var(--section-pad);
@@ -100,7 +122,10 @@
     padding-bottom: 0;
   }
 
-  .head { order: 1; }
+  .head {
+    order: 1;
+    padding-bottom: var(--sp-8);
+  }
 
   .aside {
     order: 2;
