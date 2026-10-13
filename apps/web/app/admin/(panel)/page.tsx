@@ -3,14 +3,15 @@
 import Link from "next/link";
 
 import { AdminPage } from "@/components/admin/AdminPage";
+import { DashboardOverview } from "@/components/admin/dashboard/DashboardOverview";
 import { ADMIN_HOME, ADMIN_SECTIONS } from "@/lib/admin/navigation";
 import { useAdminSession } from "@/lib/admin/session";
 
 import styles from "./home.module.css";
 
 /**
- * Главная админки. Пока дашборда нет (ждёт API, шаг F2), здесь —
- * крупные плитки разделов: заказчику с телефона так быстрее, чем через меню.
+ * Главная админки: дашборд сбора (все роли, API.md §15), под ним — крупные
+ * плитки разделов: заказчику с телефона так быстрее, чем через меню.
  */
 export default function AdminHomePage() {
   const { state, can } = useAdminSession();
@@ -21,7 +22,9 @@ export default function AdminHomePage() {
   );
 
   return (
-    <AdminPage title={`Здравствуйте, ${name}`} lead="Выберите, что хотите сделать.">
+    <AdminPage title={`Здравствуйте, ${name}`} lead="Как идёт сбор и что можно сделать.">
+      <DashboardOverview />
+      <h2 className={styles.tilesTitle}>Разделы</h2>
       <ul className={styles.tiles}>
         {sections.map((section) => (
           <li key={section.href}>

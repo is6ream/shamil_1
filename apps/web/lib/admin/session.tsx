@@ -9,6 +9,7 @@ import { createAdminClient } from "./api-client";
 import type { AdminClient } from "./api-client";
 import { AUTH_PATHS, parseAccessToken, parseAdminUser } from "./endpoints";
 import type { AdminUser, LoginBody } from "./endpoints";
+import { AdminApiError, errorMessage } from "./errors";
 import { loginRequest } from "./login";
 import { can } from "./roles";
 import type { AdminPermission } from "./roles";
@@ -24,6 +25,8 @@ import type { AdminPermission } from "./roles";
 export type SessionState =
   | { readonly status: "loading" }
   | { readonly status: "anonymous" }
+  /** Проверить вход не удалось (лимит, сбой сервера, сеть) — сессия, возможно, жива. */
+  | { readonly status: "unavailable"; readonly message: string }
   | { readonly status: "authenticated"; readonly user: AdminUser };
 
 interface SessionContextValue {
@@ -55,14 +58,17 @@ export function AdminSessionProvider({ children }: { readonly children: ReactNod
     let isActive = true;
 
     async function restore(): Promise<SessionState> {
-      if (!(await client.refresh())) {
-        return { status: "anonymous" };
-      }
-
       try {
+        if (!(await client.refresh())) {
+          return { status: "anonymous" };
+        }
+
         return { status: "authenticated", user: await loadMe(client) };
-      } catch {
-        return { status: "anonymous" };
+      } catch (error: unknown) {
+        // 429/5xx/сеть: cookie жива, на вход не уводим — предлагаем повторить.
+        return error instanceof AdminApiError && error.status === 401
+          ? { status: "anonymous" }
+          : { status: "unavailable", message: errorMessage(error) };
       }
     }
 

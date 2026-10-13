@@ -31,3 +31,8 @@
   color: var(--text-soft);
   font-weight: 400;
 }
+
+.tilesTitle {
+  margin: var(--sp-8) 0 var(--sp-4);
+  font-size: 20px;
+}

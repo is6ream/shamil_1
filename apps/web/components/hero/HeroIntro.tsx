@@ -1,4 +1,5 @@
 import { ShieldCheckIcon } from "@/components/icons/Icons";
+import type { HeroContent } from "@/lib/api/site-content";
 import type { Campaign } from "@/lib/api/types";
 import { HERO } from "@/lib/content";
 
@@ -9,6 +10,8 @@ import { RenderCard } from "./RenderCard";
 interface Props {
   /** `null` — бэкенд недоступен: вместо цифр «обновляем данные». */
   readonly campaign: Campaign | null;
+  /** Тексты из админки; по умолчанию — хардкод `HERO`. */
+  readonly hero?: HeroContent;
 }
 
 /**
@@ -18,25 +21,25 @@ interface Props {
  * цифры сбора стояли прямо над формой. Меняет его CSS (`order`), а не
  * вторая копия разметки — один H1 на странице.
  */
-export function HeroIntro({ campaign }: Props) {
+export function HeroIntro({ campaign, hero = HERO }: Props) {
   return (
     <div className={styles.hero}>
       <p className={styles.badge}>
         <span className={styles.dot} aria-hidden="true" />
-        {HERO.badge}
+        {hero.badge}
       </p>
 
-      <h1 className={styles.title}>{HERO.title}</h1>
+      <h1 className={styles.title}>{hero.title}</h1>
 
       <p className={styles.lede}>
-        <span className={styles.desktopOnly}>{HERO.lede}</span>
-        <span className={styles.mobileOnly}>{HERO.ledeShort}</span>
+        <span className={styles.desktopOnly}>{hero.lede}</span>
+        <span className={styles.mobileOnly}>{hero.ledeShort}</span>
       </p>
 
       <CollectedSummary campaign={campaign} className={styles.collected} />
 
       <ul className={styles.trust}>
-        {HERO.trust.map((item) => (
+        {hero.trust.map((item) => (
           <li key={item}>
             <ShieldCheckIcon className={styles.shield} />
             {item}
@@ -45,7 +48,7 @@ export function HeroIntro({ campaign }: Props) {
       </ul>
 
       <div className={styles.render}>
-        <RenderCard />
+        <RenderCard hero={hero} />
       </div>
     </div>
   );

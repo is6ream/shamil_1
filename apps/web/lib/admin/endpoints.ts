@@ -1,12 +1,10 @@
 /**
  * Маршруты API админки и разбор их ответов.
  *
- * Фронт пишется раньше контракта `docs/admin/API.md` (D-F01). Маршруты
- * авторизации сверены с кодом бэкенда (`apps/api/src/auth/auth.controller.ts`,
- * коммит B2): login/refresh отдают `SessionResponse` `{ accessToken, tokenType,
- * expiresIn, user }`, смена пароля — `PATCH` и тоже отдаёт новую сессию.
- * Префикс `/api` уже в `API_URL`. Всё, что о контракте известно, держим
- * здесь, чтобы сверка с API.md была правкой одного места.
+ * Сверено с `docs/admin/API.md` 09.10.2026 (D-F01 закрыт): login/refresh
+ * отдают `{ accessToken, tokenType, expiresIn, user }`, смена пароля — `PATCH`
+ * и тоже отдаёт новую сессию. Префикс `/api` уже в `API_URL`. Все пути
+ * держим здесь, типы ответов — в `types.ts`.
  *
  * Ответы разбираются с проверкой формы: внешние данные не доверенные,
  * и тихий `undefined` в сессии хуже явной ошибки.
@@ -22,6 +20,73 @@ export const AUTH_PATHS = {
   logout: "/admin/auth/logout",
   me: "/admin/auth/me",
   changePassword: "/admin/auth/password",
+} as const;
+
+const id = (value: string) => encodeURIComponent(value);
+
+/**
+ * Маршруты разделов админки — сверены с `docs/admin/API.md` 09.10.2026.
+ * Все пути от `/api` (префикс уже в `API_URL`).
+ */
+export const ADMIN_PATHS = {
+  users: "/admin/users",
+  user: (userId: string) => `/admin/users/${id(userId)}`,
+  userResetPassword: (userId: string) => `/admin/users/${id(userId)}/reset-password`,
+
+  audit: "/admin/audit",
+
+  media: "/admin/media",
+  mediaItem: (mediaId: string) => `/admin/media/${id(mediaId)}`,
+
+  gallery: "/admin/gallery",
+  galleryItem: (itemId: string) => `/admin/gallery/${id(itemId)}`,
+  galleryOrder: "/admin/gallery/order",
+
+  videos: "/admin/videos",
+  video: (videoId: string) => `/admin/videos/${id(videoId)}`,
+  videosOrder: "/admin/videos/order",
+
+  content: "/admin/content",
+  contentBlock: (key: string) => `/admin/content/${id(key)}`,
+
+  stages: "/admin/stages",
+  stage: (stageId: string) => `/admin/stages/${id(stageId)}`,
+  stagesOrder: "/admin/stages/order",
+
+  news: "/admin/news",
+  newsPost: (postId: string) => `/admin/news/${id(postId)}`,
+
+  donations: "/admin/donations",
+  donation: (donationId: string) => `/admin/donations/${id(donationId)}`,
+  donationConfirm: (donationId: string) => `/admin/donations/${id(donationId)}/confirm`,
+  donationsExport: "/admin/donations/export.csv",
+  manualDonation: "/admin/donations/manual",
+
+  campaign: "/admin/campaign",
+  monthlyGoals: "/admin/campaign/monthly-goals",
+  monthlyGoal: (goalId: string) => `/admin/campaign/monthly-goals/${id(goalId)}`,
+
+  dashboard: "/admin/dashboard",
+
+  /** Публичный справочник — для фильтра и формы региона. */
+  regions: "/regions",
+} as const;
+
+/** Лимиты из API.md — проверяются в формах до отправки. */
+export const LIMITS = {
+  /** §7: `MEDIA_MAX_UPLOAD_MB`. */
+  uploadMaxBytes: 15 * 1024 * 1024,
+  uploadTypes: ["image/jpeg", "image/png", "image/webp"],
+  /** §13: потолок ручного поступления, 240 млн ₽. */
+  manualMaxKopecks: "24000000000",
+  /** §14: потолок общей цели, 10 млрд ₽. */
+  goalMaxKopecks: "1000000000000",
+  /** §11: смета и освоено этапа, 2,4 млрд ₽. */
+  stageMaxKopecks: "240000000000",
+  stagePhotos: 30,
+  /** §15: период дашборда. */
+  dashboardMaxDays: 366,
+  pageSize: 25,
 } as const;
 
 /**

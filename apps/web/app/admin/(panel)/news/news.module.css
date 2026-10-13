@@ -1,0 +1,92 @@
+.filter {
+  max-width: 20em;
+  margin-bottom: var(--sp-5);
+}
+
+.editor {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.editor > * {
+  margin-top: 0 !important;
+}
+
+.bodyTabs {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.bodyPanes {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.bodyPanes > * {
+  min-width: 0;
+  margin-top: 0 !important;
+}
+
+.preview {
+  min-height: 200px;
+  padding: var(--sp-4);
+  border: var(--stroke) dashed var(--border);
+  border-radius: var(--r-field);
+  background: var(--bg);
+}
+
+.previewLabel {
+  margin: 0 0 var(--sp-2);
+  color: var(--text-soft);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cheatsheet {
+  font-size: var(--fs-small);
+}
+
+.cheatsheet summary {
+  min-height: var(--control-h-sm);
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.cheatsheet code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--surface-sunken);
+}
+
+.cheatsheet ul {
+  margin: 0;
+  padding-left: var(--sp-5);
+  line-height: 1.8;
+}
+
+.statusLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-small);
+}
+
+/* На широком экране текст и предпросмотр рядом; вкладки не нужны. */
+@media (min-width: 1100px) {
+  .bodyTabs {
+    display: none;
+  }
+
+  .bodyPanes {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bodyPanes > [hidden] {
+    display: block !important;
+  }
+}

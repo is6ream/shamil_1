@@ -18,6 +18,8 @@ interface ModalProps {
    * потерять (вход); подтверждения опасных действий закрываются только явно.
    */
   readonly isDismissible?: boolean;
+  /** Сетки (выбор из медиатеки) — окно шире формы. */
+  readonly isWide?: boolean;
   readonly children: ReactNode;
 }
 
@@ -41,7 +43,7 @@ function isBackdropClick(event: ReactMouseEvent<HTMLDialogElement>): boolean {
  * Модальное окно на нативном `<dialog>`: ловушка фокуса, Esc и возврат
  * фокуса на кнопку-открывашку браузер делает сам.
  */
-export function Modal({ isOpen, title, onClose, isDismissible = false, children }: ModalProps) {
+export function Modal({ isOpen, title, onClose, isDismissible = false, isWide = false, children }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -54,6 +56,9 @@ export function Modal({ isOpen, title, onClose, isDismissible = false, children 
 
     if (isOpen && !dialog.open) {
       dialog.showModal();
+      // `autoFocus` React выполняет при монтировании тела, когда окно ещё
+      // закрыто, и фокус не встаёт. Поле с `data-autofocus` фокусируем сами.
+      dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     } else if (!isOpen && dialog.open) {
       dialog.close();
     }
@@ -62,9 +67,15 @@ export function Modal({ isOpen, title, onClose, isDismissible = false, children 
   return (
     <dialog
       ref={ref}
-      className={styles.dialog}
+      className={`${styles.dialog} ${isWide ? styles.wide : ""}`}
       aria-labelledby={titleId}
-      onClose={onClose}
+      onClose={(event) => {
+        // React доводит onClose вложенного окна (выбор фото, подтверждение)
+        // и до родительского <dialog> — закрываем только своё.
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
       onClick={
         isDismissible
           ? (event) => {

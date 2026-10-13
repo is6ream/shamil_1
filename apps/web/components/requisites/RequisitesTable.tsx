@@ -5,6 +5,7 @@ import { Toast } from "@/components/ui/Toast";
 import { REQUISITES } from "@/lib/content";
 import { useCopy } from "@/lib/hooks/useCopy";
 import { BANK_DETAILS, ORGANIZATION, PAYMENT_PURPOSE } from "@/lib/organization";
+import type { BankDetails } from "@/lib/organization";
 
 import styles from "./RequisitesTable.module.css";
 
@@ -14,16 +15,18 @@ interface Row {
   readonly value: string | null;
 }
 
-/** Строки в порядке макета v2. */
-const ROWS: readonly Row[] = [
+/** Строки в порядке макета v2. Получатель и ИНН — только из кода (D-10). */
+function rows(bank: BankDetails): readonly Row[] {
+  return [
   { key: "recipient", label: "Получатель", value: ORGANIZATION.legalName },
   { key: "inn", label: "ИНН", value: ORGANIZATION.inn },
-  { key: "bank", label: "Банк", value: BANK_DETAILS.bankName },
-  { key: "account", label: "Расчётный счёт", value: BANK_DETAILS.accountNumber },
-  { key: "bik", label: "БИК", value: BANK_DETAILS.bik },
-  { key: "corr", label: "Корр. счёт", value: BANK_DETAILS.correspondentAccount },
+  { key: "bank", label: "Банк", value: bank.bankName },
+  { key: "account", label: "Расчётный счёт", value: bank.accountNumber },
+  { key: "bik", label: "БИК", value: bank.bik },
+  { key: "corr", label: "Корр. счёт", value: bank.correspondentAccount },
   { key: "purpose", label: "Назначение", value: PAYMENT_PURPOSE },
-];
+  ];
+}
 
 /**
  * Таблица реквизитов с копированием каждой строки (макет v2).
@@ -33,14 +36,14 @@ const ROWS: readonly Row[] = [
  * и номера-заглушки из макета в вёрстку не переносятся — номер счёта
  * из воздуха на странице оплаты означает деньги, ушедшие в никуда.
  */
-export function RequisitesTable() {
+export function RequisitesTable({ bank = BANK_DETAILS }: { readonly bank?: BankDetails }) {
   const { copiedKey, hasFailed, copy } = useCopy();
   const toast = copiedKey !== null ? REQUISITES.copied : hasFailed ? "Не удалось скопировать" : null;
 
   return (
     <>
       <dl className={styles.table}>
-        {ROWS.map((row) => (
+        {rows(bank).map((row) => (
           <div className={styles.row} key={row.key}>
             <dt className={styles.label}>{row.label}</dt>
             <dd className={styles.value}>

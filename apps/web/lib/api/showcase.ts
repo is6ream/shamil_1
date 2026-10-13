@@ -9,20 +9,14 @@
  *     недоступен» принимает страница (`withFallback`), а не этот слой —
  *     иначе «Показать ещё» в браузере не узнало бы об ошибке.
  *
- * Статикой остаются только ход строительства: это контент заказчика,
- * а не таблица в БД.
+ * Тексты, этапы стройки, видео и новости из админки — в `site-content.ts`.
  */
 
 import { apiGet } from "./client";
-import {
-  FIXTURE_BUILD_PROGRESS,
-  FIXTURE_CONSTRUCTION,
-  FIXTURE_GALLERY,
-} from "./showcase.fixtures";
+import { FIXTURE_BUILD_PROGRESS, FIXTURE_GALLERY } from "./showcase.fixtures";
 import type {
   BuildProgress,
   Campaign,
-  ConstructionTimeline,
   DonorRankRow,
   FeedPage,
   GalleryItem,
@@ -58,7 +52,7 @@ export const GALLERY_PLACEHOLDERS: readonly GalleryItem[] = FIXTURE_GALLERY;
 
 /** Цифры сбора: общая цель, цель месяца, число платежей. */
 export function getCampaign(): Promise<Campaign> {
-  return apiGet<Campaign>("/campaign", { revalidate: LIVE_REVALIDATE_S });
+  return apiGet<Campaign>("/campaign", { revalidate: LIVE_REVALIDATE_S, tags: ["campaign"] });
 }
 
 /**
@@ -128,21 +122,16 @@ export function getBuildProgress(): Promise<BuildProgress> {
 }
 
 /**
- * Ход строительства для таймлайна макета v2: семь этапов со статусом
- * и сметой. Как и `getBuildProgress`, в MVP это контент от заказчика —
- * эндпоинта под него нет намеренно (docs/api-gaps.md §7).
- */
-export function getConstructionStages(): Promise<ConstructionTimeline> {
-  return Promise.resolve(FIXTURE_CONSTRUCTION);
-}
-
-/**
  * Фотографии стройки, хронологически с самых первых этапов (ТЗ, блок 6).
  * Пока в базе нет ни одного снимка, показываем плашки с датами: пустая
  * сетка читается как сломанная страница.
  */
 export async function getGallery(): Promise<readonly GalleryItem[]> {
-  const items = await apiGet<readonly GalleryItem[]>("/gallery", { revalidate: STATIC_REVALIDATE_S });
+  const items = await apiGet<readonly GalleryItem[]>("/gallery", {
+    revalidate: STATIC_REVALIDATE_S,
+    tags: ["gallery"],
+  });
 
-  return items.length > 0 ? items : GALLERY_PLACEHOLDERS;
+  // Подпись в админке необязательна, а вёрстка ждёт строку.
+  return items.length > 0 ? items.map((item) => ({ ...item, caption: item.caption ?? "" })) : GALLERY_PLACEHOLDERS;
 }

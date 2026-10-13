@@ -65,6 +65,37 @@
   text-decoration: none;
 }
 
+/*
+ * Вход для сотрудников. Иконка в шапке на самых узких экранах не помещается
+ * рядом с логотипом и «Помочь», и там вход живёт здесь (см. SiteHeader.module.css).
+ * Тихий: последним пунктом, мелко, без акцента. Не прижат к низу панели:
+ * там его перекрыла бы мобильная плашка «Пожертвовать».
+ */
+.login {
+  display: none;
+  align-items: center;
+  gap: var(--sp-2);
+  align-self: flex-start;
+  min-height: var(--control-h-sm);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.login svg {
+  font-size: 20px;
+}
+
+@media (max-width: 479px) {
+  .login {
+    display: inline-flex;
+  }
+}
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);

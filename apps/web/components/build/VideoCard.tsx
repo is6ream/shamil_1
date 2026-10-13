@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { PlayIcon } from "@/components/icons/Icons";
+import type { PublicVideo } from "@/lib/api/site-content";
 import { CONSTRUCTION, CONSTRUCTION_VIDEO } from "@/lib/content";
 
 import styles from "./VideoCard.module.css";
@@ -15,10 +16,31 @@ import styles from "./VideoCard.module.css";
  *
  * Пока видео нет (`src: null`), кнопка не рисуется вовсе — нажимаемая
  * кнопка, которая ничего не делает, хуже её отсутствия.
+ *
+ * Видео из админки (D-13) — ссылка на YouTube/Rutube/VK: по клику вместо
+ * `<video>` встаёт iframe плеера в песочнице. Плеер чужого сайта тоже
+ * не грузится до клика.
  */
-export function VideoCard() {
+export function VideoCard({ video = null }: { readonly video?: PublicVideo | null }) {
   const [isPlaying, setPlaying] = useState(false);
-  const { src, posterUrl } = CONSTRUCTION_VIDEO;
+  const src = video === null ? CONSTRUCTION_VIDEO.src : video.embedUrl;
+  const posterUrl = video === null ? CONSTRUCTION_VIDEO.posterUrl : (video.poster?.urls.md ?? null);
+  const caption = video?.title ?? CONSTRUCTION.videoCaption;
+
+  if (isPlaying && video !== null) {
+    return (
+      <div className={styles.card}>
+        <iframe
+          className={styles.video}
+          src={`${video.embedUrl}${video.embedUrl.includes("?") ? "&" : "?"}autoplay=1`}
+          title={caption}
+          sandbox="allow-scripts allow-same-origin allow-presentation"
+          allow="autoplay; fullscreen; encrypted-media"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      </div>
+    );
+  }
 
   if (isPlaying && src !== null) {
     return (
@@ -64,7 +86,7 @@ export function VideoCard() {
         </button>
       )}
 
-      <span className={styles.caption}>{CONSTRUCTION.videoCaption}</span>
+      <span className={styles.caption}>{caption}</span>
     </div>
   );
 }

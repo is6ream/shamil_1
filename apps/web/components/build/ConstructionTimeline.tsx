@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { ArrowRightIcon, CheckMarkIcon } from "@/components/icons/Icons";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import type { PublicVideo } from "@/lib/api/site-content";
 import type { ConstructionStage, ConstructionTimeline as Timeline, GalleryItem } from "@/lib/api/types";
 import { CONSTRUCTION, PAGES } from "@/lib/content";
 import { formatDayMonth } from "@/lib/format";
@@ -14,6 +15,8 @@ import { VideoCard } from "./VideoCard";
 interface Props {
   readonly timeline: Timeline;
   readonly gallery: readonly GalleryItem[];
+  /** Первое опубликованное видео из админки; нет — заглушка «Видео с объекта». */
+  readonly video?: PublicVideo | null;
 }
 
 /** Сколько превью фото под видео (макет v2). */
@@ -47,7 +50,7 @@ function StageMarker({ stage, index }: { readonly stage: ConstructionStage; read
  * от фотографий, индексируется поисковиками. Заголовок на телефоне
  * скрыт — его роль там играет строка аккордеона.
  */
-export function ConstructionTimeline({ timeline, gallery }: Props) {
+export function ConstructionTimeline({ timeline, gallery, video = null }: Props) {
   const previews = gallery.slice(0, PREVIEW_COUNT);
 
   return (
@@ -77,7 +80,7 @@ export function ConstructionTimeline({ timeline, gallery }: Props) {
         ))}
       </ol>
 
-      <VideoCard />
+      <VideoCard video={video} />
 
       {previews.length === 0 ? null : (
         <ul className={styles.previews}>
@@ -88,8 +91,8 @@ export function ConstructionTimeline({ timeline, gallery }: Props) {
               ) : (
                 <Image
                   className={styles.previewImage}
-                  src={item.url}
-                  alt={`${item.caption}, ${item.takenAtLabel}`}
+                  src={item.thumbUrl ?? item.url}
+                  alt={item.alt ?? `${item.caption}, ${item.takenAtLabel}`}
                   fill
                   sizes="(min-width: 1024px) 190px, 33vw"
                 />

@@ -1,12 +1,14 @@
 import Image from "next/image";
 
 import { StarOrnamentIcon } from "@/components/icons/Icons";
+import type { HeroContent } from "@/lib/api/site-content";
 import { HERO } from "@/lib/content";
 
 import styles from "./RenderCard.module.css";
 
 interface Props {
   readonly className?: string;
+  readonly hero?: Pick<HeroContent, "renderUrl" | "renderCaption">;
 }
 
 /**
@@ -16,24 +18,24 @@ interface Props {
  * чтобы было видно, что здесь будет. `preload` — единственный на странице:
  * это самая крупная картинка первого экрана.
  */
-export function RenderCard({ className }: Props) {
+export function RenderCard({ className, hero = HERO }: Props) {
   return (
     <figure className={`${styles.card} ${className ?? ""}`}>
-      {HERO.renderUrl === null ? (
+      {hero.renderUrl === null ? (
         <span className={styles.placeholder} aria-hidden="true">
           <StarOrnamentIcon />
         </span>
       ) : (
         <Image
           className={styles.image}
-          src={HERO.renderUrl}
-          alt={HERO.renderCaption}
+          src={hero.renderUrl}
+          alt={hero.renderCaption}
           fill
           preload
           sizes="(min-width: 1024px) 680px, 100vw"
         />
       )}
-      <figcaption className={styles.caption}>{HERO.renderCaption}</figcaption>
+      <figcaption className={styles.caption}>{hero.renderCaption}</figcaption>
     </figure>
   );
 }

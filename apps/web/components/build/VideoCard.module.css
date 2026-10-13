@@ -53,3 +53,7 @@ button.play:hover {
   background: var(--surface);
   font-size: 13px;
 }
+
+iframe.video {
+  border: 0;
+}

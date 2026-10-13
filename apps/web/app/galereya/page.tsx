@@ -33,8 +33,8 @@ export default async function GalleryPage() {
                 {item.url === null ? null : (
                   <Image
                     className={styles.image}
-                    src={item.url}
-                    alt={item.caption}
+                    src={item.thumbUrl ?? item.url}
+                    alt={item.alt ?? item.caption}
                     fill
                     sizes="(min-width: 768px) 280px, 50vw"
                   />

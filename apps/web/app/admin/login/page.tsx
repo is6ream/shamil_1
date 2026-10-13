@@ -45,7 +45,7 @@ export default function LoginPage() {
     }
   }
 
-  if (state.status !== "anonymous") {
+  if (state.status !== "anonymous" && state.status !== "unavailable") {
     return <LoadingState label="Проверяем вход…" />;
   }
 

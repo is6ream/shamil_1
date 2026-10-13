@@ -64,16 +64,48 @@
   white-space: nowrap;
 }
 
+/* Главный CTA и бургер не сжимаются: при нехватке места уступает логотип. */
 .help {
+  flex: none;
   height: 44px;
   margin-left: var(--sp-2);
   padding: 0 var(--sp-6);
   font-size: 15px;
 }
 
+/* Вход для сотрудников: тихая иконка без подписи, размер как у бургера. */
+.login {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-strong);
+  font-size: 24px;
+  cursor: pointer;
+  transition: color var(--dur-fast);
+}
+
+.login:hover {
+  color: var(--accent);
+}
+
+/* Телефон стоит вплотную к иконке, кнопка «Помочь» уже со своим отступом. */
+.loginDesktop {
+  margin: 0 calc(-1 * var(--sp-3)) 0 calc(-1 * var(--sp-2));
+}
+
+.loginMobile {
+  display: none;
+}
+
 /* Когда навигации нет (телефон, планшет), кнопка прижимается вправо. */
 .burger {
   display: none;
+  flex: none;
   place-items: center;
   width: var(--control-h-sm);
   height: var(--control-h-sm);
@@ -83,6 +115,25 @@
   color: var(--text-strong);
   font-size: 26px;
   cursor: pointer;
+}
+
+/*
+ * Узкий десктоп: навигация, телефон, вход и «Помочь» в одну строку не влезали
+ * (на 1120px строка вылезала за экран ещё до иконки входа). Ужимаем только
+ * промежутки и кегль ссылок — «Помочь» не трогаем.
+ */
+@media (min-width: 1120px) and (max-width: 1279px) {
+  .inner {
+    gap: var(--sp-4);
+  }
+
+  .nav {
+    gap: 20px;
+  }
+
+  .navLink {
+    font-size: 14px;
+  }
 }
 
 @media (max-width: 1119px) {
@@ -97,6 +148,34 @@
 
   .burger {
     display: grid;
+  }
+
+  .loginDesktop {
+    display: none;
+  }
+
+  .loginMobile {
+    display: grid;
+  }
+}
+
+/*
+ * Уже 480px иконке нет места: логотип, «Помочь» и бургер занимают всю
+ * строку, а сжимать главный CTA нельзя. Вход переезжает в выдвижное меню.
+ */
+@media (max-width: 479px) {
+  .loginMobile {
+    display: none;
+  }
+
+  /*
+   * На 360–390px логотип в одну строку не оставлял места бургеру: тот
+   * сжимался до 12px и пропадал. Теперь сжимается логотип — «Мечеть Шамиль»
+   * переносится на две строки, только когда в одну не влезает.
+   */
+  .brand {
+    flex: 0 1 auto;
+    min-width: 0;
   }
 }
 
@@ -113,6 +192,10 @@
 }
 
 @media (max-width: 374px) {
+  .inner {
+    gap: var(--sp-2);
+  }
+
   .help {
     padding: 0 var(--sp-3);
   }

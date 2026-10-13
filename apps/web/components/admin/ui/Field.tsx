@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 import field from "@/components/ui/field.module.css";
 
@@ -90,6 +90,71 @@ export function TextAreaField({ label, error, hint, className, ...textarea }: Te
         aria-describedby={describedBy(id, error, hint)}
       />
     </FieldFrame>
+  );
+}
+
+export interface SelectOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "id"> & {
+  readonly label: string;
+  readonly options: readonly SelectOption[];
+  /** Пустой пункт в начале: «Все», «Не выбран». */
+  readonly emptyLabel?: string;
+  readonly error?: string | null;
+  readonly hint?: ReactNode;
+};
+
+export function SelectField({ label, options, emptyLabel, error, hint, className, ...select }: SelectFieldProps) {
+  const id = useId();
+
+  return (
+    <FieldFrame id={id} label={label} error={error} hint={hint}>
+      <select
+        {...select}
+        id={id}
+        className={`${field.input} ${styles.select} ${className ?? ""}`}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(id, error, hint)}
+      >
+        {emptyLabel === undefined ? null : <option value="">{emptyLabel}</option>}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </FieldFrame>
+  );
+}
+
+type CheckboxFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "type"> & {
+  readonly label: ReactNode;
+  readonly hint?: ReactNode;
+};
+
+/** Чекбокс с подписью справа; вся строка — цель касания не ниже 46 px. */
+export function CheckboxField({ label, hint, className, ...input }: CheckboxFieldProps) {
+  const id = useId();
+
+  return (
+    <div className={`${styles.check} ${className ?? ""}`}>
+      <input
+        {...input}
+        id={id}
+        type="checkbox"
+        className={styles.checkbox}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+      />
+      <label htmlFor={id}>{label}</label>
+      {hint ? (
+        <p id={`${id}-hint`} className={`${field.hint} ${styles.checkHint}`}>
+          {hint}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

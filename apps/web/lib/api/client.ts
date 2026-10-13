@@ -147,6 +147,11 @@ export interface ApiGetOptions {
    * ещё и склеивает в один запрос (мемоизация `fetch`).
    */
   readonly revalidate: number;
+  /**
+   * Теги кеша для мгновенной ревалидации из админки: API после записи
+   * шлёт `POST /api/revalidate` с тегом (D-F02, API.md §17).
+   */
+  readonly tags?: readonly string[];
 }
 
 /**
@@ -156,7 +161,9 @@ export interface ApiGetOptions {
  * В браузере (`DonationsFeed` → «Показать ещё») опция `next` игнорируется.
  */
 export function apiGet<T>(path: string, options: ApiGetOptions): Promise<T> {
-  return send<T>(path, { next: { revalidate: options.revalidate } });
+  return send<T>(path, {
+    next: { revalidate: options.revalidate, ...(options.tags ? { tags: [...options.tags] } : {}) },
+  });
 }
 
 /**

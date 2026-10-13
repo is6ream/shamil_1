@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 import { AdminPage } from "@/components/admin/AdminPage";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { EmptyState, LoadingState } from "@/components/admin/ui/StateViews";
+import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
 import { ADMIN_LOGIN, findSection } from "@/lib/admin/navigation";
 import { useAdminSession } from "@/lib/admin/session";
 
@@ -23,6 +23,14 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
       router.replace(ADMIN_LOGIN);
     }
   }, [state.status, router]);
+
+  if (state.status === "unavailable") {
+    return (
+      <AdminPage title="Не удалось проверить вход">
+        <ErrorState message={state.message} onRetry={() => window.location.reload()} />
+      </AdminPage>
+    );
+  }
 
   if (state.status !== "authenticated") {
     return <LoadingState label="Проверяем вход…" />;

@@ -1,0 +1,130 @@
+.tabs {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-1);
+  overflow-x: auto;
+}
+
+.tab {
+  flex: none;
+  min-height: var(--control-h-sm);
+  padding: 0 var(--sp-4);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text-strong);
+  font: inherit;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.updated {
+  margin: 0 0 var(--sp-4);
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+}
+
+.form {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.form > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.fieldset {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--sp-4);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.fieldset legend {
+  padding: 0 var(--sp-2);
+  font-weight: 600;
+}
+
+.list {
+  display: grid;
+  gap: var(--sp-3);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listItem {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--r-field);
+  background: var(--bg);
+}
+
+.listFields {
+  display: grid;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.listFields > * {
+  margin-top: 0 !important;
+}
+
+.listActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.factRow {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.factRow > * {
+  margin-top: 0 !important;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--fs-small);
+}
+
+.dirty {
+  align-self: center;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+}
+
+@media (min-width: 720px) {
+  .factRow {
+    grid-template-columns: 1fr 0.6fr 2fr;
+  }
+
+  .listItem {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+}

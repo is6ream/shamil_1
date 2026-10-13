@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 
 import { DonationsFeed } from "@/components/feed/DonationsFeed";
 import { SimplePage } from "@/components/layout/SimplePage";
+import { NewsList } from "@/components/news/NewsList";
 import { getFeed } from "@/lib/api/showcase";
+import { getLatestNews } from "@/lib/api/site-content";
 import { withFallback } from "@/lib/api/with-fallback";
 import { PAGES, REPORTS_PAGE } from "@/lib/content";
 
@@ -20,10 +22,15 @@ export const metadata: Metadata = {
 export const revalidate = 15;
 
 export default async function ReportsPage() {
-  const feed = await withFallback(getFeed(), { items: [], nextCursor: null }, "лента поступлений");
+  const [feed, news] = await Promise.all([
+    withFallback(getFeed(), { items: [], nextCursor: null }, "лента поступлений"),
+    // Пока опубликованных новостей нет, блок не рисуется и страница прежняя (D-12).
+    withFallback(getLatestNews(), [], "новости"),
+  ]);
 
   return (
     <SimplePage title={REPORTS_PAGE.title} lede={REPORTS_PAGE.lede}>
+      <NewsList items={news} />
       <DonationsFeed initialPage={feed} canLoadMore />
     </SimplePage>
   );

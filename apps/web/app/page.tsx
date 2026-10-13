@@ -15,12 +15,13 @@ import {
   GALLERY_PLACEHOLDERS,
   HOME_REGIONS_LIMIT,
   getCampaign,
-  getConstructionStages,
   getFeed,
   getGallery,
   getRegions,
   getTopRegions,
 } from "@/lib/api/showcase";
+import { FALLBACK_CONTENT, getConstruction, getSiteContent, getVideos } from "@/lib/api/site-content";
+import { FIXTURE_CONSTRUCTION } from "@/lib/api/showcase.fixtures";
 import type { FeedPage } from "@/lib/api/types";
 import { withFallback } from "@/lib/api/with-fallback";
 import { MOBILE_SECTIONS, SECTION_IDS } from "@/lib/content";
@@ -55,22 +56,26 @@ const EMPTY_FEED: FeedPage = { items: [], nextCursor: null };
 export default async function HomePage() {
   // Бэкенд недоступен — страница всё равно рендерится: форма работает,
   // вместо цифр «обновляем данные», пустые рейтинги не рисуются (with-fallback.ts).
-  const [campaign, regions, topRegions, construction, gallery, feed] = await Promise.all([
+  // Тексты, этапы и видео — из админки; пока их там нет или API недоступен,
+  // главная выглядит как до админки (хардкод и фикстуры).
+  const [campaign, regions, topRegions, construction, gallery, feed, content, videos] = await Promise.all([
     withFallback(getCampaign(), null, "цифры сбора"),
     withFallback(getRegions(), [], "справочник регионов"),
     withFallback(getTopRegions(), [], "рейтинг регионов"),
-    getConstructionStages(),
+    withFallback(getConstruction(), FIXTURE_CONSTRUCTION, "ход стройки"),
     withFallback(getGallery(), GALLERY_PLACEHOLDERS, "галерея"),
     withFallback(getFeed(), EMPTY_FEED, "лента поступлений"),
+    withFallback(getSiteContent(), FALLBACK_CONTENT, "тексты сайта"),
+    withFallback(getVideos(), [], "видео"),
   ]);
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader phone={content.contacts.phone} helpButton={content.hero.helpButton} />
 
       <main className={styles.page}>
         <div className={styles.head}>
-          <HeroIntro campaign={campaign} />
+          <HeroIntro campaign={campaign} hero={content.hero} />
         </div>
 
         <aside className={styles.aside} id={SECTION_IDS.donate} aria-label="Форма пожертвования">
@@ -84,7 +89,7 @@ export default async function HomePage() {
         </div>
 
         <div className={styles.about}>
-          <AboutSection />
+          <AboutSection about={content.about} />
         </div>
 
         <MobileAccordion
@@ -92,7 +97,7 @@ export default async function HomePage() {
           id={SECTION_IDS.construction}
           title={MOBILE_SECTIONS.construction}
         >
-          <ConstructionTimeline timeline={construction} gallery={gallery} />
+          <ConstructionTimeline timeline={construction} gallery={gallery} video={videos[0] ?? null} />
         </MobileAccordion>
 
         <div className={styles.band}>
@@ -112,11 +117,11 @@ export default async function HomePage() {
           id={SECTION_IDS.requisites}
           title={MOBILE_SECTIONS.requisites}
         >
-          <RequisitesSection />
+          <RequisitesSection bank={content.bank} />
         </MobileAccordion>
       </main>
 
-      <SiteFooter />
+      <SiteFooter contacts={content.contacts} />
       {campaign === null ? null : <MobileDonateBar campaign={campaign} />}
     </>
   );

@@ -28,12 +28,15 @@ const DATA_ERROR_STATUSES: ReadonlySet<number> = new Set([400, 409, 422]);
 export class AdminApiError extends Error {
   readonly status: number;
   readonly messages: readonly string[];
+  /** Разобранное тело ответа — для особых тел вроде 409 `usages` у медиатеки. */
+  readonly body: unknown;
 
-  constructor(status: number, messages: readonly string[]) {
+  constructor(status: number, messages: readonly string[], body: unknown = null) {
     super(messages[0] ?? FALLBACK_MESSAGE);
     this.name = "AdminApiError";
     this.status = status;
     this.messages = messages;
+    this.body = body;
   }
 
   get isUnauthorized(): boolean {
@@ -68,7 +71,7 @@ export function toAdminApiError(status: number, body: unknown): AdminApiError {
   if (DATA_ERROR_STATUSES.has(status)) {
     const fromServer = serverMessages(body);
 
-    return new AdminApiError(status, fromServer.length > 0 ? fromServer : [FALLBACK_MESSAGE]);
+    return new AdminApiError(status, fromServer.length > 0 ? fromServer : [FALLBACK_MESSAGE], body);
   }
 
   const known = STATUS_MESSAGES[status];

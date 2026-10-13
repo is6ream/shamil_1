@@ -2,6 +2,10 @@
   max-width: 960px;
 }
 
+.wide {
+  max-width: 1400px;
+}
+
 .head {
   display: flex;
   flex-wrap: wrap;
