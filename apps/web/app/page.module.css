@@ -104,15 +104,40 @@
     margin-top: var(--hero-pad-top);
   }
 
+  /*
+   * Форма выше короткого окна (ноутбук 13", Dock на маке, панель задач,
+   * масштаб браузера) не должна обрезаться: липкий блок не выходит за
+   * нижний край вьюпорта, а лишнее прокручивается внутри него. `dvh`
+   * учитывает реальную видимую высоту, `vh` — запасной вариант.
+   *
+   * Поля `--shadow-gap` нужны, чтобы `overflow` не срезал тень карточки:
+   * отступ внутри скролл-контейнера компенсируется отрицательным снаружи.
+   */
   .asideSticky {
+    --shadow-gap: var(--sp-12);   /* размах --shadow-form за краем карточки */
+    --sticky-bottom: 0px;          /* нижний воздух даёт сам --shadow-gap   */
+
     position: sticky;
     top: var(--sticky-top);
+    max-height: calc(100vh - var(--sticky-top) - var(--sticky-bottom));
+    max-height: calc(100dvh - var(--sticky-top) - var(--sticky-bottom));
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 0 var(--shadow-gap) var(--shadow-gap);
+    margin: 0 calc(-1 * var(--shadow-gap)) calc(-1 * var(--shadow-gap));
   }
 
   .band { grid-row: 5; }
   .reports { grid-row: 6; }
   .share { grid-row: 7; }
   .requisites { grid-row: 8; }
+}
+
+/* Низкое окно десктопа: уплотняем карточку, чтобы чаще влезала целиком. */
+@media (min-width: 1024px) and (max-height: 860px) {
+  .asideSticky {
+    --form-pad: var(--sp-6);
+  }
 }
 
 /* ── Телефон: хадис после формы, ниже — аккордеон ──────────────────────── */
