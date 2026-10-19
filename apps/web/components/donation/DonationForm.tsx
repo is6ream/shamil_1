@@ -122,7 +122,7 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
           onBlur={form.validateField}
         />
 
-        <div>
+        <div className={styles.consent}>
           <Checkbox
             id={CONSENT_ID}
             name="personalDataConsent"

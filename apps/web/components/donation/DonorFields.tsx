@@ -19,7 +19,7 @@ const NAME_ID = "donation-donor-name";
 const PHONE_ID = "donation-phone";
 
 /**
- * Имя и телефон, в ряд на десктопе и столбиком на телефоне.
+ * Имя и телефон в ряд на любой ширине: так форма помещается на экран.
  *
  * Имя — публичная подпись в ленте. При анонимном донате поле заблокировано
  * и пусто: публичной подписи у анонимного доната быть не может.
@@ -35,7 +35,7 @@ export function DonorFields({ state, errors, onNameChange, onPhoneChange, onBlur
   return (
     <div className={styles.row}>
       <div>
-        <label className={field.label} htmlFor={NAME_ID}>
+        <label className={`${field.label} ${field.collapsible}`} htmlFor={NAME_ID}>
           {DONATION_FORM.nameLabel}
         </label>
         <input
@@ -65,7 +65,7 @@ export function DonorFields({ state, errors, onNameChange, onPhoneChange, onBlur
       </div>
 
       <div>
-        <label className={field.label} htmlFor={PHONE_ID}>
+        <label className={`${field.label} ${field.collapsible}`} htmlFor={PHONE_ID}>
           {DONATION_FORM.phoneLabel}
         </label>
         <input

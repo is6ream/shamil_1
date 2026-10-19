@@ -21,7 +21,7 @@ interface Props {
 export function PaymentMethods({ value, onChange }: Props) {
   return (
     <fieldset className={field.fieldset}>
-      <legend className={field.legend}>{DONATION_FORM.methodLegend}</legend>
+      <legend className={`${field.legend} ${field.collapsible}`}>{DONATION_FORM.methodLegend}</legend>
       <div className={styles.grid}>
         {DONATION_FORM.methods.map((method) => (
           <label className={styles.choice} key={method.id}>

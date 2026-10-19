@@ -20,7 +20,7 @@ interface Props {
 export function AmountPresets({ selectedPreset, onSelect }: Props) {
   return (
     <fieldset className={field.fieldset}>
-      <legend className={field.legend}>{DONATION_FORM.amountLegend}</legend>
+      <legend className={`${field.legend} ${field.collapsible}`}>{DONATION_FORM.amountLegend}</legend>
       <div className={styles.grid}>
         {AMOUNT_PRESETS_RUBLES.map((preset) => (
           <label className={styles.choice} key={preset}>

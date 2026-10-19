@@ -1,6 +1,7 @@
 /*
  * Ряд кнопок выбора: пресеты суммы и способы оплаты (макет v2).
- * Четыре в ряд, на телефоне сетка 2×2. Кнопка — `<label>` с настоящим
+ * Четыре в ряд на любой ширине: прежняя сетка 2×2 на телефоне съедала
+ * высоту, и форма не помещалась на экран. Кнопка — `<label>` с настоящим
  * `input[type=radio]` внутри: стрелки клавиатуры и объявление выбранного
  * скринридером работают без единой строки JS.
  */
@@ -11,10 +12,9 @@
   gap: var(--sp-2);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 359px) {
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--sp-3);
+    gap: 6px;
   }
 }
 
@@ -53,7 +53,14 @@
 
 @media (max-width: 767px) {
   .choice {
-    height: 48px;
-    font-size: 16px;
+    padding: 0 var(--sp-1);
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 359px) {
+  .choice {
+    padding: 0 2px;
+    font-size: 13px;
   }
 }
