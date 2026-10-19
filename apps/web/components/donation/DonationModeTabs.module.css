@@ -1,0 +1,48 @@
+/* Сегментный переключатель: серая дорожка, выбранный сегмент — синий,
+   как выбранные пресеты и способы оплаты ниже в форме. */
+
+.track {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: var(--form-gap);
+  padding: 4px;
+  border-radius: var(--r-field);
+  background: var(--surface-sunken);
+}
+
+.tab {
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-2);
+  border: 0;
+  border-radius: calc(var(--r-field) - 3px);
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
+}
+
+.tab:hover {
+  color: var(--text-strong);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 2px 8px -2px rgba(11, 37, 72, 0.35);
+}
+
+.tab:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}
+
+@media (max-width: 359px) {
+  .tab {
+    font-size: 14px;
+  }
+}

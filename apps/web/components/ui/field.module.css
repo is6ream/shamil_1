@@ -82,7 +82,7 @@
  * экране прячем их от глаза, чтобы форма поместилась целиком (19.10.2026);
  * скринридер подписи по-прежнему читает.
  */
-@media (max-height: 700px) {
+@media (max-height: 800px) {
   .collapsible {
     position: absolute;
     width: 1px;

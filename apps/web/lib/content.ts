@@ -139,7 +139,6 @@ export const HADITH_BAND = {
 
 export const DONATION_FORM = {
   title: "Поддержать строительство",
-  subtitle: "Займёт меньше минуты",
   amountLegend: "Сумма",
   customAmountLabel: "Или своя сумма, ₽",
   customAmountPlaceholder: "Например, 2 500",
@@ -198,6 +197,17 @@ export const SBP_QR = {
     "Сумму укажете сами.",
   textMobile: "Нажмите кнопку — откроется приложение вашего банка. Сумму укажете сами.",
   button: "Оплатить через СБП",
+  note: "Система быстрых платежей · любой банк",
+} as const;
+
+/**
+ * Режимы карточки доната. Пока не подключена Robokassa, по умолчанию
+ * открыт QR СБП (решение 19.10.2026); после подключения — `"form"`.
+ */
+export const DONATION_MODES = {
+  defaultMode: "qr" as "qr" | "form",
+  ariaLabel: "Способ пожертвования",
+  labels: { qr: "По QR-коду", form: "Через форму" },
 } as const;
 
 export const REQUISITES = {

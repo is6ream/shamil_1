@@ -8,8 +8,8 @@
    * переопределены здесь, а не в токенах: сжимается только форма.
    * `svh` — видимая высота с панелями мобильного браузера; `vh` — запасной.
    */
-  --form-gap: clamp(8px, 2.2vh, 24px);
-  --form-gap: clamp(8px, 2.2svh, 24px);
+  --form-gap: clamp(8px, 1.9vh, 22px);
+  --form-gap: clamp(8px, 1.9svh, 22px);
   --form-pad: clamp(16px, 3.2vh, 32px);
   --form-pad: clamp(16px, 3.2svh, 32px);
   --control-h: clamp(42px, 6vh, 56px);
@@ -43,7 +43,7 @@
 
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--sp-4);
 }
@@ -60,21 +60,8 @@
   }
 }
 
-.subtitle {
-  margin: var(--sp-1) 0 0;
-  font-size: var(--fs-small);
-  color: var(--text-soft);
-}
-
-/* Низкий экран: подзаголовок уступает место полям формы. */
-@media (max-height: 700px) {
-  .subtitle {
-    display: none;
-  }
-}
-
-/* Очень низкий экран (≤ 580px): последняя ступень уплотнения. */
-@media (max-height: 580px) {
+/* Очень низкий экран (≤ 640px): последняя ступень уплотнения. */
+@media (max-height: 640px) {
   .card {
     --form-gap: 6px;
     --form-pad: 12px;
@@ -213,5 +200,12 @@
 
   .mobileOnly {
     display: inline;
+  }
+}
+
+/* Совсем низкое окно (≤ 540px): строка про комиссию уступает место полям. */
+@media (max-height: 540px) {
+  .note {
+    display: none;
   }
 }

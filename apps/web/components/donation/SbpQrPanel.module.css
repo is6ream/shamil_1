@@ -1,0 +1,88 @@
+/* QR-панель внутри карточки формы. Высота, как и у формы, зависит
+   от высоты окна: карточка целиком помещается на экран. */
+
+.panel {
+  display: grid;
+  justify-items: center;
+  gap: var(--form-gap);
+  margin-top: var(--form-gap);
+}
+
+/* Код всегда на белом с полем — камера должна видеть границу кода. */
+.qrWrap {
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: #FFFFFF;
+}
+
+.qr {
+  display: block;
+  width: clamp(120px, 24vh, 220px);
+  width: clamp(120px, 24svh, 220px);
+  height: auto;
+}
+
+.text {
+  max-width: 34ch;
+  margin: 0;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.button {
+  height: var(--control-h);
+  font-size: 17px;
+}
+
+.note {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.mobileOnly {
+  display: none;
+}
+
+/* Низкий экран: подпись про СБП уступает место коду. */
+@media (max-height: 700px) {
+  .note {
+    display: none;
+  }
+}
+
+/* Телефон: кнопка — главное действие, она идёт сразу под текстом,
+   код ниже и меньше (его сканируют с другого устройства). */
+@media (max-width: 767px) {
+  .qrWrap {
+    order: 3;
+  }
+
+  .qr {
+    width: clamp(120px, 22svh, 180px);
+  }
+
+  .text {
+    order: 1;
+  }
+
+  .button {
+    order: 2;
+  }
+
+  .note {
+    order: 4;
+  }
+
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: inline;
+  }
+}
