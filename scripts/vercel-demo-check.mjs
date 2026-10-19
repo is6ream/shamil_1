@@ -96,7 +96,7 @@ async function openEmulator(page, shot) {
 
 async function waitThanksPaid(page) {
   await page.waitForURL(/\/spasibo/, { timeout: 20_000 });
-  await page.getByText("Ваш вклад дошёл").waitFor({ timeout: THANKS_WAIT_MS });
+  await page.getByText("Ваше пожертвование дошло").waitFor({ timeout: THANKS_WAIT_MS });
 }
 
 async function checkNoHorizontalScroll(page, label) {
@@ -208,7 +208,7 @@ async function extraScenarios(page) {
     await page.getByRole("link", { name: "Колбэк через 10 с" }).click();
     await page.waitForURL(/\/spasibo/, { timeout: 20_000 });
     await shot("07-delay10-checking");
-    await page.getByText("Ваш вклад дошёл").waitFor({ timeout: THANKS_WAIT_MS });
+    await page.getByText("Ваше пожертвование дошло").waitFor({ timeout: THANKS_WAIT_MS });
     await shot("08-delay10-paid");
 
     record((await donationStatus(orderId)) === "paid", "Колбэк через 10 с: «спасибо» ловит оплату");
@@ -240,7 +240,7 @@ async function extraScenarios(page) {
       body: "{}",
     });
     await page.goto(`${SITE_URL}/spasibo?order_id=${orderId}`, { waitUntil: "networkidle" });
-    await page.getByText("Ваш вклад дошёл").waitFor({ timeout: THANKS_WAIT_MS });
+    await page.getByText("Ваше пожертвование дошло").waitFor({ timeout: THANKS_WAIT_MS });
     await shot("10-transfer-confirmed");
 
     record(true, "Перевод по реквизитам: после подтверждения «оплачено»");

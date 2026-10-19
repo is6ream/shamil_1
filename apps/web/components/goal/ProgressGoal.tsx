@@ -158,7 +158,7 @@ export function ProgressGoal({ campaign, regionsCount }: Props) {
 
         <div className="cta">
           <a className="btn btn-primary" href="#donate">
-            Внести свой вклад
+            Пожертвовать на строительство
           </a>
         </div>
       </div>

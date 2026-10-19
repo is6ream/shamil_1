@@ -56,7 +56,7 @@ export function HeroSection({ collectedKopecks, donationsCount, regionsCount }: 
           </div>
 
           <p className={`lede ${styles.lede}`}>
-            Мечеть «Шамиль» в Уфе на 500 человек. Каждый вклад остаётся садака джария —
+            Мечеть «Шамиль» в Уфе на 500 человек. Каждое пожертвование остаётся садака джария —
             тем, что продолжает приносить награду и после нас.
           </p>
 

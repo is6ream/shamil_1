@@ -28,7 +28,7 @@ const CONSENT_ID = "donation-consent";
 const CONSENT_ERROR_ID = `${CONSENT_ID}-error`;
 
 /**
- * Форма «Внести вклад» (макет v2). Логика — в `useDonationForm`, здесь
+ * Форма «Поддержать строительство» (макет v2). Логика — в `useDonationForm`, здесь
  * только разметка.
  *
  * Сумма в кнопке обновляется живьём: «Пожертвовать 2 500 ₽» — последнее,

@@ -96,7 +96,7 @@ export function ThanksScreen({ orderId }: Props) {
           <div className="eyebrow">
             <span className="dot" /> Платёж подтверждён
           </div>
-          <h1 className={styles.title}>Ваш вклад дошёл</h1>
+          <h1 className={styles.title}>Ваше пожертвование дошло</h1>
           {paidAmount === null ? null : (
             <p className={styles.sum}>{kopecksToRubDisplay(paidAmount)}</p>
           )}
