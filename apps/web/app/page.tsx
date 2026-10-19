@@ -1,6 +1,7 @@
 import { ConstructionTimeline } from "@/components/build/ConstructionTimeline";
 import { DonationWidget } from "@/components/donation/DonationWidget";
 import { MobileDonateBar } from "@/components/donation/MobileDonateBar";
+import { HeroBackdrop } from "@/components/hero/HeroBackdrop";
 import { HeroIntro } from "@/components/hero/HeroIntro";
 import { MobileAccordion } from "@/components/layout/MobileAccordion";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -74,7 +75,9 @@ export default async function HomePage() {
       <SiteHeader phone={content.contacts.phone} helpButton={content.hero.helpButton} />
 
       <main className={styles.page}>
-        <div className={styles.head}>
+        <HeroBackdrop className={styles.backdrop} />
+
+        <div className={`${styles.head} on-dark`}>
           <HeroIntro campaign={campaign} hero={content.hero} />
         </div>
 

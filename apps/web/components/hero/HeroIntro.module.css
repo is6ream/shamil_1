@@ -103,10 +103,6 @@
   color: var(--accent);
 }
 
-.render {
-  margin-top: var(--sp-12);
-}
-
 .mobileOnly {
   display: none;
 }
@@ -135,7 +131,7 @@
     display: inline;
   }
 
-  /* Телефон: доверие → рендер → «Собрано», и сразу под ним форма. */
+  /* Телефон: доверие → «Собрано», и сразу под ним форма. */
   .trust {
     order: 1;
     grid-template-columns: minmax(0, 1fr);
@@ -144,13 +140,8 @@
     font-size: 16px;
   }
 
-  .render {
+  .collected {
     order: 2;
     margin-top: var(--sp-8);
-  }
-
-  .collected {
-    order: 3;
-    margin-top: var(--sp-5);
   }
 }

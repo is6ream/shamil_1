@@ -5,7 +5,6 @@ import { HERO } from "@/lib/content";
 
 import { CollectedSummary } from "./CollectedSummary";
 import styles from "./HeroIntro.module.css";
-import { RenderCard } from "./RenderCard";
 
 interface Props {
   /** `null` — бэкенд недоступен: вместо цифр «обновляем данные». */
@@ -15,9 +14,10 @@ interface Props {
 }
 
 /**
- * Первый экран макета v2: бейдж, H1, лид, «Собрано», пункты доверия, рендер.
+ * Первый экран макета v2: бейдж, H1, лид, «Собрано», пункты доверия.
+ * Рендер мечети теперь не карточка, а фон экрана — см. `HeroBackdrop`.
  *
- * Порядок на телефоне другой: доверие и рендер идут до «Собрано», чтобы
+ * Порядок на телефоне другой: доверие идёт до «Собрано», чтобы
  * цифры сбора стояли прямо над формой. Меняет его CSS (`order`), а не
  * вторая копия разметки — один H1 на странице.
  */
@@ -46,10 +46,6 @@ export function HeroIntro({ campaign, hero = HERO }: Props) {
           </li>
         ))}
       </ul>
-
-      <div className={styles.render}>
-        <RenderCard hero={hero} />
-      </div>
     </div>
   );
 }
