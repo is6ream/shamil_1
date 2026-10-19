@@ -72,6 +72,8 @@ describeDatabase('гарантии схемы', () => {
         'donation_contact_phone_e164',
         'region_hierarchy',
         'campaign_goal_positive',
+        // Без него короткая ссылка с "//чужой.домен" стала бы открытым редиректом.
+        'short_link_target_path_format',
       ]),
     );
   });

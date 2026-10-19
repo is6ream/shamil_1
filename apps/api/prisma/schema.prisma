@@ -215,6 +215,22 @@ model Donation {
   referrer    String? @db.VarChar(512)
   /// Путь страницы первого захода: `/02/`, `/?utm_source=…` без домена.
   landingPage String? @map("landing_page") @db.VarChar(512)
+  /// Когда был первый заход (из cookie first-touch). Сверяется сервером:
+  /// время из будущего или старше окна атрибуции не пишется.
+  firstTouchAt DateTime? @map("first_touch_at") @db.Timestamptz(3)
+
+  /// Атрибуция last-touch: метки последнего захода с UTM (cookie на 90 дней).
+  /// Без меток last-touch не обновляется — «вернулся напрямую» каналом не считается.
+  lastUtmSource   String? @map("last_utm_source") @db.VarChar(128)
+  lastUtmMedium   String? @map("last_utm_medium") @db.VarChar(128)
+  lastUtmCampaign String? @map("last_utm_campaign") @db.VarChar(128)
+  lastUtmContent  String? @map("last_utm_content") @db.VarChar(128)
+  lastUtmTerm     String? @map("last_utm_term") @db.VarChar(128)
+
+  /// «Откуда узнали о сборе» из вкладки перевода по реквизитам: у перевода
+  /// нет перехода по ссылке, и cookie часто нет. Не enum — по той же причине,
+  /// что и `provider`: список значений живёт в DTO.
+  howDidYouHear String? @map("how_did_you_hear") @db.VarChar(32)
 
   /// Комментарий админа к ручному поступлению («перевод по выписке от 08.10»).
   /// Обязателен для ручного поступления; ПДн сюда не пишут — подсказка в админке.
@@ -238,6 +254,8 @@ model Donation {
   @@index([status, isAnonymous, paidAmountKopecks(sort: Desc)])
   /// UTM-отчёт админки: разбивка оплаченных донатов по источнику и кампании.
   @@index([status, utmSource, utmCampaign])
+  /// Отчёт по источникам, модель last-touch: оплаченные за период по last_utm_source.
+  @@index([status, paidAt, lastUtmSource])
   @@map("donation")
 }
 
@@ -549,4 +567,35 @@ model NewsPost {
   @@index([status, publishedAt(sort: Desc), id(sort: Desc)])
   @@index([coverMediaId])
   @@map("news_post")
+}
+
+// ─── Короткие ссылки ────────────────────────────────────────────────────────
+
+/// Короткая ссылка для QR и соцсетей: `mechetshamil.ru/go/<slug>` → 302 на
+/// страницу сайта с UTM-метками. Напечатанный QR не перепечатать, поэтому
+/// ссылку с кликами не удаляют, а выключают: выключенная ведёт на главную.
+model ShortLink {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Сегмент URL: строчные латиница, цифры, дефис. CHECK `short_link_slug_format`.
+  slug        String   @unique @db.VarChar(64)
+  /// Подпись для админки: «Баннер у входа в мечеть». Наружу не выходит.
+  title       String   @db.VarChar(200)
+  /// Путь на сайте без домена и query: `/`, `/02/`. Домен всегда наш —
+  /// это CHECK `short_link_target_path_format`, открытого редиректа нет.
+  targetPath  String   @default("/") @map("target_path") @db.VarChar(256)
+  /// Без источника короткая ссылка не нужна: ради метки её и заводят.
+  utmSource   String   @map("utm_source") @db.VarChar(128)
+  utmMedium   String?  @map("utm_medium") @db.VarChar(128)
+  utmCampaign String?  @map("utm_campaign") @db.VarChar(128)
+  utmContent  String?  @map("utm_content") @db.VarChar(128)
+  utmTerm     String?  @map("utm_term") @db.VarChar(128)
+  /// Переходы людей. Превью-боты мессенджеров не считаются. Инкремент —
+  /// одним UPDATE в базе, без чтения в сервисе: два клика не теряют друг друга.
+  clicks      Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@map("short_link")
 }
