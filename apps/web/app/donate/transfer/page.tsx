@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BankDetails } from "@/components/donation/BankDetails";
+import { SbpQrCard } from "@/components/requisites/SbpQrCard";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { ShareLinks } from "@/components/share/ShareLinks";
 import { FALLBACK_CONTENT, getSiteContent } from "@/lib/api/site-content";
@@ -55,6 +56,8 @@ export default async function TransferPage({ searchParams }: PageProps<"/donate/
             сопоставим ваши деньги с пожертвованием.
           </p>
         )}
+
+        <SbpQrCard />
 
         <div className="card">
           <BankDetails orderId={orderId ?? undefined} bank={content.bank} />

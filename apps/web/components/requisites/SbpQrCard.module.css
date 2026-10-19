@@ -1,0 +1,113 @@
+/*
+ * Карточка «QR СБП»: слева код, справа объяснение и кнопка. Белая
+ * карточка того же радиуса, что таблица реквизитов под ней, — читается
+ * как часть блока, а не как вставленный баннер.
+ */
+
+.card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-6);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+/* Код всегда на белом с полем: тёмная тема и фон секции не должны
+   касаться модулей, иначе камера теряет границу кода. */
+.qrWrap {
+  padding: var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: #FFFFFF;
+}
+
+.qr {
+  display: block;
+  width: 168px;
+  height: auto;
+}
+
+.body {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.badge {
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.title {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--fs-h3);
+}
+
+.text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.button {
+  margin-top: var(--sp-2);
+}
+
+.mobileOnly {
+  display: none;
+}
+
+/* Телефон: сначала текст и кнопка во всю ширину, код — ниже, меньше. */
+@media (max-width: 767px) {
+  .card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-5);
+    padding: var(--sp-5);
+  }
+
+  /* Внутри белого аккордеона телефона белая карточка сливается с фоном. */
+  .onWhite {
+    background: var(--bg);
+  }
+
+  .qrWrap {
+    order: 2;
+    justify-self: center;
+  }
+
+  .qr {
+    width: 148px;
+  }
+
+  .body {
+    justify-items: stretch;
+  }
+
+  .badge {
+    justify-self: start;
+  }
+
+  .button {
+    width: 100%;
+  }
+
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: inline;
+  }
+}

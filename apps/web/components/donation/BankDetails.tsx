@@ -1,15 +1,7 @@
-import Image from "next/image";
-
 import { BANK_DETAILS, ORGANIZATION, hasBankDetails } from "@/lib/organization";
 import type { BankDetails as BankDetailsData } from "@/lib/organization";
 
 import styles from "./BankDetails.module.css";
-
-/**
- * Сторона QR-кода. `unoptimized`: картинку выдаёт банк готовой, и пережимать
- * её нельзя — потеря контраста ломает распознавание камерой.
- */
-const QR_SIZE_PX = 180;
 
 interface Props {
   /**
@@ -55,7 +47,8 @@ export function BankDetails({ orderId, bank = BANK_DETAILS }: Props) {
       {isReady ? null : (
         <p className={styles.pending}>
           Реквизиты расчётного счёта публикуются после подтверждения заказчиком.
-          Пока оплатите онлайн — или напишите нам, и мы пришлём реквизиты ответом.
+          Пока переведите по QR-коду СБП выше — или напишите нам, и мы пришлём
+          реквизиты ответом.
         </p>
       )}
 
@@ -72,18 +65,6 @@ export function BankDetails({ orderId, bank = BANK_DETAILS }: Props) {
         )}
       </dl>
 
-      {bank.sbpQrUrl === null ? (
-        <p className="micro">QR-код СБП появится здесь вместе с реквизитами.</p>
-      ) : (
-        <Image
-          className={styles.qr}
-          src={bank.sbpQrUrl}
-          alt="QR-код СБП для перевода пожертвования"
-          width={QR_SIZE_PX}
-          height={QR_SIZE_PX}
-          unoptimized
-        />
-      )}
     </div>
   );
 }

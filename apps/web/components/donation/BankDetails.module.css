@@ -47,11 +47,3 @@
   font-size: var(--fs-input);
   font-weight: 500;
 }
-
-.qr {
-  display: block;
-  width: 180px;
-  height: auto;
-  margin: var(--sp-5) auto 0;
-  border-radius: var(--r-field);
-}
