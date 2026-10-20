@@ -1,5 +1,7 @@
 import { IsBoolean, IsIn, IsISO8601, IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
 
+import { HOW_DID_YOU_HEAR } from '../../attribution/attribution.constants';
+import type { HowDidYouHear } from '../../attribution/attribution.constants';
 import { Trim, TrimToNull } from '../../common/dto-transforms';
 import { MANUAL_CONFIRM_METHODS } from '../../config/constants';
 import type { ManualConfirmMethod } from '../../config/constants';
@@ -57,4 +59,14 @@ export class ManualDonationDto {
   @IsString()
   @MaxLength(120)
   donorName?: string | null;
+
+  /**
+   * «Откуда узнали о сборе» — бухгалтер спрашивает при приёме наличных
+   * или видит в назначении перевода. Меток у таких денег нет, а без ответа
+   * они попадают в отчёт по источникам строкой «без атрибуции».
+   */
+  @IsOptional()
+  @ValidateIf(notNull)
+  @IsIn(HOW_DID_YOU_HEAR)
+  howDidYouHear?: HowDidYouHear | null;
 }

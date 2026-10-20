@@ -87,6 +87,7 @@ export class ManualDonationService {
             isAnonymous: parsed.isAnonymous,
             donorName: parsed.donorName,
             adminComment: dto.comment,
+            howDidYouHear: dto.howDidYouHear ?? null,
           },
           select: { id: true, invoiceNo: true, status: true, paidAmountKopecks: true, paidAt: true },
         });
@@ -116,6 +117,7 @@ export class ManualDonationService {
             isAnonymous: parsed.isAnonymous,
             donorName: parsed.donorName,
             comment: dto.comment,
+            howDidYouHear: dto.howDidYouHear ?? null,
             idempotencyKey: dto.idempotencyKey,
           },
           meta,

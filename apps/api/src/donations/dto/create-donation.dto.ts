@@ -21,6 +21,9 @@ import {
   PUBLIC_REGION_SOURCES,
 } from '../../config/constants';
 import type { PaymentChannel, PublicRegionSource } from '../../config/constants';
+import { HOW_DID_YOU_HEAR } from '../../attribution/attribution.constants';
+import type { HowDidYouHear } from '../../attribution/attribution.constants';
+import { AttributionDto } from '../../attribution/dto/attribution.dto';
 import { DonationUtmDto } from './donation-utm.dto';
 
 /** Слаг региона: тот же формат, что и CHECK `region_slug_format` в БД. */
@@ -109,14 +112,33 @@ export class CreateDonationDto {
   channel?: PaymentChannel;
 
   /**
-   * UTM-метки, Referer и страница первого захода (first-touch, cookie на 30 дней).
-   * Необязательны: донат без атрибуции проходит так же, как без региона.
+   * Атрибуция: метки первого и последнего захода, Referer, страница и время
+   * первого захода (cookie сайта на 90 дней). Необязательна: донат без
+   * атрибуции проходит так же, как без региона.
+   */
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AttributionDto)
+  attribution?: AttributionDto;
+
+  /**
+   * @deprecated Старая форма — только first-touch. Принимается один релиз,
+   * пока у всех не обновится фронт; вместе с `attribution` — 400.
    */
   @IsOptional()
   @IsObject()
   @ValidateNested()
   @Type(() => DonationUtmDto)
   utm?: DonationUtmDto;
+
+  /**
+   * «Откуда вы узнали о сборе?» — вкладка перевода по реквизитам. Перевод
+   * идёт из приложения банка, без перехода по ссылке, и метки часто нет.
+   */
+  @IsOptional()
+  @IsIn(HOW_DID_YOU_HEAR)
+  howDidYouHear?: HowDidYouHear;
 
   /**
    * Honeypot против ботов: поле скрыто в вёрстке, человек его не заполняет.
