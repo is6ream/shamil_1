@@ -8,17 +8,26 @@ import styles from "./Blocks.module.css";
 
 interface SectionProps {
   readonly title?: string;
+  /** Пояснение под заголовком: что это и где видно на сайте. */
+  readonly description?: ReactNode;
   readonly actions?: ReactNode;
   readonly children: ReactNode;
 }
 
 /** Белая карточка раздела с необязательным заголовком и кнопками справа. */
-export function Section({ title, actions, children }: SectionProps) {
+export function Section({ title, description, actions, children }: SectionProps) {
   return (
     <section className={styles.section}>
       {title || actions ? (
         <div className={styles.sectionHead}>
-          {title ? <h2 className={styles.sectionTitle}>{title}</h2> : <span />}
+          {title ? (
+            <div>
+              <h2 className={styles.sectionTitle}>{title}</h2>
+              {description ? <p className={styles.sectionDescription}>{description}</p> : null}
+            </div>
+          ) : (
+            <span />
+          )}
           {actions ? <div className={styles.sectionActions}>{actions}</div> : null}
         </div>
       ) : null}
@@ -60,7 +69,12 @@ type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 /** Плашка статуса: «Оплачено», «Черновик», «Скрыто». */
 export function Badge({ tone = "neutral", children }: { readonly tone?: BadgeTone; readonly children: ReactNode }) {
-  return <span className={`${styles.badge} ${styles[tone]}`}>{children}</span>;
+  return (
+    <span className={`${styles.badge} ${styles[tone]}`}>
+      <span className={styles.badgeDot} aria-hidden="true" />
+      {children}
+    </span>
+  );
 }
 
 interface MeterProps {

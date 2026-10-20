@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { readonly children: ReactNode }) {
       {children}
       <div className={styles.region} role="status" aria-live="polite">
         {items.map((item) => (
-          <p key={item.id} className={`${styles.toast} ${item.kind === "error" ? styles.error : ""}`}>
+          <p key={item.id} className={`${styles.toast} ${item.kind === "error" ? styles.error : styles.success}`}>
             {item.message}
           </p>
         ))}

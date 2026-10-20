@@ -11,9 +11,9 @@ import type { ReactNode, SVGProps } from "react";
  * `aria-label` кнопки, внутри которой иконка лежит.
  */
 
-type IconProps = Omit<SVGProps<SVGSVGElement>, "children">;
+export type IconProps = Omit<SVGProps<SVGSVGElement>, "children">;
 
-function Svg({ children, ...rest }: IconProps & { readonly children: ReactNode }) {
+export function Svg({ children, ...rest }: IconProps & { readonly children: ReactNode }) {
   return (
     <svg
       width="1em"

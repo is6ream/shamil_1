@@ -1,10 +1,11 @@
 .state {
   display: grid;
   justify-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   padding: var(--sp-10) var(--sp-4);
-  border: var(--stroke) dashed var(--border);
+  border: var(--stroke) dashed var(--border-strong, var(--border));
   border-radius: var(--r-md);
+  background: var(--surface);
   color: var(--text-soft);
   text-align: center;
 }
@@ -13,19 +14,50 @@
   margin: 0;
 }
 
+.icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--sp-1);
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  color: var(--text-muted, var(--text-soft));
+  font-size: 24px;
+}
+
 .title {
   max-width: 32em;
   color: var(--text-strong);
   font-weight: 600;
 }
 
+.text {
+  max-width: 36em;
+  font-size: var(--fs-small);
+}
+
+.text p {
+  margin: 0;
+}
+
+.action {
+  margin-top: var(--sp-2);
+}
+
 .error {
-  border-color: var(--danger);
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
   background: var(--danger-soft);
 }
 
-.error .title {
+.error .title,
+.error .icon {
   color: var(--danger);
+}
+
+.error .icon {
+  background: var(--surface);
 }
 
 .spinner {
@@ -43,8 +75,48 @@
   }
 }
 
+.skeleton {
+  display: inline-block;
+  max-width: 100%;
+  border-radius: var(--r-sm, 6px);
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunken) 0%,
+    color-mix(in srgb, var(--surface-sunken) 45%, var(--surface)) 50%,
+    var(--surface-sunken) 100%
+  );
+  background-size: 200% 100%;
+  animation: admin-shimmer 1.4s linear infinite;
+  vertical-align: middle;
+}
+
+.round {
+  border-radius: 50%;
+}
+
+.skeletonRows {
+  display: grid;
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.skeletonRow {
+  display: flex;
+  gap: var(--sp-6);
+  padding: var(--sp-4);
+}
+
+.skeletonRow + .skeletonRow {
+  border-top: var(--stroke) solid var(--border);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation-duration: 2.4s;
+  }
+
+  .skeleton {
+    animation: none;
   }
 }
