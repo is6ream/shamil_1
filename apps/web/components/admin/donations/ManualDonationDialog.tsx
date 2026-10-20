@@ -17,20 +17,26 @@ import {
   looksLikePersonalData,
 } from "@/lib/admin/donations";
 import type { ManualDonationForm } from "@/lib/admin/donations";
+import { HOW_DID_YOU_HEAR_LABELS } from "@/lib/admin/attribution";
 import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import { useAdminMutation, useUnsavedChangesWarning } from "@/lib/admin/hooks";
 import { MANUAL_METHOD_LABELS } from "@/lib/admin/labels";
 import { formatKopecks, kopecksToRublesInput } from "@/lib/admin/money";
 import { toUfaDateTimeInput } from "@/lib/admin/time";
-import { MANUAL_METHODS } from "@/lib/admin/types";
+import { HOW_DID_YOU_HEAR, MANUAL_METHODS } from "@/lib/admin/types";
 import { randomUuid } from "@/lib/admin/uuid";
-import type { ManualDonationBody, ManualDonationResult, ManualMethod } from "@/lib/admin/types";
+import type { HowDidYouHear, ManualDonationBody, ManualDonationResult, ManualMethod } from "@/lib/admin/types";
 
 import styles from "./donations.module.css";
 
 const METHOD_OPTIONS: readonly SelectOption[] = MANUAL_METHODS.map((method) => ({
   value: method,
   label: MANUAL_METHOD_LABELS[method],
+}));
+
+const HOW_DID_YOU_HEAR_OPTIONS: readonly SelectOption[] = HOW_DID_YOU_HEAR.map((value) => ({
+  value,
+  label: HOW_DID_YOU_HEAR_LABELS[value],
 }));
 
 function createManual(client: AdminClient, body: ManualDonationBody): Promise<ManualDonationResult> {
@@ -162,6 +168,16 @@ function ManualDonationFormBody({ regions, onClose, onCreated }: Omit<Props, "is
           options={regions}
           value={form.regionSlug}
           onChange={(event) => set("regionSlug", event.target.value)}
+        />
+        <SelectField
+          label="Откуда узнали о сборе (необязательно)"
+          emptyLabel="Не знаем"
+          options={HOW_DID_YOU_HEAR_OPTIONS}
+          value={form.howDidYouHear ?? ""}
+          onChange={(event) =>
+            set("howDidYouHear", event.target.value === "" ? undefined : (event.target.value as HowDidYouHear))
+          }
+          hint="Если человек сказал или написал в назначении перевода. Попадёт в раздел «Источники»."
         />
         <CheckboxField
           label="Анонимно"

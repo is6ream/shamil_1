@@ -349,6 +349,7 @@ export interface ManualDonationBody {
   readonly regionSlug?: string;
   readonly isAnonymous: boolean;
   readonly donorName?: string;
+  readonly howDidYouHear?: HowDidYouHear;
 }
 
 export interface ManualDonationResult {
@@ -452,4 +453,86 @@ export interface RegionOption {
   readonly code: string;
   readonly name: string;
   readonly type: "country" | "subject";
+}
+
+/* ── Атрибуция: отчёт по источникам и короткие ссылки ───────────────────── */
+
+/** Зеркало `HOW_DID_YOU_HEAR` бэкенда (apps/api/src/attribution/attribution.constants.ts). */
+export const HOW_DID_YOU_HEAR = [
+  "telegram",
+  "whatsapp",
+  "instagram",
+  "vk",
+  "friends",
+  "mosque",
+  "banner_qr",
+  "other",
+] as const;
+
+export type HowDidYouHear = (typeof HOW_DID_YOU_HEAR)[number];
+
+/** Модель атрибуции: первый заход на сайт или последний заход с метками. */
+export type AttributionModel = "first" | "last";
+
+export type SourceGrouping = "source" | "campaign" | "content" | "how_did_you_hear";
+
+export interface SourceAggregate {
+  readonly count: number;
+  readonly totalKopecks: string;
+  readonly averageKopecks: string;
+}
+
+export interface SourceRow extends SourceAggregate {
+  readonly source: string;
+  /** Только в разрезах `campaign` и `content`. */
+  readonly campaign?: string | null;
+  readonly content?: string | null;
+}
+
+/** `GET /admin/analytics/donations-by-source`. */
+export interface DonationsBySource {
+  readonly period: { readonly from: string; readonly to: string };
+  readonly model: AttributionModel;
+  readonly groupBy: SourceGrouping;
+  readonly rows: readonly SourceRow[];
+  readonly unattributed: SourceAggregate;
+  readonly total: SourceAggregate;
+}
+
+export interface AdminShortLink {
+  readonly id: string;
+  readonly slug: string;
+  readonly title: string;
+  readonly targetPath: string;
+  readonly utm: {
+    readonly source: string;
+    readonly medium: string | null;
+    readonly campaign: string | null;
+    readonly content: string | null;
+    readonly term: string | null;
+  };
+  readonly clicks: number;
+  readonly isActive: boolean;
+  /** `https://mechetshamil.ru/go/<slug>` — это печатают в QR. */
+  readonly shortUrl: string;
+  readonly targetUrl: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface ShortLinkList {
+  readonly items: readonly AdminShortLink[];
+}
+
+/** Тело создания и правки. Слаг при правке не отправляется: он уже напечатан. */
+export interface ShortLinkBody {
+  readonly slug?: string;
+  readonly title: string;
+  readonly targetPath: string;
+  readonly utmSource: string;
+  readonly utmMedium: string | null;
+  readonly utmCampaign: string | null;
+  readonly utmContent: string | null;
+  readonly utmTerm: string | null;
+  readonly isActive: boolean;
 }

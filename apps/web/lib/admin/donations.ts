@@ -9,7 +9,7 @@ import { LIMITS } from "./endpoints";
 import { checkRublesInput, rublesToKopecks } from "./money";
 import type { QueryValue } from "./query";
 import { ufaDateTimeInputToIso, ufaDayKey, ufaRangeToIso } from "./time";
-import type { AdminDonation, DonationStatus, ManualDonationBody, ManualMethod } from "./types";
+import type { AdminDonation, DonationStatus, HowDidYouHear, ManualDonationBody, ManualMethod } from "./types";
 
 export type DonationSort = "createdAt" | "paidAt" | "amount";
 
@@ -172,6 +172,8 @@ export interface ManualDonationForm {
   readonly regionSlug: string;
   readonly isAnonymous: boolean;
   readonly donorName: string;
+  /** «Откуда узнали о сборе». Не выбрано — не отправляем. */
+  readonly howDidYouHear?: HowDidYouHear;
 }
 
 export type ManualFormErrors = Partial<Record<keyof ManualDonationForm, string>>;
@@ -228,6 +230,7 @@ export function checkManualDonation(form: ManualDonationForm, now: number = Date
       ...(form.regionSlug === "" ? {} : { regionSlug: form.regionSlug }),
       isAnonymous: form.isAnonymous,
       ...(form.isAnonymous ? {} : { donorName }),
+      ...(form.howDidYouHear === undefined ? {} : { howDidYouHear: form.howDidYouHear }),
     },
   };
 }

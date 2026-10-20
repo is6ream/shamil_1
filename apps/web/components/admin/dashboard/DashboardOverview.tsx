@@ -190,7 +190,10 @@ export function DashboardOverview() {
 
       {data ? (
         <>
-          <Section title="По источникам (UTM)">
+          <Section
+            title="По источникам (первый переход)"
+            actions={<Link href="/admin/sources">Подробнее →</Link>}
+          >
             {data.byUtm.length === 0 ? (
               <EmptyState title="За период поступлений нет." />
             ) : (
