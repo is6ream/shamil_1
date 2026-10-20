@@ -3,73 +3,182 @@ import { describe, test } from "node:test";
 
 import { buildCreateDonationBody } from "./api/donation-body";
 import type { DonationDraft } from "./api/donation-body";
-import { ATTRIBUTION_COOKIE, buildAttribution, parseAttributionCookie } from "./attribution";
+import {
+  buildFirstTouch,
+  parseFirstTouch,
+  parseLastTouch,
+  planAttributionCookies,
+  readCookie,
+  readUtmParams,
+  toDonationAttribution,
+} from "./attribution";
+import type { LandingContext } from "./attribution";
 
 const ORIGIN = "https://mechetshamil.ru";
+const NOW = new Date("2026-10-19T12:00:00.000Z");
 
-describe("buildAttribution", () => {
-  test("метки, внешний Referer и страница входа", () => {
+function context(overrides: Partial<LandingContext> = {}): LandingContext {
+  return { search: "", pathname: "/", referrer: "", origin: ORIGIN, now: NOW, ...overrides };
+}
+
+describe("buildFirstTouch", () => {
+  test("метки, внешний Referer, страница и время входа", () => {
     // Act
-    const utm = buildAttribution({
-      search: "?utm_source=vk&utm_medium=social&utm_campaign=рамадан&gclid=x",
-      pathname: "/02/",
-      referrer: "https://vk.com/feed",
-      origin: ORIGIN,
-    });
+    const touch = buildFirstTouch(
+      context({
+        search: "?utm_source=vk&utm_medium=social&utm_campaign=рамадан&gclid=x",
+        pathname: "/02/",
+        referrer: "https://vk.com/feed",
+      }),
+    );
 
     // Assert
-    assert.equal(utm.source, "vk");
-    assert.equal(utm.medium, "social");
-    assert.equal(utm.campaign, "рамадан");
-    assert.equal(utm.referrer, "https://vk.com/feed");
-    assert.ok(utm.landingPage?.startsWith("/02/?utm_source=vk"));
+    assert.equal(touch.source, "vk");
+    assert.equal(touch.medium, "social");
+    assert.equal(touch.campaign, "рамадан");
+    assert.equal(touch.referrer, "https://vk.com/feed");
+    assert.equal(touch.at, NOW.toISOString());
+    assert.ok(touch.landingPage?.startsWith("/02/?utm_source=vk"));
   });
 
   test("свой домен в Referer источником не считается", () => {
     // Act
-    const utm = buildAttribution({ search: "", pathname: "/", referrer: `${ORIGIN}/otchety`, origin: ORIGIN });
+    const touch = buildFirstTouch(context({ referrer: `${ORIGIN}/otchety` }));
 
     // Assert
-    assert.equal(utm.referrer, undefined);
-    assert.equal(utm.landingPage, "/");
+    assert.equal(touch.referrer, undefined);
+    assert.equal(touch.landingPage, "/");
   });
 
-  test("метка с запрещёнными символами или длиннее 128 отбрасывается, донат её не увидит", () => {
+  test("метка с запрещёнными символами, e-mail или длиннее 128 отбрасывается — донат её не увидит", () => {
     // Act
-    const utm = buildAttribution({
-      search: `?utm_source=${encodeURIComponent("<script>")}&utm_campaign=${"x".repeat(129)}&utm_term=ok`,
-      pathname: "/",
-      referrer: "javascript:alert(1)",
-      origin: ORIGIN,
-    });
+    const touch = buildFirstTouch(
+      context({
+        search:
+          `?utm_source=${encodeURIComponent("<script>")}&utm_campaign=${"x".repeat(129)}` +
+          `&utm_content=${encodeURIComponent("a@b.ru")}&utm_term=ok`,
+        referrer: "javascript:alert(1)",
+      }),
+    );
 
     // Assert
-    assert.equal(utm.source, undefined);
-    assert.equal(utm.campaign, undefined);
-    assert.equal(utm.referrer, undefined);
-    assert.equal(utm.term, "ok");
+    assert.equal(touch.source, undefined);
+    assert.equal(touch.campaign, undefined);
+    assert.equal(touch.content, undefined);
+    assert.equal(touch.referrer, undefined);
+    assert.equal(touch.term, "ok");
   });
 });
 
-describe("parseAttributionCookie", () => {
-  test("cookie разбирается и проверяется заново", () => {
-    // Arrange
-    const value = encodeURIComponent(JSON.stringify({ source: "tg", medium: "<b>", evil: "x" }));
+describe("readUtmParams", () => {
+  test("без меток — null: last-touch не обновляется", () => {
+    assert.equal(readUtmParams("?page=2"), null);
+    assert.equal(readUtmParams(""), null);
+  });
+});
 
+describe("planAttributionCookies", () => {
+  test("первый визит без меток: first-touch пишется, last-touch нет", () => {
     // Act
-    const utm = parseAttributionCookie(`other=1; ${ATTRIBUTION_COOKIE}=${value}`);
+    const plan = planAttributionCookies(context({ referrer: "https://t.me/" }), undefined);
 
     // Assert
-    assert.deepEqual(utm, { source: "tg" });
+    assert.deepEqual(JSON.parse(plan.firstTouch ?? "{}"), {
+      referrer: "https://t.me/",
+      landingPage: "/",
+      at: NOW.toISOString(),
+    });
+    assert.equal(plan.lastTouch, undefined);
+  });
+
+  test("повторный заход с метками: first-touch не трогаем, last-touch обновляем", () => {
+    // Arrange
+    const existing = JSON.stringify({ source: "telegram", at: "2026-10-01T10:00:00.000Z" });
+
+    // Act
+    const plan = planAttributionCookies(context({ search: "?utm_source=instagram&utm_medium=stories" }), existing);
+
+    // Assert
+    assert.equal(plan.firstTouch, undefined);
+    assert.deepEqual(JSON.parse(plan.lastTouch ?? "{}"), { source: "instagram", medium: "stories" });
+  });
+
+  test("повторный прямой заход ничего не пишет", () => {
+    // Act
+    const plan = planAttributionCookies(context(), JSON.stringify({ landingPage: "/" }));
+
+    // Assert
+    assert.deepEqual(plan, {});
+  });
+
+  test("испорченная first-touch перезаписывается, а не ломает атрибуцию", () => {
+    // Act
+    const plan = planAttributionCookies(context({ search: "?utm_source=qr" }), "{not-json");
+
+    // Assert
+    assert.equal(JSON.parse(plan.firstTouch ?? "{}").source, "qr");
+  });
+});
+
+describe("разбор cookie", () => {
+  test("first-touch проверяется заново: чужие ключи и опасные значения выброшены", () => {
+    // Act
+    const touch = parseFirstTouch(
+      JSON.stringify({ source: "tg", medium: "<b>", evil: "x", at: "вчера", landingPage: "https://evil" }),
+    );
+
+    // Assert
+    assert.deepEqual(touch, { source: "tg" });
+  });
+
+  test("first-touch прежнего формата (без at) принимается", () => {
+    assert.deepEqual(parseFirstTouch(JSON.stringify({ source: "vk", landingPage: "/" })), {
+      source: "vk",
+      landingPage: "/",
+    });
   });
 
   test("испорченная cookie — атрибуции нет, без исключения", () => {
-    assert.equal(parseAttributionCookie(`${ATTRIBUTION_COOKIE}=%7Bnot-json`), null);
-    assert.equal(parseAttributionCookie("other=1"), null);
+    assert.equal(parseFirstTouch("{not-json"), null);
+    assert.equal(parseFirstTouch("[1,2]"), null);
+    assert.equal(parseLastTouch(JSON.stringify({ evil: "x" })), null);
+  });
+
+  test("readCookie декодирует значение и не падает на битой кодировке", () => {
+    // Arrange
+    const value = encodeURIComponent(JSON.stringify({ source: "tg" }));
+
+    // Act & Assert
+    assert.equal(readCookie(`other=1; shamil_ft=${value}`, "shamil_ft"), '{"source":"tg"}');
+    assert.equal(readCookie("shamil_ft=%E0%A4%A", "shamil_ft"), undefined);
+    assert.equal(readCookie("other=1", "shamil_ft"), undefined);
   });
 });
 
-describe("buildCreateDonationBody: utm", () => {
+describe("toDonationAttribution", () => {
+  test("first и last собираются в тело доната", () => {
+    // Act
+    const attribution = toDonationAttribution(
+      JSON.stringify({ campaign: "oct", referrer: "https://t.me/", landingPage: "/", at: NOW.toISOString() }),
+      JSON.stringify({ source: "qr", medium: "offline" }),
+    );
+
+    // Assert
+    assert.deepEqual(attribution, {
+      first: { campaign: "oct" },
+      last: { source: "qr", medium: "offline" },
+      referrer: "https://t.me/",
+      landingPage: "/",
+      firstTouchAt: NOW.toISOString(),
+    });
+  });
+
+  test("без cookie — null", () => {
+    assert.equal(toDonationAttribution(undefined, undefined), null);
+  });
+});
+
+describe("buildCreateDonationBody: атрибуция", () => {
   const draft: DonationDraft = {
     amountRubles: 100,
     isAnonymous: true,
@@ -83,12 +192,22 @@ describe("buildCreateDonationBody: utm", () => {
     channel: "online",
   };
 
-  test("атрибуция уходит полем utm", () => {
-    assert.deepEqual(buildCreateDonationBody(draft, { source: "vk" }).utm, { source: "vk" });
+  test("атрибуция уходит полем attribution, старого utm в теле нет", () => {
+    // Act
+    const body = buildCreateDonationBody(draft, { first: { source: "vk" } });
+
+    // Assert
+    assert.deepEqual(body.attribution, { first: { source: "vk" } });
+    assert.equal("utm" in body, false);
   });
 
   test("пустая атрибуция в тело не попадает", () => {
-    assert.equal("utm" in buildCreateDonationBody(draft, {}), false);
-    assert.equal("utm" in buildCreateDonationBody(draft), false);
+    assert.equal("attribution" in buildCreateDonationBody(draft, {}), false);
+    assert.equal("attribution" in buildCreateDonationBody(draft), false);
+  });
+
+  test("«откуда узнали» уходит только с переводом по реквизитам", () => {
+    assert.equal(buildCreateDonationBody({ ...draft, channel: "transfer", howDidYouHear: "mosque" }).howDidYouHear, "mosque");
+    assert.equal("howDidYouHear" in buildCreateDonationBody({ ...draft, howDidYouHear: "mosque" }), false);
   });
 });
