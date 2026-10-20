@@ -89,6 +89,7 @@ const TRUNCATED_TABLES = [
   'news_post',
   'content_block',
   'media_asset',
+  'short_link',
 ] as const;
 
 /**
