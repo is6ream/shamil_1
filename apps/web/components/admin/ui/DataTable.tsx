@@ -23,37 +23,40 @@ interface DataTableProps<Row> {
 /**
  * Таблица, которая на телефоне становится списком карточек: каждая ячейка
  * получает подпись столбца из `data-label`. Горизонтальная прокрутка
- * на 360 px заказчику не подходит.
+ * на 360 px заказчику не подходит. С 720 px широкая таблица прокручивается
+ * внутри своего контейнера, а не всей страницей.
  */
 export function DataTable<Row>({ caption, columns, rows, rowKey, rowClassName }: DataTableProps<Row>) {
   return (
-    <table className={styles.table}>
-      <caption className="sr-only">{caption}</caption>
-      <thead>
-        <tr>
-          {columns.map((column) => (
-            <th key={column.key} scope="col" className={column.isNumeric ? styles.numeric : undefined}>
-              {column.header}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={rowKey(row)} className={rowClassName?.(row)}>
+    <div className={styles.scroll}>
+      <table className={styles.table}>
+        <caption className="sr-only">{caption}</caption>
+        <thead>
+          <tr>
             {columns.map((column) => (
-              <td
-                key={column.key}
-                data-label={column.header}
-                className={column.isNumeric ? styles.numeric : undefined}
-              >
-                {column.render(row)}
-              </td>
+              <th key={column.key} scope="col" className={column.isNumeric ? styles.numeric : undefined}>
+                {column.header}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={rowKey(row)} className={rowClassName?.(row)}>
+              {columns.map((column) => (
+                <td
+                  key={column.key}
+                  data-label={column.header}
+                  className={column.isNumeric ? styles.numeric : undefined}
+                >
+                  {column.render(row)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

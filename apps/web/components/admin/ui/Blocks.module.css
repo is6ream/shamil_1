@@ -1,8 +1,9 @@
 .section {
-  padding: var(--sp-5);
+  padding: var(--sp-5) var(--sp-4);
   border: var(--stroke) solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-card);
   background: var(--surface);
+  box-shadow: var(--shadow-sm, none);
 }
 
 .section + .section {
@@ -20,7 +21,13 @@
 
 .sectionTitle {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--fs-card, 18px);
+}
+
+.sectionDescription {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
 }
 
 .sectionActions {
@@ -76,12 +83,20 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px var(--sp-2);
+  gap: 6px;
+  padding: 2px 10px 2px 8px;
   border-radius: var(--r-pill);
   font-size: var(--fs-micro);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
+}
+
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .neutral {
@@ -90,13 +105,13 @@
 }
 
 .success {
-  background: #e3f3e8;
-  color: #1d6b35;
+  background: var(--success-soft, #e3f3e8);
+  color: var(--success, #1d6b35);
 }
 
 .warning {
-  background: #fdf1d8;
-  color: #7a5200;
+  background: var(--warning-soft, #fdf1d8);
+  color: var(--warning, #7a5200);
 }
 
 .danger {
@@ -105,8 +120,8 @@
 }
 
 .info {
-  background: #e3eef8;
-  color: var(--accent);
+  background: var(--info-soft, #e3eef8);
+  color: var(--info, var(--accent));
 }
 
 .note {
@@ -114,14 +129,14 @@
   padding: var(--sp-3) var(--sp-4);
   border-left: 3px solid var(--accent);
   border-radius: var(--r-field);
-  background: #eef4fa;
+  background: var(--info-soft, #eef4fa);
   font-size: var(--fs-small);
   line-height: 1.5;
 }
 
 .noteWarning {
-  border-left-color: #b77900;
-  background: #fdf6e7;
+  border-left-color: var(--warning-line, #b77900);
+  background: var(--warning-soft, #fdf6e7);
 }
 
 .note p {

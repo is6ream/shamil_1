@@ -34,6 +34,17 @@
   }
 }
 
+/* На телефоне снизу нижняя панель разделов — тост встаёт над ней. */
+@media (max-width: 767px) {
+  .region {
+    bottom: calc(var(--a-tabbar-h, 64px) + var(--sp-4) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.success {
+  border-left: 4px solid #6fd08f;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .toast {
     animation: none;

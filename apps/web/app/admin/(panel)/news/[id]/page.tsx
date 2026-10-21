@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { AdminPage } from "@/components/admin/AdminPage";
@@ -15,7 +14,7 @@ export default function EditNewsPage() {
   const { data, error, isLoading, reload } = useAdminQuery<AdminNewsPost>(ADMIN_PATHS.newsPost(id));
 
   return (
-    <AdminPage title={data?.title ?? "Новость"} actions={<Link href="/admin/news">← Все новости</Link>} isWide>
+    <AdminPage title={data?.title ?? "Новость"} breadcrumbs={[{ href: "/admin/news", label: "Новости" }]} isWide>
       {isLoading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {data ? <NewsEditor key={data.updatedAt} post={data} onChanged={reload} /> : null}

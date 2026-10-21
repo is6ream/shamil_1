@@ -1,9 +1,58 @@
 .page {
-  max-width: 960px;
+  max-width: var(--a-content-max);
+  margin-inline: auto;
 }
 
 .wide {
-  max-width: 1400px;
+  max-width: var(--a-content-wide);
+}
+
+.crumbs {
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-small);
+}
+
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crumbs li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.crumbs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--text-soft);
+  text-decoration: none;
+}
+
+.crumbs a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.crumbs [aria-current="page"] {
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumbSep {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
 }
 
 .head {
@@ -15,20 +64,27 @@
   margin-bottom: var(--sp-6);
 }
 
+.headText {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
 .title {
-  font-size: var(--fs-h2);
+  font-size: var(--fs-page);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .lead {
   margin: var(--sp-2) 0 0;
-  max-width: 38em;
+  max-width: 44em;
   color: var(--text-soft);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
 }
 
 /* Формы — одной колонкой и не шире строки чтения. */
@@ -38,4 +94,14 @@
 
 .submit {
   margin-top: var(--sp-6);
+}
+
+@media (max-width: 480px) {
+  .actions {
+    width: 100%;
+  }
+
+  .actions > * {
+    flex: 1 1 auto;
+  }
 }

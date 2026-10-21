@@ -1,0 +1,174 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Дизайн-токены админки.
+
+   Админка живёт на токенах сайта (tokens.css) и переопределяет их только
+   внутри `.admin-root`: публичные страницы этот файл не задевает, а
+   компоненты админки, написанные на `--accent`, `--surface`, `--r-card`,
+   меняют вид без единой правки внутри себя.
+
+   Сайт — эмоциональный лендинг (Philosopher, радиусы 28px, 17px текст).
+   Админка — рабочий инструмент: один шрифт с хорошей кириллицей, плотнее
+   сетка, меньше скругления, табличные цифры везде.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.admin-root {
+  /* ── Палитра ───────────────────────────────────────────────────────────
+     Синие — из логотипа группы «Мечеть Шамиль» (CLAUDE.md, палитра):
+     #0A3367 — сайдбар, #0B4C86 — основной цвет действий (как на сайте).
+     Контраст по WCAG 2.x посчитан 19.10.2026:
+       --accent на белом 8.78 · --gray-600 на белом 6.37 · --gray-500 на белом 4.62
+       белый на --nav-bg 12.6 · --nav-text-soft на --nav-bg 7.4
+       --success / --warning / --danger текстом на своих *-soft — от 5.6     */
+  --brand-navy: #0A3367;
+  --brand-blue: #026AA9;
+
+  --gray-0: #FFFFFF;
+  --gray-25: #F7F9FC;
+  --gray-50: #F1F4F9;
+  --gray-100: #E6EBF2;
+  --gray-200: #D5DDE8;
+  --gray-300: #B6C2D2;
+  --gray-500: #5E6E86;
+  --gray-600: #4A5B75;
+  --gray-800: #1E3352;
+  --gray-900: #0B2548;
+
+  --bg: var(--gray-50);
+  --surface: var(--gray-0);
+  --surface-sunken: var(--gray-100);
+  --surface-hover: var(--gray-25);
+  --border: var(--gray-200);
+  --border-strong: var(--gray-300);
+  --text-strong: var(--gray-900);
+  --text-soft: var(--gray-600);
+  --text-muted: var(--gray-500);
+
+  --accent: #0B4C86;
+  --accent-hover: var(--brand-navy);
+  --accent-soft: #E7EFF8;           /* фон выбранного, secondary-кнопка   */
+  --accent-soft-hover: #D6E4F3;
+  --on-accent: #FFFFFF;
+  --accent-quiet: #0B4C86;
+  --focus: #0B4C86;
+
+  --success: #1D6B35;
+  --success-soft: #E3F3E8;
+  --warning: #7A5200;
+  --warning-soft: #FDF1D8;
+  --warning-line: #B77900;
+  --danger: #B3261E;
+  --danger-hover: #8C1D17;
+  --danger-soft: #FBEAE9;
+  --info: #0B4C86;
+  --info-soft: #E7EFF8;
+
+  /* Сайдбар */
+  --nav-bg: var(--brand-navy);
+  --nav-text: #FFFFFF;
+  --nav-text-soft: rgba(255, 255, 255, 0.74);
+  --nav-hover: rgba(255, 255, 255, 0.08);
+  --nav-active: rgba(255, 255, 255, 0.14);
+  --nav-indicator: #7CC4F0;
+  --nav-border: rgba(255, 255, 255, 0.12);
+
+  /* ── Типографика ───────────────────────────────────────────────────────
+     Один шрифт — Golos Text: Philosopher хорош в слогане, но не в таблице
+     сумм. Шкала: заголовок страницы 26 · карточки 18 · текст 15 · подпись 13. */
+  --font-display: var(--font-text);
+  --fs-page: clamp(22px, 2.2vw, 28px);
+  --fs-h2: var(--fs-page);
+  --fs-h3: 20px;
+  --fs-card: 17px;
+  --fs-body: 15px;
+  --fs-small: 13.5px;
+  --fs-micro: 12px;
+  --fs-kpi: clamp(24px, 2.4vw, 30px);
+  --fs-button: 15px;
+  --ls-tight: -0.01em;
+
+  /* ── Форма ─────────────────────────────────────────────────────────────
+     Отступы — шкала 4px из tokens.css (--sp-*). Радиусы скромнее сайта.
+     Цели касания — не ниже 44px (WCAG 2.5.5, требование ТЗ к кабинету). */
+  --r-card: 14px;
+  --r-md: 12px;
+  --r-field: 10px;
+  --r-sm: 6px;
+  --control-h: 44px;
+  --control-h-sm: 44px;
+  --field-h: 44px;
+
+  --shadow-sm: 0 1px 2px rgba(11, 37, 72, 0.05), 0 1px 3px rgba(11, 37, 72, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(11, 37, 72, 0.08), 0 2px 4px rgba(11, 37, 72, 0.04);
+  --shadow-pop: 0 16px 40px -12px rgba(11, 37, 72, 0.28);
+  --shadow-form: 0 24px 60px -20px rgba(11, 37, 72, 0.32);
+
+  /* ── Каркас ────────────────────────────────────────────────────────────  */
+  --a-sidebar-w: 248px;
+  --a-sidebar-w-collapsed: 72px;
+  --a-topbar-h: 60px;
+  --a-tabbar-h: 64px;
+  --a-content-max: 1120px;
+  --a-content-wide: 1440px;
+
+  --z-sidebar: 45;
+  --z-tabbar: 50;
+  --z-popover: 65;
+
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text-strong);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-root h1,
+.admin-root h2,
+.admin-root h3 {
+  font-weight: 600;
+  letter-spacing: var(--ls-tight);
+}
+
+.admin-root h2 { font-size: var(--fs-h3); }
+.admin-root h3 { font-size: var(--fs-card); }
+
+.admin-root .btn {
+  gap: var(--sp-2);
+  padding: 0 18px;
+  font-weight: 600;
+}
+
+.admin-root .btn-sm {
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.admin-root .btn-primary:hover {
+  transform: none;
+}
+
+.admin-root .btn-ghost {
+  background: var(--surface);
+}
+
+.admin-root .btn-ghost:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text-strong);
+}
+
+.admin-root .btn svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.admin-root .track {
+  height: 8px;
+}
+
+/* Подгрузка: блик бежит по плейсхолдеру. Без анимации — просто плашка. */
+@keyframes admin-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}

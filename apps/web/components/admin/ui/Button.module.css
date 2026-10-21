@@ -3,5 +3,18 @@
 }
 
 .danger:hover {
-  background: #8c1d17;
+  background: var(--danger-hover, #8c1d17);
+}
+
+/* Мягкая синяя: «Скачать CSV», «Добавить из медиатеки». */
+.secondary {
+  border-color: transparent;
+  background: var(--accent-soft, #e7eff8);
+  color: var(--accent);
+}
+
+.secondary:hover {
+  border-color: transparent;
+  background: var(--accent-soft-hover, #d6e4f3);
+  color: var(--accent);
 }
