@@ -243,8 +243,8 @@ export const MOBILE_BAR = {
 
 /** Служебные страницы, на которые ссылаются футер и форма. */
 export const PAGES = {
-  privacy: { href: "/privacy", title: "Политика конфиденциальности" },
-  cookie: { href: "/cookie", title: "Использование cookie" },
+  privacy: { href: "/privacy", title: "Политика обработки персональных данных" },
+  cookie: { href: "/cookie", title: "Политика использования cookies" },
   consent: { href: "/soglasie", title: "Согласие на обработку персональных данных" },
   paymentTerms: { href: "/usloviya-oplaty", title: "Условия оплаты" },
   offer: { href: "/oferta", title: "Публичная оферта" },

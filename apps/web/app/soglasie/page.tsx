@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
-import { LegalStubPage } from "@/components/layout/LegalStubPage";
-import { PAGES } from "@/lib/content";
+import { LegalPage } from "@/components/legal/LegalPage";
+import { CONSENT } from "@/lib/legal/consent";
 
 export const metadata: Metadata = {
-  title: PAGES.consent.title,
+  title: CONSENT.title,
 };
 
 export default function Page() {
-  return <LegalStubPage title={PAGES.consent.title} />;
+  return <LegalPage document={CONSENT} />;
 }

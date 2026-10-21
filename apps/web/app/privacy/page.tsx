@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
-import { LegalStubPage } from "@/components/layout/LegalStubPage";
-import { PAGES } from "@/lib/content";
+import { LegalPage } from "@/components/legal/LegalPage";
+import { PRIVACY_POLICY } from "@/lib/legal/privacy";
 
 export const metadata: Metadata = {
-  title: PAGES.privacy.title,
+  title: PRIVACY_POLICY.title,
 };
 
 export default function Page() {
-  return <LegalStubPage title={PAGES.privacy.title} />;
+  return <LegalPage document={PRIVACY_POLICY} />;
 }

@@ -4,6 +4,11 @@
   color: var(--text-strong);
 }
 
+/* kit.css даёт каждому <section> отступ блока лендинга — в документе он лишний. */
+.section {
+  padding: 0;
+}
+
 .section + .section {
   margin-top: var(--sp-10);
 }
@@ -51,5 +56,93 @@
   .clause,
   .clauseBody > .clause {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.preamble {
+  margin-bottom: var(--sp-10);
+}
+
+.inlineLink {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* Таблицы документов: целей обработки, мер защиты, категорий cookie. */
+.tableWrap {
+  margin: 0 0 var(--sp-6);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+  line-height: 1.55;
+}
+
+.table th,
+.table td {
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  background: var(--surface-sunken);
+  font-weight: 600;
+}
+
+.table td > :last-child {
+  margin-bottom: 0;
+}
+
+/* Внутри ячейки абзацы и списки плотнее, чем в основном тексте. */
+.table .paragraph,
+.table .bullets {
+  margin-bottom: var(--sp-2);
+}
+
+.table .bullets {
+  padding-left: var(--sp-5);
+}
+
+/* На телефоне 2–4 колонки не помещаются: каждая строка — карточка, подпись колонки над значением. */
+@media (max-width: 560px) {
+  /* Подписи колонок уже есть в каждой карточке (td::before). */
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+  }
+
+  .table tr {
+    border: 1px solid var(--border);
+  }
+
+  .table tr + tr {
+    margin-top: var(--sp-3);
+  }
+
+  .table td {
+    border: 0;
+  }
+
+  .table td + td {
+    border-top: 1px solid var(--border);
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: var(--sp-1);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    color: var(--text-soft);
   }
 }

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
-import { LegalStubPage } from "@/components/layout/LegalStubPage";
-import { PAGES } from "@/lib/content";
+import { LegalPage } from "@/components/legal/LegalPage";
+import { COOKIE_POLICY } from "@/lib/legal/cookie";
 
 export const metadata: Metadata = {
-  title: PAGES.cookie.title,
+  title: COOKIE_POLICY.title,
 };
 
 export default function Page() {
-  return <LegalStubPage title={PAGES.cookie.title} />;
+  return <LegalPage document={COOKIE_POLICY} />;
 }
