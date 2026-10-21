@@ -29,4 +29,31 @@ describe("toSiteContent", () => {
     assert.equal("renderMediaId" in content.hero, false);
     assert.deepEqual(content.about.facts, [{ value: "500", label: "молящихся" }]);
   });
+
+  test("пустые поля блока «Реквизиты» из админки не затирают реквизиты из кода", () => {
+    const empty = {
+      accountNumber: null,
+      bankName: null,
+      bik: null,
+      correspondentAccount: null,
+      kpp: null,
+      sbpQrMediaId: null,
+      sbpQrUrl: null,
+    };
+    const content = toSiteContent({ hero: null, about: null, requisites: empty as never, contacts: null });
+
+    assert.deepEqual(content.bank, FALLBACK_CONTENT.bank);
+  });
+
+  test("заполненное в админке поле главнее кода", () => {
+    const content = toSiteContent({
+      hero: null,
+      about: null,
+      requisites: { ...FALLBACK_CONTENT.bank, bik: "044525225", sbpQrMediaId: null } as never,
+      contacts: null,
+    });
+
+    assert.equal(content.bank.bik, "044525225");
+    assert.equal(content.bank.accountNumber, FALLBACK_CONTENT.bank.accountNumber);
+  });
 });

@@ -122,16 +122,19 @@ export function toSiteContent(response: ContentResponse): SiteContent {
               ...(fact.unit === null || fact.unit === undefined ? {} : { unit: fact.unit }),
             })),
           },
+    // Поле, не заполненное в админке, берётся из кода: пустой блок «Реквизиты»
+    // не должен прятать известный расчётный счёт за «Уточняется».
     bank:
       requisites === null
         ? FALLBACK_CONTENT.bank
         : {
-            accountNumber: requisites.accountNumber,
-            bankName: requisites.bankName,
-            bik: requisites.bik,
-            correspondentAccount: requisites.correspondentAccount,
-            kpp: requisites.kpp,
-            sbpQrUrl: requisites.sbpQrUrl,
+            accountNumber: requisites.accountNumber ?? FALLBACK_CONTENT.bank.accountNumber,
+            bankName: requisites.bankName ?? FALLBACK_CONTENT.bank.bankName,
+            bik: requisites.bik ?? FALLBACK_CONTENT.bank.bik,
+            correspondentAccount:
+              requisites.correspondentAccount ?? FALLBACK_CONTENT.bank.correspondentAccount,
+            kpp: requisites.kpp ?? FALLBACK_CONTENT.bank.kpp,
+            sbpQrUrl: requisites.sbpQrUrl ?? FALLBACK_CONTENT.bank.sbpQrUrl,
           },
     contacts:
       contacts === null
