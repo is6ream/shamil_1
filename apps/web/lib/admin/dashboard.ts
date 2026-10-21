@@ -74,6 +74,57 @@ export function fillDays(byDay: Dashboard["byDay"], fromDay: string, toDay: stri
   );
 }
 
+/** Помесячный график: последние 3, 6 или 12 месяцев. Больше — упрётся в лимит периода API. */
+export type MonthsWindow = 3 | 6 | 12;
+
+export const MONTH_WINDOWS: readonly MonthsWindow[] = [3, 6, 12];
+
+/**
+ * С 1-го числа месяца, отстоящего на `months − 1` назад, по сегодня (Уфа).
+ * Текущий месяц неполный — это честнее, чем дорисовывать будущие дни.
+ * 12 месяцев — максимум 366 дней, лимит `LIMITS.dashboardMaxDays` не превышается.
+ */
+export function resolveMonths(months: MonthsWindow, now: number = Date.now()): ResolvedPeriod {
+  const toDay = ufaDayKey(now);
+  const [year, month] = toDay.split("-").map(Number);
+  const start = new Date(Date.UTC(year, month - months, 1));
+  const fromDay = start.toISOString().slice(0, 10);
+
+  return { fromDay, toDay, params: { from: ufaDayStartIso(fromDay), to: ufaDayStartIso(nextDay(toDay)) } };
+}
+
+/**
+ * Дни → месяцы (`ГГГГ-ММ`), все месяцы периода, пустые — нули. Суммы —
+ * в BigInt: копейки за год легко выходят за точность Number.
+ */
+export function groupByMonth(byDay: Dashboard["byDay"], fromDay: string, toDay: string): DayBar[] {
+  const totals = new Map<string, { total: bigint; count: number }>();
+
+  for (const day of daysBetween(fromDay, toDay)) {
+    totals.set(day.slice(0, 7), { total: BigInt(0), count: 0 });
+  }
+
+  for (const day of byDay) {
+    const month = totals.get(day.date.slice(0, 7));
+
+    if (month && day.date >= fromDay && day.date <= toDay) {
+      totals.set(day.date.slice(0, 7), { total: month.total + BigInt(day.totalKopecks), count: month.count + day.count });
+    }
+  }
+
+  return [...totals].map(([date, { total, count }]) => ({ date, totalKopecks: total.toString(), count }));
+}
+
+/** «2026-10» → «октябрь 2026» или «окт» для оси. */
+export function monthLabel(month: string, form: "long" | "short" = "long"): string {
+  const [year, index] = month.split("-").map(Number);
+  const name = new Date(Date.UTC(year, index - 1, 1))
+    .toLocaleDateString("ru-RU", { month: form, timeZone: "UTC" })
+    .replace(/\.$/, "");
+
+  return form === "long" ? `${name} ${year}` : name;
+}
+
 /** Доля от максимума 0…1 для высоты столбика; BigInt → Number только для пропорции. */
 export function barRatios(days: readonly DayBar[]): number[] {
   const max = days.reduce((top, day) => (BigInt(day.totalKopecks) > top ? BigInt(day.totalKopecks) : top), BigInt(0));
