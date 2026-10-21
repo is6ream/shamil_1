@@ -22,16 +22,42 @@ export type DonationChannel = "online" | "transfer";
 /** Как регион попал в донат. Зеркало `PUBLIC_REGION_SOURCES` бэкенда. */
 export type RegionSource = "link" | "form";
 
-/** Атрибуция first-touch. Зеркало `DonationUtmDto` бэкенда. */
-export interface DonationUtm {
+/** Метки одного касания. Зеркало `UtmTouchDto` бэкенда. */
+export interface UtmTouch {
   readonly source?: string;
   readonly medium?: string;
   readonly campaign?: string;
   readonly content?: string;
   readonly term?: string;
-  readonly referrer?: string;
-  readonly landingPage?: string;
 }
+
+/** Атрибуция доната. Зеркало `AttributionDto` бэкенда. */
+export interface DonationAttribution {
+  /** Метки первого захода. */
+  readonly first?: UtmTouch;
+  /** Метки последнего захода с UTM. Нет — бэкенд берёт first. */
+  readonly last?: UtmTouch;
+  /** Внешний Referer первого захода. Источник по нему определяет бэкенд. */
+  readonly referrer?: string;
+  /** Путь страницы первого захода, без домена. */
+  readonly landingPage?: string;
+  /** ISO-время первого захода. */
+  readonly firstTouchAt?: string;
+}
+
+/** Зеркало `HOW_DID_YOU_HEAR` бэкенда. */
+export const HOW_DID_YOU_HEAR = [
+  "telegram",
+  "whatsapp",
+  "instagram",
+  "vk",
+  "friends",
+  "mosque",
+  "banner_qr",
+  "other",
+] as const;
+
+export type HowDidYouHear = (typeof HOW_DID_YOU_HEAR)[number];
 
 export interface CreateDonationBody {
   /** Целое число копеек, 10 000…1 000 000 000 (100 ₽ … 10 000 000 ₽). */
@@ -52,8 +78,10 @@ export interface CreateDonationBody {
   readonly antispam?: string;
   /** Таб формы. Не передан — провайдер из `PAYMENT_PROVIDER` бэкенда. */
   readonly channel?: DonationChannel;
-  /** UTM-метки первого захода. Не передаются, если меток нет. */
-  readonly utm?: DonationUtm;
+  /** Атрибуция из cookie сайта. Не передаётся, если cookie нет. */
+  readonly attribution?: DonationAttribution;
+  /** «Откуда узнали о сборе» — только вкладка перевода по реквизитам. */
+  readonly howDidYouHear?: HowDidYouHear;
 }
 
 /** Ответ на создание заказа. Статус доната он не подтверждает — только вебхук. */

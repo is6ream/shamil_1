@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminModule } from './admin/admin.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { configuration } from './config/configuration';
@@ -17,6 +18,7 @@ import {
   PaymentEmulatorModule,
   isPaymentEmulatorEnabled,
 } from './payments/emulator/payment-emulator.module';
+import { ShortLinksModule } from './short-links/short-links.module';
 import { ShowcaseModule } from './showcase/showcase.module';
 
 @Module({
@@ -47,6 +49,8 @@ import { ShowcaseModule } from './showcase/showcase.module';
     MediaModule,
     ContentModule,
     ShowcaseModule,
+    ShortLinksModule,
+    AnalyticsModule,
     // Эмулятор оплаты — только локально: в production флаг запрещён
     // валидацией окружения, и маршрутов `/api/dev/…` там нет (404).
     ConditionalModule.registerWhen(PaymentEmulatorModule, isPaymentEmulatorEnabled),
