@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
-import { barRatios, fillDays, resolvePeriod } from "./dashboard";
+import { barRatios, fillDays, groupByMonth, monthLabel, resolveMonths, resolvePeriod } from "./dashboard";
 
 describe("resolvePeriod", () => {
   const now = Date.parse("2026-10-09T20:00:00Z"); // 10.10 01:00 по Уфе
@@ -53,5 +53,60 @@ describe("график по дням", () => {
       [0.25, 1],
     );
     assert.deepEqual(barRatios([{ date: "a", totalKopecks: "0", count: 0 }]), [0]);
+  });
+});
+
+describe("помесячный график", () => {
+  const now = Date.parse("2026-10-20T20:00:00Z"); // 21.10 01:00 по Уфе
+
+  test("3 месяца: с 1-го числа позапрошлого месяца по сегодня", () => {
+    const period = resolveMonths(3, now);
+
+    assert.equal(period.fromDay, "2026-08-01");
+    assert.equal(period.toDay, "2026-10-21");
+    assert.deepEqual(period.params, { from: "2026-07-31T19:00:00.000Z", to: "2026-10-21T19:00:00.000Z" });
+  });
+
+  test("12 месяцев переходят через год и укладываются в лимит API", () => {
+    const period = resolveMonths(12, now);
+
+    assert.equal(period.fromDay, "2025-11-01");
+    assert.equal(period.toDay, "2026-10-21");
+  });
+
+  test("12 месяцев в последний день високосного февраля — ровно 366 дней", () => {
+    const period = resolveMonths(12, Date.parse("2028-02-29T12:00:00Z"));
+
+    assert.equal(period.fromDay, "2027-03-01");
+    assert.equal(period.toDay, "2028-02-29");
+  });
+
+  test("суммы складываются по месяцам без потери копеек, пустые месяцы — нули", () => {
+    const months = groupByMonth(
+      [
+        { date: "2026-08-31", totalKopecks: "9007199254740993", count: 1 },
+        { date: "2026-10-01", totalKopecks: "150", count: 2 },
+        { date: "2026-10-21", totalKopecks: "50", count: 1 },
+      ],
+      "2026-08-01",
+      "2026-10-21",
+    );
+
+    assert.deepEqual(months, [
+      { date: "2026-08", totalKopecks: "9007199254740993", count: 1 },
+      { date: "2026-09", totalKopecks: "0", count: 0 },
+      { date: "2026-10", totalKopecks: "200", count: 3 },
+    ]);
+  });
+
+  test("дни за пределами периода не попадают в месяцы", () => {
+    const months = groupByMonth([{ date: "2026-07-31", totalKopecks: "100", count: 1 }], "2026-08-01", "2026-08-31");
+
+    assert.deepEqual(months, [{ date: "2026-08", totalKopecks: "0", count: 0 }]);
+  });
+
+  test("подписи месяцев по-русски", () => {
+    assert.equal(monthLabel("2026-10"), "октябрь 2026");
+    assert.equal(monthLabel("2026-01", "short"), "янв");
   });
 });
