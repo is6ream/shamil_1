@@ -1,0 +1,580 @@
+/*
+ * Каркас кабинета.
+ *   < 768   — шапка сверху, нижняя панель разделов, сайдбара нет;
+ *   768–1023 — сайдбар из одних иконок (подписи — во всплывающей подсказке
+ *              и для скринридера), переключателя нет;
+ *   ≥ 1024  — сайдбар с подписями, сворачивается кнопкой внизу.
+ * Цели касания — не ниже --control-h (44 px).
+ */
+
+.shell {
+  --sw: 0px;
+
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "top"
+    "main";
+}
+
+.skipLink {
+  position: absolute;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: calc(var(--z-popover) + 1);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-field);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skipLink:focus-visible {
+  transform: none;
+}
+
+/* ── Шапка ───────────────────────────────────────────────────────────── */
+
+.topbar {
+  grid-area: top;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--a-topbar-h);
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: var(--stroke) solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: saturate(1.4) blur(8px);
+}
+
+.topBrand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  min-height: var(--control-h);
+  color: var(--text-strong);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.logo {
+  flex: none;
+  border-radius: 50%;
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+.siteLink {
+  display: none;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h);
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-field);
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.siteLink:hover {
+  background: var(--surface-hover);
+  color: var(--accent);
+}
+
+.siteLink svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Контент ─────────────────────────────────────────────────────────── */
+
+.main {
+  grid-area: main;
+  min-width: 0;
+  padding: var(--sp-5) var(--sp-4) calc(var(--a-tabbar-h) + var(--sp-10) + env(safe-area-inset-bottom));
+}
+
+.main:focus {
+  outline: none;
+}
+
+/* ── Сайдбар ─────────────────────────────────────────────────────────── */
+
+.sidebar {
+  display: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--a-topbar-h);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--stroke) solid var(--nav-border);
+  color: var(--nav-text);
+  text-decoration: none;
+}
+
+.brandText {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.brandName {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.brandSub {
+  color: var(--nav-text-soft);
+  font-size: var(--fs-micro);
+}
+
+.sideNav {
+  flex: 1;
+  padding: var(--sp-3) var(--sp-3) var(--sp-4);
+  overflow-y: auto;
+}
+
+.navGroup + .navGroup {
+  margin-top: var(--sp-4);
+}
+
+.groupTitle {
+  margin: 0 0 var(--sp-1);
+  padding: 0 var(--sp-3);
+  color: var(--nav-text-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sideNav ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-radius: var(--r-field);
+  background: transparent;
+  color: var(--nav-text-soft);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+
+.navLink:hover {
+  background: var(--nav-hover);
+  color: var(--nav-text);
+}
+
+.navLink[aria-current="page"] {
+  background: var(--nav-active);
+  color: var(--nav-text);
+  font-weight: 600;
+}
+
+.navLink[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--nav-indicator);
+}
+
+.sidebar :focus-visible {
+  outline-color: var(--nav-indicator);
+}
+
+.navIcon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+.navLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.soon {
+  margin-left: auto;
+  font-size: var(--fs-micro);
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.sideFooter {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-3);
+  border-top: var(--stroke) solid var(--nav-border);
+}
+
+/* ── Нижняя панель (телефон) ─────────────────────────────────────────── */
+
+.tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-tabbar);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: var(--stroke) solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 -6px 20px -12px rgba(11, 37, 72, 0.25);
+}
+
+.tabbar ul {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-height: var(--a-tabbar-h);
+  padding: var(--sp-1) 2px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tab .navIcon {
+  width: 24px;
+  height: 24px;
+  padding: 2px;
+  border-radius: var(--r-pill);
+  box-sizing: content-box;
+  transition: background var(--dur-fast);
+}
+
+.tab[aria-current="page"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tab[aria-current="page"] .navIcon {
+  width: 36px;
+  background: var(--accent-soft);
+}
+
+.tab .navLabel {
+  max-width: 100%;
+}
+
+/* ── Лист «Ещё» ──────────────────────────────────────────────────────── */
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: min(86dvh, 720px);
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  background: var(--surface);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-pop);
+}
+
+.sheet[open] {
+  animation: sheet-in var(--dur) var(--ease);
+}
+
+.sheet::backdrop {
+  background: rgba(11, 37, 72, 0.45);
+}
+
+.sheetBody {
+  padding: var(--sp-2) var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
+}
+
+.sheetHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) 0;
+  background: var(--surface);
+}
+
+.sheetTitle {
+  margin: 0;
+  font-size: var(--fs-card);
+}
+
+.sheetClose {
+  display: grid;
+  place-items: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  color: var(--text-soft);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.sheetGroup + .sheetGroup {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: var(--stroke) solid var(--border);
+}
+
+.sheetGroupTitle {
+  margin: 0 0 var(--sp-1);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sheetGroup ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheetLink {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-radius: var(--r-field);
+  background: transparent;
+  color: var(--text-strong);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sheetLink .navIcon {
+  color: var(--text-muted);
+}
+
+.sheetLink:hover {
+  background: var(--surface-hover);
+}
+
+.sheetLink[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.sheetLink[aria-current="page"] .navIcon {
+  color: var(--accent);
+}
+
+.sheetDanger,
+.sheetDanger .navIcon {
+  color: var(--danger);
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] {
+    animation: none;
+  }
+}
+
+/* ── Планшет и десктоп ───────────────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .shell {
+    --sw: var(--a-sidebar-w-collapsed);
+
+    grid-template-columns: var(--sw) minmax(0, 1fr);
+    grid-template-areas:
+      "side top"
+      "side main";
+  }
+
+  .sidebar {
+    grid-area: side;
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sidebar);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    background: var(--nav-bg);
+    background-image: linear-gradient(180deg, #0B3B74 0%, var(--nav-bg) 40%, #08294F 100%);
+    color: var(--nav-text);
+  }
+
+  .topBrand,
+  .tabbar {
+    display: none;
+  }
+
+  .siteLink {
+    display: inline-flex;
+  }
+
+  .topbar {
+    padding-inline: var(--sp-6);
+  }
+
+  .main {
+    padding: var(--sp-6) var(--sp-6) var(--sp-16);
+  }
+
+  /* Узкий сайдбар: только иконки. Подписи остаются для скринридера. */
+  .shell .brand {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .shell .brandText,
+  .shell .navLabel,
+  .shell .soon {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .shell .groupTitle {
+    height: 1px;
+    margin: var(--sp-2) var(--sp-3);
+    padding: 0;
+    overflow: hidden;
+    background: var(--nav-border);
+    color: transparent;
+  }
+
+  .shell .navLink {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sideNav {
+    padding-inline: var(--sp-2);
+  }
+
+  .sideFooter {
+    padding-inline: var(--sp-2);
+  }
+
+  .collapseToggle {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .shell[data-collapsed="false"] {
+    --sw: var(--a-sidebar-w);
+  }
+
+  .shell[data-collapsed="false"] .brand {
+    justify-content: flex-start;
+    padding-inline: var(--sp-4);
+  }
+
+  .shell[data-collapsed="false"] .brandText,
+  .shell[data-collapsed="false"] .navLabel,
+  .shell[data-collapsed="false"] .soon {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    clip-path: none;
+  }
+
+  .shell[data-collapsed="false"] .groupTitle {
+    height: auto;
+    margin: 0 0 var(--sp-1);
+    padding: 0 var(--sp-3);
+    background: none;
+    color: var(--nav-text-soft);
+  }
+
+  .shell[data-collapsed="false"] .navLink {
+    justify-content: flex-start;
+    padding: 0 var(--sp-3);
+  }
+
+  .shell[data-collapsed="false"] .sideNav,
+  .shell[data-collapsed="false"] .sideFooter {
+    padding-inline: var(--sp-3);
+  }
+
+  .collapseToggle {
+    display: flex;
+  }
+
+  .topbar {
+    padding-inline: var(--sp-8);
+  }
+
+  .main {
+    padding: var(--sp-8) var(--sp-8) var(--sp-16);
+  }
+}

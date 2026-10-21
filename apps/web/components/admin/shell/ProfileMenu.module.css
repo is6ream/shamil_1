@@ -1,0 +1,145 @@
+.root {
+  position: relative;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--control-h);
+  padding: 0 var(--sp-2) 0 4px;
+  border: var(--stroke) solid transparent;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-strong);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  border-color: var(--border);
+  background: var(--surface-hover);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.who {
+  display: none;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.name {
+  display: block;
+  max-width: 180px;
+  overflow: hidden;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role {
+  font-size: var(--fs-micro);
+  color: var(--text-muted);
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: var(--z-popover);
+  width: min(280px, calc(100vw - 2 * var(--sp-4)));
+  padding: var(--sp-2);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.head {
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  margin-bottom: var(--sp-1);
+  border-bottom: var(--stroke) solid var(--border);
+}
+
+.head p {
+  margin: 0;
+}
+
+.headName {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.headMeta {
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+  overflow-wrap: anywhere;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-radius: var(--r-field);
+  background: transparent;
+  color: var(--text-strong);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--surface-hover);
+}
+
+.item:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.itemIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+}
+
+.danger,
+.danger .itemIcon {
+  color: var(--danger);
+}
+
+@media (min-width: 768px) {
+  .who {
+    display: block;
+  }
+}
