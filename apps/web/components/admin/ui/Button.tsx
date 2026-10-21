@@ -2,7 +2,11 @@ import type { ButtonHTMLAttributes } from "react";
 
 import styles from "./Button.module.css";
 
-type Variant = "primary" | "ghost" | "danger";
+/**
+ * primary — главное действие экрана (одно); secondary — частое, но не главное;
+ * ghost — второстепенное в строке; danger — необратимое.
+ */
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   readonly variant?: Variant;
@@ -13,11 +17,12 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const VARIANT_CLASS: Readonly<Record<Variant, string>> = {
   primary: "btn-primary",
+  secondary: `btn-ghost ${styles.secondary}`,
   ghost: "btn-ghost",
   danger: `btn-primary ${styles.danger}`,
 };
 
-/** Кнопки сайта (`.btn` из kit.css) с состоянием «отправляется». */
+/** Кнопки сайта (`.btn` из kit.css) с состоянием «отправляется»; вид в кабинете — admin.css. */
 export function Button({
   variant = "primary",
   isBusy = false,

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { AdminPage } from "@/components/admin/AdminPage";
@@ -108,7 +107,7 @@ export default function DonationDetailsPage() {
   return (
     <AdminPage
       title={data ? `Пожертвование № ${data.invoiceNo}` : "Пожертвование"}
-      actions={<Link href="/admin/donations">← Ко всем пожертвованиям</Link>}
+      breadcrumbs={[{ href: "/admin/donations", label: "Пожертвования" }]}
     >
       {isLoading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}

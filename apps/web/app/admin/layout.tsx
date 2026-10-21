@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { ToastProvider } from "@/components/admin/ui/Toasts";
 import { AdminSessionProvider } from "@/lib/admin/session";
 
+import "./admin.css";
+
 /**
  * Корень админки. Серверный только ради metadata: сами страницы клиентские,
  * данные админки на сервере Next не рендерятся (D-05).
@@ -15,8 +17,10 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
-    <AdminSessionProvider>
-      <ToastProvider>{children}</ToastProvider>
-    </AdminSessionProvider>
+    <div className="admin-root">
+      <AdminSessionProvider>
+        <ToastProvider>{children}</ToastProvider>
+      </AdminSessionProvider>
+    </div>
   );
 }
