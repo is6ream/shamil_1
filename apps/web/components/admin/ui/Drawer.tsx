@@ -46,7 +46,8 @@ export function Drawer({ isOpen, title, onClose, actions, children }: DrawerProp
       className={styles.drawer}
       aria-labelledby={titleId}
       onClose={(event) => {
-        // onClose вложенного окна (подтверждение перевода) всплывает и сюда.
+        // React доводит onClose вложенного окна (подтверждение перевода)
+        // и до родительского обработчика — закрываемся только сами.
         if (event.target === event.currentTarget) {
           onClose();
         }
