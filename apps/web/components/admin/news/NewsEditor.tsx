@@ -270,10 +270,11 @@ export function NewsEditor({ post, onChanged }: Props) {
           </div>
 
           <FormErrors messages={mutation.errors} />
-          <FormActions>
+          <FormActions isSticky>
             <Button type="submit" isBusy={mutation.isPending} disabled={post !== null && !isDirty}>
               {post === null ? "Сохранить черновик" : "Сохранить"}
             </Button>
+            {isDirty ? <span className={styles.dirty}>Есть несохранённые изменения</span> : null}
           </FormActions>
         </form>
       </Section>

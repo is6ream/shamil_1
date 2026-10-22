@@ -4,39 +4,82 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { AdminPage } from "@/components/admin/AdminPage";
+import { AdminImage } from "@/components/admin/media/AdminImage";
+import { NewsIcon } from "@/components/admin/ui/AdminIcons";
 import { Badge } from "@/components/admin/ui/Blocks";
-import { DataTable, Pagination } from "@/components/admin/ui/DataTable";
-import type { Column } from "@/components/admin/ui/DataTable";
-import { SelectField } from "@/components/admin/ui/Field";
+import { Pagination } from "@/components/admin/ui/DataTable";
+import { Segmented } from "@/components/admin/ui/Segmented";
+import type { SegmentOption } from "@/components/admin/ui/Segmented";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
 import { ADMIN_PATHS, LIMITS } from "@/lib/admin/endpoints";
 import { useAdminQuery } from "@/lib/admin/hooks";
+import { newsPublicPath } from "@/lib/admin/news";
 import { withQuery } from "@/lib/admin/query";
 import { formatDateTime } from "@/lib/admin/time";
 import type { AdminNewsPost, NewsStatus, Paged } from "@/lib/admin/types";
 
 import styles from "./news.module.css";
 
-const COLUMNS: readonly Column<AdminNewsPost>[] = [
-  {
-    key: "title",
-    header: "Заголовок",
-    render: (row) => <Link href={`/admin/news/${row.id}`}>{row.title}</Link>,
-  },
-  {
-    key: "status",
-    header: "Статус",
-    render: (row) =>
-      row.status === "published" ? <Badge tone="success">Опубликовано</Badge> : <Badge>Черновик</Badge>,
-  },
-  { key: "published", header: "Опубликовано", render: (row) => formatDateTime(row.publishedAt) },
-  { key: "updated", header: "Изменено", render: (row) => formatDateTime(row.updatedAt) },
+type StatusFilter = NewsStatus | "all";
+
+const STATUS_OPTIONS: readonly SegmentOption<StatusFilter>[] = [
+  { value: "all", label: "Все" },
+  { value: "draft", label: "Черновики" },
+  { value: "published", label: "Опубликованные" },
 ];
 
+/** Карточка новости: обложка, статус, дата, анонс и действия. */
+function NewsCard({ post }: { readonly post: AdminNewsPost }) {
+  const isPublished = post.status === "published";
+  const editHref = `/admin/news/${post.id}`;
+
+  return (
+    <li className={styles.card}>
+      <Link href={editHref} className={styles.cover} tabIndex={-1} aria-hidden="true">
+        {post.cover ? (
+          <AdminImage src={post.cover.urls.sm} alt="" width={post.cover.width} height={post.cover.height} />
+        ) : (
+          <span className={styles.coverEmpty}>
+            <NewsIcon />
+          </span>
+        )}
+      </Link>
+      <div className={styles.cardBody}>
+        <p className={styles.cardMeta}>
+          {isPublished ? <Badge tone="success">Опубликовано</Badge> : <Badge>Черновик</Badge>}
+          <span>
+            {isPublished && post.publishedAt
+              ? formatDateTime(post.publishedAt)
+              : `изменено ${formatDateTime(post.updatedAt)}`}
+          </span>
+        </p>
+        <h2 className={styles.cardTitle}>
+          <Link href={editHref}>{post.title}</Link>
+        </h2>
+        {post.excerpt ? <p className={styles.excerpt}>{post.excerpt}</p> : null}
+        <div className={styles.cardActions}>
+          <Link href={editHref} className="btn btn-ghost btn-sm">
+            Редактировать
+          </Link>
+          {isPublished ? (
+            <a href={newsPublicPath(post.slug)} target="_blank" rel="noopener noreferrer" className={styles.siteLink}>
+              Открыть на сайте ↗
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export default function NewsListPage() {
-  const [status, setStatus] = useState<NewsStatus | "">("");
+  const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
-  const path = withQuery(ADMIN_PATHS.news, { status, page, pageSize: LIMITS.pageSize });
+  const path = withQuery(ADMIN_PATHS.news, {
+    status: status === "all" ? undefined : status,
+    page,
+    pageSize: LIMITS.pageSize,
+  });
   const { data, error, isLoading, reload } = useAdminQuery<Paged<AdminNewsPost>>(path);
 
   return (
@@ -50,16 +93,12 @@ export default function NewsListPage() {
       }
     >
       <div className={styles.filter}>
-        <SelectField
+        <Segmented
           label="Показать"
-          emptyLabel="Все"
-          options={[
-            { value: "draft", label: "Черновики" },
-            { value: "published", label: "Опубликованные" },
-          ]}
+          options={STATUS_OPTIONS}
           value={status}
-          onChange={(event) => {
-            setStatus(event.target.value as NewsStatus | "");
+          onChange={(next) => {
+            setStatus(next);
             setPage(1);
           }}
         />
@@ -67,13 +106,24 @@ export default function NewsListPage() {
       {isLoading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {data !== null && data.items.length === 0 ? (
-        <EmptyState title={status === "" ? "Новостей пока нет." : "Таких новостей нет."}>
+        <EmptyState
+          title={status === "all" ? "Новостей пока нет." : "Таких новостей нет."}
+          action={
+            <Link href="/admin/news/new" className="btn btn-primary btn-sm">
+              Написать новость
+            </Link>
+          }
+        >
           <p>Напишите первую — например, о заливке фундамента. Сначала она сохранится черновиком.</p>
         </EmptyState>
       ) : null}
       {data !== null && data.items.length > 0 ? (
         <>
-          <DataTable caption="Новости" columns={COLUMNS} rows={data.items} rowKey={(row) => row.id} />
+          <ul className={styles.cards} aria-label="Новости">
+            {data.items.map((post) => (
+              <NewsCard key={post.id} post={post} />
+            ))}
+          </ul>
           <Pagination page={page} pageCount={Math.ceil(data.total / data.pageSize)} onChange={setPage} />
         </>
       ) : null}

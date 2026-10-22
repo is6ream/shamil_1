@@ -1,5 +1,8 @@
 .section {
-  padding: var(--sp-5) var(--sp-4);
+  /* Поля — переменными: закреплённая плашка формы выходит ровно на края карточки. */
+  --section-pad-x: var(--sp-4);
+  --section-pad-bottom: var(--sp-5);
+  padding: var(--sp-5) var(--section-pad-x) var(--section-pad-bottom);
   border: var(--stroke) solid var(--border);
   border-radius: var(--r-card);
   background: var(--surface);
@@ -52,6 +55,27 @@
   flex-wrap: wrap;
   gap: var(--sp-3);
   margin-top: var(--sp-6);
+}
+
+/* Плашка на всю ширину карточки: выходит за её внутренние поля. */
+.formActionsSticky {
+  position: sticky;
+  bottom: calc(var(--a-tabbar-h) + env(safe-area-inset-bottom));
+  z-index: 2;
+  align-items: center;
+  margin-inline: calc(-1 * var(--section-pad-x, 0px));
+  margin-bottom: calc(-1 * var(--section-pad-bottom, 0px));
+  padding: var(--sp-3) var(--section-pad-x, var(--sp-4));
+  border-top: var(--stroke) solid var(--border);
+  border-radius: 0 0 var(--r-card) var(--r-card);
+  background: var(--surface);
+  box-shadow: 0 -8px 16px -12px rgba(11, 37, 72, 0.25);
+}
+
+@media (min-width: 768px) {
+  .formActionsSticky {
+    bottom: 0;
+  }
 }
 
 .kv {
@@ -149,6 +173,8 @@
 
 @media (min-width: 720px) {
   .section {
+    --section-pad-x: var(--sp-6);
+    --section-pad-bottom: var(--sp-6);
     padding: var(--sp-6);
   }
 

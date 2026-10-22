@@ -3,9 +3,10 @@
 import { useState } from "react";
 
 import { AdminPage } from "@/components/admin/AdminPage";
+import { AdminImage } from "@/components/admin/media/AdminImage";
 import { StageDialog } from "@/components/admin/stages/StageDialog";
 import styles from "@/components/admin/stages/stages.module.css";
-import { Badge, Note } from "@/components/admin/ui/Blocks";
+import { Badge, Meter, Note } from "@/components/admin/ui/Blocks";
 import { Button } from "@/components/admin/ui/Button";
 import { ConfirmDialog } from "@/components/admin/ui/Modal";
 import { ReorderButtons } from "@/components/admin/ui/ReorderButtons";
@@ -15,7 +16,7 @@ import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import { errorMessage } from "@/lib/admin/errors";
 import { useAdminQuery } from "@/lib/admin/hooks";
 import { STAGE_STATUS_LABELS } from "@/lib/admin/labels";
-import { formatKopecks } from "@/lib/admin/money";
+import { formatKopecks, percentOf } from "@/lib/admin/money";
 import { useAdminSession } from "@/lib/admin/session";
 import type { AdminStage, StageStatus } from "@/lib/admin/types";
 import { useReorder } from "@/lib/admin/use-reorder";
@@ -26,6 +27,13 @@ const STATUS_TONES: Readonly<Record<StageStatus, "success" | "info" | "neutral">
   current: "info",
   upcoming: "neutral",
 };
+
+/** Доля освоенной сметы — только когда известны обе суммы. */
+function spentPercent(stage: AdminStage): number | null {
+  return stage.budgetKopecks === null || stage.spentKopecks === null
+    ? null
+    : percentOf(stage.spentKopecks, stage.budgetKopecks);
+}
 
 export default function StagesPage() {
   const { client } = useAdminSession();
@@ -59,7 +67,14 @@ export default function StagesPage() {
     <AdminPage
       title="Ход стройки"
       lead="Этапы по порядку — так же, как на сайте в блоке «Куда идут пожертвования»."
-      actions={<Button onClick={() => setEditing("new")}>Добавить этап</Button>}
+      actions={
+        <>
+          <Button onClick={() => setEditing("new")}>Добавить этап</Button>
+          <a href="/#hod-stroitelstva" target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+            Посмотреть на сайте ↗
+          </a>
+        </>
+      }
     >
       <Note tone="warning">
         <p>
@@ -77,11 +92,19 @@ export default function StagesPage() {
       ) : null}
       {list !== null && list.length > 0 ? (
         <ol className={styles.list}>
-          {list.map((stage, index) => (
+          {list.map((stage, index) => {
+            const percent = spentPercent(stage);
+            const cover = stage.photos[0];
+
+            return (
             <li key={stage.id} className={styles.stage}>
               <div className={styles.main}>
                 <span className={styles.number}>{index + 1}</span>
-                <div>
+                {cover ? (
+                  // Миниатюра узнаётся быстрее заголовка.
+                  <AdminImage className={styles.thumb} src={cover.urls.sm} alt="" width={56} height={56} />
+                ) : null}
+                <div className={styles.body}>
                   <h2 className={styles.title}>{stage.title}</h2>
                   <p className={styles.meta}>
                     <Badge tone={STATUS_TONES[stage.status]}>{STAGE_STATUS_LABELS[stage.status]}</Badge>
@@ -89,6 +112,12 @@ export default function StagesPage() {
                     <span>Освоено: {stage.spentKopecks === null ? "—" : formatKopecks(stage.spentKopecks)}</span>
                     <span>{pluralize(stage.photoMediaIds.length, ["фото", "фото", "фото"])}</span>
                   </p>
+                  {percent === null ? null : (
+                    <div className={styles.spent}>
+                      <Meter label={`Освоено ${percent}% сметы этапа «${stage.title}»`} percent={percent} />
+                      <span>Освоено {percent}% сметы</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className={styles.actions}>
@@ -101,7 +130,8 @@ export default function StagesPage() {
                 </Button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ol>
       ) : null}
 

@@ -2,6 +2,32 @@
   margin-top: var(--sp-5);
 }
 
+/* Подсказка или ошибка слева, счётчик символов справа. */
+.meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.meta > p {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.counter {
+  flex: none;
+  margin-top: var(--sp-1);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+}
+
+.counterNear {
+  color: var(--warning);
+  font-weight: 600;
+}
+
 .textarea {
   height: auto;
   min-height: 120px;
