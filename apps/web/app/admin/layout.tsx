@@ -4,6 +4,7 @@ import { ToastProvider } from "@/components/admin/ui/Toasts";
 import { AdminSessionProvider } from "@/lib/admin/session";
 
 import "./admin.css";
+import "./admin-icons.css";
 
 /**
  * Корень админки. Серверный только ради metadata: сами страницы клиентские,

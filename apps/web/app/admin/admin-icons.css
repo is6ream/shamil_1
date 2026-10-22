@@ -1,0 +1,241 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Микродвижение иконок кабинета (components/admin/ui/AdminIcons.tsx).
+
+   Иконка оживает, когда наводят мышь или приходят с клавиатуры на весь
+   пункт меню, кнопку или ссылку, а не только на сам SVG. У каждой иконки
+   своё движение по смыслу: крыша приподнимается, монета ложится в ладонь,
+   купол дорисовывается.
+
+   Переключатель — «пробельный» трюк с custom property. В покое
+   `--icon-idle: none`, и каждая часть получает `transform: none` и
+   `animation-name: none`: рисунок тот же до пикселя. Интерактивный
+   элемент ставит `--icon-idle: initial` (невалидное значение), и `var()`
+   у потомков берёт запасной вариант — движение. Так одно правило на часть
+   обслуживает и `:hover`, и `:focus-visible`.
+
+   Обратный переключатель `--icon-live` в покое не задан (тоже невалиден)
+   и становится `1` при движении — для того, что видно только в движении.
+
+   Точка поворота задаётся в координатах viewBox 24×24
+   (`transform-box: view-box`), сдвиги — тоже в его единицах: при иконке
+   20px 1.5 единицы — это 1.25px на экране.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.admin-root {
+  --icon-idle: none;
+  --icon-dur: 240ms;
+}
+
+/* Наведение — только там, где есть настоящая мышь: на телефоне касание
+   не дёргает иконку. */
+@media (hover: hover) {
+  .admin-root :is(a, button):hover {
+    --icon-idle: initial;
+    --icon-live: 1;
+    --icon-swap-delay: 0s;
+  }
+}
+
+.admin-root :is(a, button):focus-visible {
+  --icon-idle: initial;
+  --icon-live: 1;
+  --icon-swap-delay: 0s;
+}
+
+/* Текущий раздел и выключенная кнопка не зовут к действию — стоят. */
+.admin-root :is(a, button):is([aria-current="page"], :disabled) {
+  --icon-idle: none;
+  --icon-live: initial;
+  --icon-swap-delay: initial;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-root svg[data-icon] [data-part] {
+    transform-box: view-box;
+    transition: transform var(--icon-dur) ease-out;
+    animation-duration: var(--icon-dur);
+    animation-timing-function: ease-out;
+    animation-fill-mode: backwards;
+  }
+
+  /* Обзор: крыша приподнимается над стенами. Цельный дом на время движения
+     подменяется разрезанным; обратно — когда крыша уже легла на место. */
+  .admin-root svg[data-icon="home"] :is([data-part="house"], [data-part="house-split"]) {
+    transition: opacity 0s linear var(--icon-swap-delay, var(--icon-dur));
+  }
+
+  .admin-root svg[data-icon="home"] [data-part="house"] {
+    opacity: var(--icon-idle, 0);
+  }
+
+  .admin-root svg[data-icon="home"] [data-part="house-split"] {
+    opacity: var(--icon-live, 0);
+  }
+
+  .admin-root svg[data-icon="home"] [data-part="roof"] {
+    transform: var(--icon-idle, translateY(-1.6px));
+  }
+
+  /* Пожертвования: монета опускается в ладонь. */
+  .admin-root svg[data-icon="donations"] [data-part="coin"] {
+    transform: var(--icon-idle, translateY(2px));
+  }
+
+  /* Цели: волна от центра мишени к краю. */
+  .admin-root svg[data-icon="goals"] [data-part] {
+    transform-origin: 12px 12px;
+    animation-duration: 300ms;
+  }
+
+  .admin-root svg[data-icon="goals"] [data-part="bullseye"] {
+    animation-name: var(--icon-idle, admin-icon-pulse-strong);
+  }
+
+  .admin-root svg[data-icon="goals"] [data-part="ring-inner"] {
+    animation-name: var(--icon-idle, admin-icon-pulse);
+    animation-delay: 40ms;
+  }
+
+  .admin-root svg[data-icon="goals"] [data-part="ring-outer"] {
+    animation-name: var(--icon-idle, admin-icon-pulse-soft);
+    animation-delay: 90ms;
+  }
+
+  /* Ход стройки: купол прорисовывается линией, следом шпиль. */
+  .admin-root svg[data-icon="stages"] [data-part="dome"] {
+    animation-name: var(--icon-idle, admin-icon-draw);
+    animation-duration: 200ms;
+  }
+
+  .admin-root svg[data-icon="stages"] [data-part="spire"] {
+    animation-name: var(--icon-idle, admin-icon-draw);
+    animation-duration: 120ms;
+    animation-delay: 180ms;
+  }
+
+  /* Новости: верхний лист приподнимается за угол, как при перелистывании. */
+  .admin-root svg[data-icon="news"] [data-part="page"] {
+    transform-origin: 4px 20px;
+    transform: var(--icon-idle, rotate(-5deg));
+  }
+
+  /* Тексты сайта: буква наклоняется курсивом. */
+  .admin-root svg[data-icon="content"] [data-part="glyph"] {
+    transform-origin: 12px 19.5px;
+    transform: var(--icon-idle, skewX(-10deg));
+  }
+
+  /* Медиатека: солнце в кадре поднимается. */
+  .admin-root svg[data-icon="media"] [data-part="sun"] {
+    transform: var(--icon-idle, translateY(-1.8px));
+  }
+
+  /* Галерея: плитки сдвигаются по кругу, как при перестановке. */
+  .admin-root svg[data-icon="gallery"] [data-part="tile-tl"] {
+    transform: var(--icon-idle, translateX(1.2px));
+  }
+
+  .admin-root svg[data-icon="gallery"] [data-part="tile-tr"] {
+    transform: var(--icon-idle, translateY(1.2px));
+  }
+
+  .admin-root svg[data-icon="gallery"] [data-part="tile-br"] {
+    transform: var(--icon-idle, translateX(-1.2px));
+  }
+
+  .admin-root svg[data-icon="gallery"] [data-part="tile-bl"] {
+    transform: var(--icon-idle, translateY(-1.2px));
+  }
+
+  /* Видео: объектив камеры выдвигается вперёд. */
+  .admin-root svg[data-icon="video"] [data-part="lens"] {
+    transform: var(--icon-idle, translateX(1.2px));
+  }
+
+  /* Пользователи: второй силуэт выглядывает из-за первого. */
+  .admin-root svg[data-icon="users"] [data-part="second"] {
+    transform: var(--icon-idle, translateX(1.2px));
+  }
+
+  /* Журнал: строки прописываются слева направо. Один путь, как в покое:
+     три отдельных сглаживаются иначе. */
+  .admin-root svg[data-icon="audit"] [data-part="lines"] {
+    animation-name: var(--icon-idle, admin-icon-draw);
+    animation-duration: 300ms;
+  }
+
+  /* Сменить пароль: ключ проворачивается вокруг кольца, как в замке. */
+  .admin-root svg[data-icon="key"] [data-part="key"] {
+    transform-origin: 8px 15px;
+    transform: var(--icon-idle, rotate(12deg));
+  }
+
+  /* Выход: стрелка уходит в ту сторону, куда указывает, — прочь от двери. */
+  .admin-root svg[data-icon="logout"] [data-part="arrow"] {
+    transform: var(--icon-idle, translateX(-1.6px));
+  }
+
+  /* Внешняя ссылка: стрелка уходит вверх-вправо, за рамку. */
+  .admin-root svg[data-icon="external"] [data-part="arrow"] {
+    transform: var(--icon-idle, translate(1.2px, -1.2px));
+  }
+
+  .admin-root svg[data-icon="chevron-right"] [data-part="chevron"] {
+    transform: var(--icon-idle, translateX(1.5px));
+  }
+
+  .admin-root svg[data-icon="chevron-down"] [data-part="chevron"] {
+    transform: var(--icon-idle, translateY(1.5px));
+  }
+
+  /* Свернуть меню: перегородка подсказывает, куда поедет колонка. */
+  .admin-root svg[data-icon="sidebar"] [data-part="divider"] {
+    transform: var(--icon-idle, translateX(-2px));
+  }
+
+  .admin-root [aria-pressed="true"] svg[data-icon="sidebar"] [data-part="divider"] {
+    transform: var(--icon-idle, translateX(3px));
+  }
+
+  /* Ещё: точки пробегают волной. */
+  .admin-root svg[data-icon="more"] [data-part^="dot-"] {
+    animation-name: var(--icon-idle, admin-icon-hop);
+  }
+
+  .admin-root svg[data-icon="more"] [data-part="dot-2"] {
+    animation-delay: 50ms;
+  }
+
+  .admin-root svg[data-icon="more"] [data-part="dot-3"] {
+    animation-delay: 100ms;
+  }
+}
+
+/* Прорисовка: у частей `pathLength="1"`, поэтому штрих длиной 1 — весь путь.
+   После анимации свойства снимаются, и путь снова рисуется без пунктира. */
+@keyframes admin-icon-draw {
+  from {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes admin-icon-pulse {
+  50% { transform: scale(1.12); }
+}
+
+@keyframes admin-icon-pulse-soft {
+  50% { transform: scale(1.05); }
+}
+
+@keyframes admin-icon-pulse-strong {
+  50% { transform: scale(1.8); }
+}
+
+@keyframes admin-icon-hop {
+  50% { transform: translateY(-1.6px); }
+}
