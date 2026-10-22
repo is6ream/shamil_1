@@ -1,5 +1,108 @@
-.row {
+/* Мягкие поля имени и телефона; «Анонимно» живёт внутри поля имени. */
+
+.stack {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-3);
+}
+
+.box {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--control-h);
+  padding: 0 var(--sp-4) 0 var(--sp-5);
+  border: var(--stroke) solid transparent;
+  border-radius: 20px;
+  background: var(--surface-soft);
+  transition: border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast);
+}
+
+.box:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.box[data-invalid="true"] {
+  border-color: var(--danger);
+}
+
+/* Фокус показывает рамка всего поля (`.box:focus-within`), не само поле. */
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-strong);
+  font: inherit;
+  font-size: var(--fs-input);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--text-soft);
+  opacity: 0.75;
+}
+
+.input:disabled {
+  cursor: default;
+}
+
+.anonymous {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 15px;
+  color: var(--text-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+.checkInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 1.5px solid var(--text-soft);
+  border-radius: 6px;
+  background: var(--surface);
+  appearance: none;
+  cursor: pointer;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.checkInput:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.checkInput:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}
+
+.checkMark {
+  position: absolute;
+  inset: 3px;
+  width: 16px;
+  height: 16px;
+  color: var(--on-accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast);
+}
+
+.checkInput:checked + .checkMark {
+  opacity: 1;
 }

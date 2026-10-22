@@ -13,8 +13,11 @@ import { groupDigits } from "@/lib/format";
 import { parseRublesInput } from "@/lib/money";
 import { MAX_DONATION_RUBLES, MIN_DONATION_RUBLES } from "@/lib/site";
 
-/** Пресеты сумм (макет v2). 100 ₽ обязателен: он совпадает со слоганом. */
-export const AMOUNT_PRESETS_RUBLES = [100, 500, 1000, 5000] as const;
+/**
+ * Пресеты сумм — три пилюли справа от поля суммы. 100 ₽ обязателен:
+ * он совпадает со слоганом.
+ */
+export const AMOUNT_PRESETS_RUBLES = [100, 500, 1000] as const;
 
 /**
  * Способ онлайн-оплаты. Бэкенду НЕ передаётся: в `CreateDonationDto` поля
@@ -27,6 +30,9 @@ export const AMOUNT_PRESETS_RUBLES = [100, 500, 1000, 5000] as const;
  * TODO(api): передавать способ провайдеру, когда DTO его примет.
  */
 export type OnlineMethodId = "sbp" | "card" | "sberpay" | "tpay";
+
+/** Плитка в сетке способов: онлайн-методы плюс перевод по реквизитам. */
+export type PaymentOptionId = OnlineMethodId | "transfer";
 
 export interface DonationFormState {
   /** Онлайн или перевод по реквизитам. Уходит в запрос полем `channel`. */
@@ -283,4 +289,20 @@ export function selectValidAmount(state: DonationFormState): number | null {
   }
 
   return amount;
+}
+
+/**
+ * Какая плитка способа оплаты выбрана. «Расчётный счёт» — это не метод
+ * внутри Robokassa, а другой канал (`channel: "transfer"`), поэтому
+ * плитка собирается из двух полей состояния.
+ */
+export function selectPaymentOption(state: DonationFormState): PaymentOptionId {
+  return state.channel === "transfer" ? "transfer" : state.onlineMethod;
+}
+
+/** Изменения состояния при выборе плитки. Последний онлайн-метод сохраняется. */
+export function paymentOptionChanges(option: PaymentOptionId): Partial<DonationFormState> {
+  return option === "transfer"
+    ? { channel: "transfer" }
+    : { channel: "online", onlineMethod: option };
 }

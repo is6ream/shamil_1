@@ -108,8 +108,11 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
     // Публичной подписи у анонимного доната быть не может — CHECK
     // `donation_anonymous_has_no_public_name` в базе. Поле очищаем сразу,
     // чтобы не отправить имя, которое человек уже не видит.
+    // Телефон при анонимности скрыт — значит, и не отправляется: уходить
+    // должно только то, что человек видит в форме.
     clearError("donorName");
-    patch(isAnonymous ? { isAnonymous, donorName: "" } : { isAnonymous });
+    clearError("phone");
+    patch(isAnonymous ? { isAnonymous, donorName: "", phone: "" } : { isAnonymous });
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {

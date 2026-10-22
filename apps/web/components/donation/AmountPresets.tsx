@@ -1,4 +1,3 @@
-import field from "@/components/ui/field.module.css";
 import { DONATION_FORM } from "@/lib/content";
 import { formatCount } from "@/lib/format";
 
@@ -11,19 +10,16 @@ interface Props {
 }
 
 /**
- * Пресеты сумм. У референса их нет вообще, только ручной ввод, — и это
- * упущение: пресет снимает вопрос «сколько принято жертвовать».
- *
- * Своя сумма — отдельное поле под пресетами (макет v2), поэтому пятой
- * кнопки «Своя сумма» больше нет: ручной ввод сам снимает подсветку.
+ * Пилюли быстрого выбора суммы внутри поля суммы. Ручной ввод сам снимает
+ * подсветку: выбранным считается пресет, совпадающий с введённой суммой.
  */
 export function AmountPresets({ selectedPreset, onSelect }: Props) {
   return (
-    <fieldset className={field.fieldset}>
-      <legend className={`${field.legend} ${field.collapsible}`}>{DONATION_FORM.amountLegend}</legend>
-      <div className={styles.grid}>
+    <fieldset className={styles.fieldset}>
+      <legend className="sr-only">{DONATION_FORM.presetsLegend}</legend>
+      <div className={styles.chips}>
         {AMOUNT_PRESETS_RUBLES.map((preset) => (
-          <label className={styles.choice} key={preset}>
+          <label className={styles.chip} key={preset}>
             <input
               className="sr-only"
               type="radio"
