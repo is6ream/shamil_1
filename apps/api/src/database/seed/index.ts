@@ -8,6 +8,7 @@ import { PrismaClient } from '../../generated/prisma/client';
 import { RegionType } from '../../generated/prisma/enums';
 import { seedSuperAdmin } from './admin.seed';
 import { seedContent } from './content.seed';
+import { seedDemoGoal } from './demo-goal.seed';
 import {
   CAMPAIGN_SEED,
   MONTHLY_GOAL_PLACEHOLDER_KOPECKS,
@@ -143,12 +144,14 @@ async function main(): Promise<void> {
     await seedCampaign(prisma);
     await seedContent(prisma);
     await seedSuperAdmin(prisma, process.env);
+    const demoGoal = await seedDemoGoal(prisma, process.env);
 
     const period = currentMonthPeriod();
     const monthlyGoalRubles = Number(MONTHLY_GOAL_PLACEHOLDER_KOPECKS / 100n);
 
     logger.log(`Регионы: ${regionsCount} (страны + субъекты РФ)`);
     logger.log(`Сбор «${CAMPAIGN_SEED.title}»: цель 240 000 000 ₽`);
+    logger.log(`Демо-этап сбора (только NODE_ENV=development): ${demoGoal}`);
     logger.warn(
       `Цель месяца — ЗАГЛУШКА ${monthlyGoalRubles.toLocaleString('ru-RU')} ₽ ` +
         `на ${period.start.toISOString().slice(0, 10)}…${period.end.toISOString().slice(0, 10)}. ` +

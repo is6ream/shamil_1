@@ -7,7 +7,7 @@ import type { AppConfig } from '../config/configuration';
  * Теги кеша сайта. Список фиксированный и совпадает с фронтендом
  * (`apps/web/lib/revalidate.ts`, D-F02): неизвестный тег фронт отклонит.
  */
-export const REVALIDATE_TAGS = ['content', 'stages', 'news', 'gallery', 'video', 'campaign'] as const;
+export const REVALIDATE_TAGS = ['content', 'stages', 'news', 'gallery', 'video', 'campaign', 'active-goal'] as const;
 
 export type RevalidateTag = (typeof REVALIDATE_TAGS)[number];
 

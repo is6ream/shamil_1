@@ -12,6 +12,7 @@ import { ContentModule } from './content/content.module';
 import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { DonationsModule } from './donations/donations.module';
+import { FundraisingGoalsModule } from './fundraising-goals/fundraising-goals.module';
 import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
 import {
@@ -49,6 +50,7 @@ import { ShowcaseModule } from './showcase/showcase.module';
     MediaModule,
     ContentModule,
     ShowcaseModule,
+    FundraisingGoalsModule,
     ShortLinksModule,
     AnalyticsModule,
     // Эмулятор оплаты — только локально: в production флаг запрещён
