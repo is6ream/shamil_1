@@ -71,6 +71,7 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
  * начнут видеть данные друг друга. `_prisma_migrations` не трогаем.
  */
 const TRUNCATED_TABLES = [
+  'fundraising_goal',
   'payment_event',
   'donation_contact',
   'donation',

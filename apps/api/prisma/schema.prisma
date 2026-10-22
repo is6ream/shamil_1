@@ -49,12 +49,12 @@ enum DonationStatus {
 /// Сбор. В MVP он один, но таблица — не singleton: заказчик может запустить
 /// второй сбор (например, на внутреннюю отделку), и переписывать схему не хочется.
 model Campaign {
-  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug     String @unique @db.VarChar(64)
-  title    String @db.VarChar(200)
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug               String   @unique @db.VarChar(64)
+  title              String   @db.VarChar(200)
   /// Общая цель сбора в копейках: 240 000 000 ₽ = 24 000 000 000 копеек.
   /// Цель на месяц живёт отдельной сущностью — см. CampaignMonthlyGoal.
-  goalKopecks BigInt @map("goal_kopecks")
+  goalKopecks        BigInt   @map("goal_kopecks")
   /// Валюта учёта. Все суммы сбора сводятся к ней; платёж в тенге или сомах
   /// приходит в charged_currency доната.
   currency           String   @default("RUB") @db.Char(3)
@@ -63,10 +63,11 @@ model Campaign {
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  stats        CampaignStats?
-  monthlyGoals CampaignMonthlyGoal[]
-  donations    Donation[]
-  galleryItems GalleryItem[]
+  stats            CampaignStats?
+  monthlyGoals     CampaignMonthlyGoal[]
+  donations        Donation[]
+  galleryItems     GalleryItem[]
+  fundraisingGoals FundraisingGoal[]
 
   @@map("campaign")
 }
@@ -163,58 +164,58 @@ model RegionStats {
 /// Донат. Идентификатор доната — он же order_id на странице «спасибо»:
 /// uuid не перебрать, отдельный публичный номер не нужен.
 model Donation {
-  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   /// Числовой номер счёта для провайдера: Robokassa принимает InvId только
   /// целым числом (0…2147483647), uuid ей отдать нельзя. Значение выдаёт
   /// последовательность в БД — счётчик в сервисе дал бы гонку на двух инстансах.
   /// Публичный идентификатор заказа при этом остаётся uuid'ом: его не перебрать.
   /// SERIAL, а не dbgenerated: иначе Prisma видит дрейф и следующая
   /// `migrate dev` сама сгенерирует «исправление» боевой таблицы.
-  invoiceNo  Int            @unique @default(autoincrement()) @map("invoice_no")
-  campaignId String         @map("campaign_id") @db.Uuid
+  invoiceNo          Int            @unique @default(autoincrement()) @map("invoice_no")
+  campaignId         String         @map("campaign_id") @db.Uuid
   /// Nullable намеренно: донат без региона обязан проходить (CLAUDE.md).
-  regionId   String?        @map("region_id") @db.Uuid
-  status     DonationStatus @default(pending)
+  regionId           String?        @map("region_id") @db.Uuid
+  status             DonationStatus @default(pending)
   /// Сумма заказа, которую сформировал сервер. Клиентскому значению не верим:
   /// оно проходит только через валидацию DTO и пересчёт на бэкенде.
-  amountKopecks BigInt @map("amount_kopecks")
+  amountKopecks      BigInt         @map("amount_kopecks")
   /// Фактически оплаченная сумма — из вебхука. Заполнена у всех paid-донатов
   /// (CHECK в миграции) и только она попадает в витринные счётчики.
-  paidAmountKopecks BigInt? @map("paid_amount_kopecks")
+  paidAmountKopecks  BigInt?        @map("paid_amount_kopecks")
   /// Валюта реального списания: RUB для агрегатора РФ, KZT для Kaspi,
   /// KGS для Mbank. Учётная сумма при этом всегда в копейках рубля.
-  chargedCurrency    String  @default("RUB") @map("charged_currency") @db.Char(3)
-  chargedAmountMinor BigInt? @map("charged_amount_minor")
+  chargedCurrency    String         @default("RUB") @map("charged_currency") @db.Char(3)
+  chargedAmountMinor BigInt?        @map("charged_amount_minor")
   /// Код провайдера: 'manual' | 'robokassa' | 'kaspi' | 'mbank'. Не enum —
   /// агрегатор ещё не согласован (блокер), а миграцию enum'а на проде не хочется.
-  provider          String  @default("manual") @db.VarChar(32)
+  provider           String         @default("manual") @db.VarChar(32)
   /// Способ внутри провайдера: 'sbp' | 'card' | 'sberpay' | 'tpay' | 'bank_transfer'.
   /// Показывается в живой ленте поступлений.
-  method            String? @db.VarChar(32)
+  method             String?        @db.VarChar(32)
   /// Идентификатор платежа на стороне провайдера (счёт, инвойс).
-  providerPaymentId String? @map("provider_payment_id") @db.VarChar(128)
+  providerPaymentId  String?        @map("provider_payment_id") @db.VarChar(128)
   /// Публичная подпись для ленты и топа донатеров. У анонимного доната пуста —
   /// это CHECK в миграции: чего в таблице нет, то невозможно показать по ошибке.
   /// Имя для сверки платежей живёт в donation_contact.full_name.
-  donorName         String? @map("donor_name") @db.VarChar(120)
+  donorName          String?        @map("donor_name") @db.VarChar(120)
   /// Анонимность включена по умолчанию: садака — скрытое поклонение (блок 9 ТЗ).
   /// В топ донатеров попадают только те, кто снял галочку сознательно.
-  isAnonymous  Boolean @default(true) @map("is_anonymous")
+  isAnonymous        Boolean        @default(true) @map("is_anonymous")
   /// Откуда взялся регион: 'link' (региональная ссылка), 'form' (селектор),
   /// 'admin'. У референса атрибуция была ~7%, и понять это можно было только так.
-  regionSource String? @map("region_source") @db.VarChar(16)
+  regionSource       String?        @map("region_source") @db.VarChar(16)
 
   /// Атрибуция first-touch: метки первого захода на сайт (cookie на 30 дней).
   /// Все поля необязательны — донат без меток обязан проходить, как и без региона.
-  utmSource   String? @map("utm_source") @db.VarChar(128)
-  utmMedium   String? @map("utm_medium") @db.VarChar(128)
-  utmCampaign String? @map("utm_campaign") @db.VarChar(128)
-  utmContent  String? @map("utm_content") @db.VarChar(128)
-  utmTerm     String? @map("utm_term") @db.VarChar(128)
+  utmSource    String?   @map("utm_source") @db.VarChar(128)
+  utmMedium    String?   @map("utm_medium") @db.VarChar(128)
+  utmCampaign  String?   @map("utm_campaign") @db.VarChar(128)
+  utmContent   String?   @map("utm_content") @db.VarChar(128)
+  utmTerm      String?   @map("utm_term") @db.VarChar(128)
   /// Внешний Referer первого захода. Свой домен сюда не пишется.
-  referrer    String? @db.VarChar(512)
+  referrer     String?   @db.VarChar(512)
   /// Путь страницы первого захода: `/02/`, `/?utm_source=…` без домена.
-  landingPage String? @map("landing_page") @db.VarChar(512)
+  landingPage  String?   @map("landing_page") @db.VarChar(512)
   /// Когда был первый заход (из cookie first-touch). Сверяется сервером:
   /// время из будущего или старше окна атрибуции не пишется.
   firstTouchAt DateTime? @map("first_touch_at") @db.Timestamptz(3)
@@ -265,12 +266,12 @@ model Donation {
 ///   • по требованию об удалении ПДн строка удаляется, донат и сумма сбора
 ///     остаются на месте.
 model DonationContact {
-  donationId String  @id @map("donation_id") @db.Uuid
+  donationId            String   @id @map("donation_id") @db.Uuid
   /// Телефон строго в E.164: +79991234567. Формат проверяет CHECK в миграции.
-  phoneE164  String? @map("phone_e164") @db.VarChar(16)
+  phoneE164             String?  @map("phone_e164") @db.VarChar(16)
   /// Имя как его ввёл донатер — нужно для сверки поступлений по реквизитам.
   /// Публичная подпись — это donation.donor_name, а не это поле.
-  fullName   String? @map("full_name") @db.VarChar(120)
+  fullName              String?  @map("full_name") @db.VarChar(120)
   /// Отметка согласия на обработку ПДн — обязательна: без неё строки быть не должно.
   personalDataConsentAt DateTime @map("personal_data_consent_at") @db.Timestamptz(3)
   consentIp             String?  @map("consent_ip") @db.Inet
@@ -314,22 +315,22 @@ model PaymentEvent {
 /// width/height нужны фронтенду: без них Next.js не зарезервирует место
 /// под картинку и первый экран будет прыгать.
 model GalleryItem {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  campaignId  String    @map("campaign_id") @db.Uuid
-  imageUrl    String    @map("image_url") @db.VarChar(500)
-  altText     String?   @map("alt_text") @db.VarChar(200)
-  caption     String?   @db.VarChar(300)
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId   String    @map("campaign_id") @db.Uuid
+  imageUrl     String    @map("image_url") @db.VarChar(500)
+  altText      String?   @map("alt_text") @db.VarChar(200)
+  caption      String?   @db.VarChar(300)
   /// Дата съёмки — по ней галерея выстраивается в хронологию стройки.
-  takenOn     DateTime? @map("taken_on") @db.Date
-  width       Int?
-  height      Int?
-  sortOrder   Int       @default(100) @map("sort_order")
-  isPublished Boolean   @default(true) @map("is_published")
+  takenOn      DateTime? @map("taken_on") @db.Date
+  width        Int?
+  height       Int?
+  sortOrder    Int       @default(100) @map("sort_order")
+  isPublished  Boolean   @default(true) @map("is_published")
   /// Фото из медиатеки. Пусто у строк, заведённых до админки (только image_url).
   /// Ссылка на сайт строится от файла медиатеки — смена бакета не ломает галерею.
-  mediaAssetId String?  @map("media_asset_id") @db.Uuid
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  mediaAssetId String?   @map("media_asset_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   campaign   Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   mediaAsset MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
@@ -374,6 +375,9 @@ model AdminUser {
   updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   refreshTokens AdminRefreshToken[]
+
+  createdFundraisingGoals FundraisingGoal[] @relation("FundraisingGoalCreatedBy")
+  updatedFundraisingGoals FundraisingGoal[] @relation("FundraisingGoalUpdatedBy")
 
   @@map("admin_user")
 }
@@ -598,4 +602,61 @@ model ShortLink {
 
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("short_link")
+}
+
+// ─── Этапы сбора («малые цели») ─────────────────────────────────────────────
+
+/// Статус этапа сбора. Порядок значений — не случайный: по нему сортируется
+/// список в админке (`ORDER BY status`), и активный этап стоит первым.
+/// Переходы: DRAFT → ACTIVE → COMPLETED, ACTIVE ⇄ COMPLETED, любой → ARCHIVED.
+/// В DRAFT не возвращаются, из ARCHIVED не выходят — это триггер
+/// `fundraising_goal_status_guard_bu` в миграции, а не только сервис.
+enum FundraisingGoalStatus {
+  ACTIVE
+  DRAFT
+  COMPLETED
+  ARCHIVED
+
+  @@map("fundraising_goal_status")
+}
+
+/// Ближайший этап сбора на главной: «На кирпичи — 700 000 ₽». Это наглядность,
+/// а не отдельное назначение средств: по оферте все пожертвования идут
+/// на строительство мечети в целом.
+///
+/// «Собрано» не хранится: это SUM оплаченных донатов сбора за
+/// [starts_at; ends_at] плюс ручная корректировка (`GoalProgressCalculator`).
+///
+/// Активный этап — не больше одного: частичный уникальный индекс
+/// `fundraising_goal_single_active` (WHERE status = 'ACTIVE') в миграции.
+/// Prisma его не выражает, наличие проверяет `fundraising-goals.schema.spec.ts`.
+model FundraisingGoal {
+  id                      String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId              String                @map("campaign_id") @db.Uuid
+  /// 3–80 символов без пробелов по краям — CHECK `fundraising_goal_title_length`.
+  title                   String                @db.VarChar(80)
+  description             String?               @db.VarChar(200)
+  /// От 1 000 ₽ до 100 000 000 ₽ — CHECK `fundraising_goal_target_range`.
+  targetAmountKopecks     BigInt                @map("target_amount_kopecks")
+  /// С этого момента донаты считаются в этап (включительно).
+  startsAt                DateTime              @map("starts_at") @db.Timestamptz(3)
+  /// До этого момента включительно; `null` — без конца.
+  endsAt                  DateTime?             @map("ends_at") @db.Timestamptz(3)
+  status                  FundraisingGoalStatus @default(DRAFT)
+  /// Поступления мимо сайта: СБП по QR, наличные, переводы по реквизитам.
+  /// Может быть отрицательной; итог «собрано» не опускается ниже нуля.
+  manualAdjustmentKopecks BigInt                @default(0) @map("manual_adjustment_kopecks")
+  completedAt             DateTime?             @map("completed_at") @db.Timestamptz(3)
+  createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdById             String?               @map("created_by") @db.Uuid
+  updatedById             String?               @map("updated_by") @db.Uuid
+
+  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  createdBy AdminUser? @relation("FundraisingGoalCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy AdminUser? @relation("FundraisingGoalUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([campaignId])
+  @@map("fundraising_goal")
 }
