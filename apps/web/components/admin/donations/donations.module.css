@@ -257,3 +257,36 @@
   padding-top: 0;
   border-top: 0;
 }
+
+/* ── «Как видно на сайте»: строка ленты поступлений ──────────────────── */
+.feedRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--stroke) dashed var(--border-strong);
+  border-radius: var(--r-field);
+  background: var(--bg);
+}
+
+.feedTitle {
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.feedAmount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.feedWhen {
+  grid-column: 1 / -1;
+  color: var(--text-soft);
+  font-size: var(--fs-micro);
+}
+
+.feedNote {
+  margin: var(--sp-3) 0 0;
+}

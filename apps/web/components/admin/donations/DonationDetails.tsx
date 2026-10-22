@@ -1,9 +1,9 @@
 import { ConfirmTransferForm } from "@/components/admin/donations/ConfirmTransferForm";
 import { DonationStatusBadge } from "@/components/admin/donations/DonationsTable";
-import { Badge, KeyValueList, Section } from "@/components/admin/ui/Blocks";
+import { Badge, KeyValueList, Note, Section } from "@/components/admin/ui/Blocks";
 import type { KeyValueRow } from "@/components/admin/ui/Blocks";
 import { DataTable } from "@/components/admin/ui/DataTable";
-import { canConfirmTransfer, isAmountMismatch } from "@/lib/admin/donations";
+import { canConfirmTransfer, feedPreview, isAmountMismatch } from "@/lib/admin/donations";
 import { DONATION_STATUS_LABELS, methodLabel, providerLabel } from "@/lib/admin/labels";
 import { formatKopecks } from "@/lib/admin/money";
 import { formatDateTime } from "@/lib/admin/time";
@@ -93,6 +93,40 @@ const EVENT_COLUMNS = [
   },
 ];
 
+const FEED_SHOWS = {
+  name: { tone: "info", label: "С именем: жертвователь снял анонимность" },
+  region: { tone: "neutral", label: "Анонимно: вместо имени виден регион" },
+  anonymous: { tone: "neutral", label: "Анонимно" },
+} as const;
+
+/** Строка ленты «Последние поступления» — как её увидит посетитель. */
+function FeedPreviewBlock({ donation }: { readonly donation: AdminDonationDetails }) {
+  const preview = feedPreview(donation);
+
+  if (!preview.isListed) {
+    return (
+      <Note>
+        <p>В ленте поступлений на сайте не показывается: там только оплаченные пожертвования.</p>
+      </Note>
+    );
+  }
+
+  const shows = FEED_SHOWS[preview.shows];
+
+  return (
+    <>
+      <div className={styles.feedRow}>
+        <span className={styles.feedTitle}>{preview.title}</span>
+        <span className={styles.feedAmount}>{formatKopecks(donation.paidAmountKopecks)}</span>
+        <span className={styles.feedWhen}>{formatDateTime(donation.paidAt)}</span>
+      </div>
+      <p className={styles.feedNote}>
+        <Badge tone={shows.tone}>{shows.label}</Badge>
+      </p>
+    </>
+  );
+}
+
 interface Props {
   readonly donation: AdminDonationDetails;
   /** После подтверждения перевода — перечитать карточку и список. */
@@ -110,6 +144,9 @@ export function DonationDetails({ donation, onChanged }: Props) {
       ) : null}
       <Section title="Платёж">
         <KeyValueList rows={mainRows(donation)} />
+      </Section>
+      <Section title="Как видно на сайте" description="Строка в ленте «Последние поступления».">
+        <FeedPreviewBlock donation={donation} />
       </Section>
       <Section title={donation.contactMasked ? "Данные жертвователя (скрыты для вашей роли)" : "Данные жертвователя"}>
         <KeyValueList rows={personalRows(donation)} />

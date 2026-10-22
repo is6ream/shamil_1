@@ -5,6 +5,8 @@
  * по нему ищут имя и телефон — это ПДн, им не место в истории браузера.
  */
 
+import { FEED } from "@/lib/content";
+
 import { LIMITS } from "./endpoints";
 import { checkRublesInput, rublesToKopecks } from "./money";
 import type { QueryValue } from "./query";
@@ -146,6 +148,36 @@ export function isAmountMismatch(donation: Pick<AdminDonation, "amountKopecks" |
 /** Подтвердить перевод можно только у ручного провайдера в ожидании (§13). */
 export function canConfirmTransfer(donation: Pick<AdminDonation, "provider" | "status">): boolean {
   return donation.provider === "manual" && donation.status === "pending";
+}
+
+export interface FeedPreview {
+  /** Лента сайта показывает только оплаченные. */
+  readonly isListed: boolean;
+  /** Жирная строка записи в ленте. */
+  readonly title: string;
+  readonly shows: "name" | "region" | "anonymous";
+}
+
+/**
+ * Как пожертвование выглядит в ленте сайта — та же логика, что у ленты
+ * (components/feed/DonationsFeed.tsx и маппер API): имя, если анонимность
+ * снята; иначе регион; иначе «Анонимное пожертвование».
+ */
+export function feedPreview(
+  donation: Pick<AdminDonation, "status" | "isAnonymous" | "donorName" | "region">,
+): FeedPreview {
+  const isListed = donation.status === "paid";
+  const name = donation.isAnonymous ? null : donation.donorName;
+
+  if (name !== null && name.trim() !== "") {
+    return { isListed, title: name, shows: "name" };
+  }
+
+  if (donation.region !== null) {
+    return { isListed, title: donation.region.name, shows: "region" };
+  }
+
+  return { isListed, title: FEED.anonymous, shows: "anonymous" };
 }
 
 /** Имя файла выгрузки: `donations-ГГГГ-ММ-ДД.csv` (дата по Уфе). */
