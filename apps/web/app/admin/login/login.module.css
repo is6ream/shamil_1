@@ -3,19 +3,44 @@
   place-items: center;
   min-height: 100dvh;
   padding: var(--sp-4);
+  background: linear-gradient(160deg, var(--brand-navy) 0%, var(--brand-blue) 100%);
 }
 
 .card {
   width: min(100%, 420px);
 }
 
-.title {
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.logo {
+  flex: none;
+  width: 56px;
+  height: 56px;
+}
+
+/* Специфичность выше `.admin-root h1`. */
+.brand .title {
+  margin: 0;
   font-size: var(--fs-h3);
 }
 
 .lead {
-  margin: var(--sp-1) 0 var(--sp-6);
+  margin: var(--sp-1) 0 0;
   color: var(--text-soft);
+}
+
+.notice {
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-field);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--fs-small);
 }
 
 .submit {

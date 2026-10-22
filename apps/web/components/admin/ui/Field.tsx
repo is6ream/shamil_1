@@ -72,20 +72,32 @@ type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
   readonly label: string;
   readonly error?: string | null;
   readonly hint?: ReactNode;
+  /** Кнопка внутри поля справа: «Показать» у пароля. */
+  readonly trailing?: ReactNode;
 };
 
-export function TextField({ label, error, hint, className, ...input }: TextFieldProps) {
+export function TextField({ label, error, hint, trailing, className, ...input }: TextFieldProps) {
   const id = useId();
+  const control = (
+    <input
+      {...input}
+      id={id}
+      className={`${field.input} ${trailing ? styles.withTrailing : ""} ${className ?? ""}`}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy(id, error, hint)}
+    />
+  );
 
   return (
     <FieldFrame id={id} label={label} error={error} hint={hint} counter={counterOf(input.value, input.maxLength)}>
-      <input
-        {...input}
-        id={id}
-        className={`${field.input} ${className ?? ""}`}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy(id, error, hint)}
-      />
+      {trailing ? (
+        <div className={styles.control}>
+          {control}
+          <div className={styles.trailing}>{trailing}</div>
+        </div>
+      ) : (
+        control
+      )}
     </FieldFrame>
   );
 }

@@ -24,7 +24,8 @@ import type { AdminPermission } from "./roles";
 
 export type SessionState =
   | { readonly status: "loading" }
-  | { readonly status: "anonymous" }
+  /** `logout` — вышел сам: возвращать на прежнюю страницу после входа незачем. */
+  | { readonly status: "anonymous"; readonly reason?: "logout" }
   /** Проверить вход не удалось (лимит, сбой сервера, сеть) — сессия, возможно, жива. */
   | { readonly status: "unavailable"; readonly message: string }
   | { readonly status: "authenticated"; readonly user: AdminUser };
@@ -111,7 +112,7 @@ export function AdminSessionProvider({ children }: { readonly children: ReactNod
     }
 
     client.setAccessToken(null);
-    setState({ status: "anonymous" });
+    setState({ status: "anonymous", reason: "logout" });
   }, [client]);
 
   const value = useMemo<SessionContextValue>(

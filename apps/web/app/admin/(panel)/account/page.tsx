@@ -6,7 +6,9 @@ import type { FormEvent } from "react";
 import { AdminPage } from "@/components/admin/AdminPage";
 import pageStyles from "@/components/admin/AdminPage.module.css";
 import { Button } from "@/components/admin/ui/Button";
-import { FormErrors, TextField } from "@/components/admin/ui/Field";
+import { FormErrors } from "@/components/admin/ui/Field";
+import { PasswordInput } from "@/components/admin/ui/PasswordInput";
+import { PasswordStrength } from "@/components/admin/ui/PasswordStrength";
 import { useToast } from "@/components/admin/ui/Toasts";
 import type { AdminClient } from "@/lib/admin/api-client";
 import { AUTH_PATHS, PASSWORD_MIN_LENGTH, parseAccessToken } from "@/lib/admin/endpoints";
@@ -59,26 +61,24 @@ export default function AccountPage() {
   return (
     <AdminPage title="Сменить пароль" lead="После смены пароля другие ваши устройства выйдут из админки.">
       <form className={`card ${pageStyles.form}`} onSubmit={handleSubmit}>
-        <TextField
+        <PasswordInput
           label="Текущий пароль"
-          type="password"
           autoComplete="current-password"
           value={current}
           onChange={(event) => setCurrent(event.target.value)}
           error={fieldErrors.current}
         />
-        <TextField
+        <PasswordInput
           label="Новый пароль"
-          type="password"
           autoComplete="new-password"
-          hint={`Не короче ${PASSWORD_MIN_LENGTH} символов.`}
+          hint={`Не короче ${PASSWORD_MIN_LENGTH} символов. Надёжнее всего — фраза из нескольких слов, которую легко запомнить.`}
           value={next}
           onChange={(event) => setNext(event.target.value)}
           error={fieldErrors.next}
         />
-        <TextField
+        <PasswordStrength value={next} />
+        <PasswordInput
           label="Новый пароль ещё раз"
-          type="password"
           autoComplete="new-password"
           value={repeat}
           onChange={(event) => setRepeat(event.target.value)}

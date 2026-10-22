@@ -10,6 +10,7 @@ import type { AdminClient } from "./api-client";
 import { AUTH_PATHS } from "./endpoints";
 import type { LoginBody } from "./endpoints";
 import { AdminApiError } from "./errors";
+import { ADMIN_HOME, ADMIN_LOGIN } from "./navigation";
 
 /**
  * Одна формулировка на «нет такой почты» и «не тот пароль»: по тексту
@@ -40,4 +41,34 @@ export async function loginRequest(client: AdminClient, body: LoginBody): Promis
 
     throw error;
   }
+}
+
+/** Путь кабинета: `/admin` или `/admin/…`, с необязательной query. Без `\`, `//` и пробелов. */
+const ADMIN_PATH = /^\/admin(?:\/[^\s\\?#]*)?(?:\?[^\s\\#]*)?$/;
+
+/**
+ * Куда вернуть после входа (`?next=`). Только внутренние страницы кабинета:
+ * иначе ссылка «войдите» стала бы открытым редиректом на чужой сайт.
+ * Всё сомнительное — на главную кабинета.
+ */
+export function safeNextPath(raw: string | null): string {
+  if (raw === null || !ADMIN_PATH.test(raw) || raw.includes("//")) {
+    return ADMIN_HOME;
+  }
+
+  const path = raw.split("?")[0];
+
+  // «/admin/../oferta» браузер свернёт в путь вне кабинета.
+  if (path.split("/").some((segment) => segment === "." || segment === "..")) {
+    return ADMIN_HOME;
+  }
+
+  return path === ADMIN_LOGIN || path.startsWith(`${ADMIN_LOGIN}/`) ? ADMIN_HOME : raw;
+}
+
+/** Ссылка на вход, которая после входа вернёт на `current`. */
+export function loginHref(current: string): string {
+  const next = safeNextPath(current);
+
+  return next === ADMIN_HOME ? ADMIN_LOGIN : `${ADMIN_LOGIN}?next=${encodeURIComponent(next)}`;
 }
