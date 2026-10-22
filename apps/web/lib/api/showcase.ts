@@ -12,6 +12,9 @@
  * Тексты, этапы стройки, видео и новости из админки — в `site-content.ts`.
  */
 
+import { parseActiveGoal } from "@/lib/goal-progress";
+import type { ActiveGoal } from "@/lib/goal-progress";
+
 import { apiGet } from "./client";
 import { FIXTURE_BUILD_PROGRESS, FIXTURE_GALLERY } from "./showcase.fixtures";
 import type {
@@ -49,6 +52,23 @@ const STATIC_REVALIDATE_S = 3600;
  * пустая сетка читается как сломанная страница.
  */
 export const GALLERY_PLACEHOLDERS: readonly GalleryItem[] = FIXTURE_GALLERY;
+
+/**
+ * Активный этап сбора для первого экрана — ISR с тегом `active-goal`:
+ * админка после правки этапа сбрасывает его через `POST /api/revalidate`,
+ * а без правок цифры «собрано» догоняют донаты раз в минуту.
+ */
+const ACTIVE_GOAL_REVALIDATE_S = 60;
+
+/** `null` — активного этапа нет (API отдал пустое тело) или ответ не той формы. */
+export async function getActiveGoal(): Promise<ActiveGoal | null> {
+  const body = await apiGet<unknown>("/public/goals/active", {
+    revalidate: ACTIVE_GOAL_REVALIDATE_S,
+    tags: ["active-goal"],
+  });
+
+  return parseActiveGoal(body);
+}
 
 /** Цифры сбора: общая цель, цель месяца, число платежей. */
 export function getCampaign(): Promise<Campaign> {

@@ -15,6 +15,7 @@ import { SharePanel } from "@/components/share/SharePanel";
 import {
   GALLERY_PLACEHOLDERS,
   HOME_REGIONS_LIMIT,
+  getActiveGoal,
   getCampaign,
   getFeed,
   getGallery,
@@ -59,7 +60,7 @@ export default async function HomePage() {
   // вместо цифр «обновляем данные», пустые рейтинги не рисуются (with-fallback.ts).
   // Тексты, этапы и видео — из админки; пока их там нет или API недоступен,
   // главная выглядит как до админки (хардкод и фикстуры).
-  const [campaign, regions, topRegions, construction, gallery, feed, content, videos] = await Promise.all([
+  const [campaign, regions, topRegions, construction, gallery, feed, content, videos, activeGoal] = await Promise.all([
     withFallback(getCampaign(), null, "цифры сбора"),
     withFallback(getRegions(), [], "справочник регионов"),
     withFallback(getTopRegions(), [], "рейтинг регионов"),
@@ -68,6 +69,8 @@ export default async function HomePage() {
     withFallback(getFeed(), EMPTY_FEED, "лента поступлений"),
     withFallback(getSiteContent(), FALLBACK_CONTENT, "тексты сайта"),
     withFallback(getVideos(), [], "видео"),
+    // Этапа нет или API недоступен — блок просто не рисуется.
+    withFallback(getActiveGoal(), null, "активный этап сбора"),
   ]);
 
   return (
@@ -78,7 +81,7 @@ export default async function HomePage() {
         <HeroBackdrop className={styles.backdrop} />
 
         <div className={`${styles.head} on-dark`}>
-          <HeroIntro campaign={campaign} hero={content.hero} />
+          <HeroIntro campaign={campaign} hero={content.hero} goal={activeGoal} />
         </div>
 
         <aside className={styles.aside} id={SECTION_IDS.donate} aria-label="Форма пожертвования">

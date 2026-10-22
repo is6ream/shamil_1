@@ -1,0 +1,281 @@
+/*
+ * Активный этап сбора — «жидкое стекло» в цветах логотипа.
+ *
+ * Своя трактовка, не копия iOS: стекло здесь синее, а не серое. Подложка —
+ * полупрозрачный тёмно-синий логотипа под размытием фона первого экрана,
+ * сверху мягкий белый блик и тонкая светлая кромка. Текст белый: контраст
+ * считается по самой светлой подложке — rgba(10, 51, 103, 0.55) поверх
+ * #082F56 даёт ≈ #0A3160, белый на нём 12.9:1, 0.8 белого — 9.4:1 (AA с запасом).
+ *
+ * Блок живёт на `.on-dark` первого экрана и в тёмной рамке превью админки.
+ */
+
+.goal {
+  --goal-ink: #FFFFFF;
+  --goal-soft: rgba(255, 255, 255, 0.8);
+  --goal-sky: #7CC4F5;        /* светлый край полосы: синий логотипа, высветленный */
+  --goal-blue: #026AA9;       /* синий логотипа */
+  --goal-ease: cubic-bezier(0.33, 1, 0.68, 1); /* = easeOutCubic в goal-progress.ts */
+
+  position: relative;
+  isolation: isolate;
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 20px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 46%, rgba(255, 255, 255, 0) 100%),
+    rgba(10, 51, 103, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 40px -24px rgba(2, 20, 45, 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  color: var(--goal-ink);
+}
+
+/* Блик по верхней кромке — «толщина» стекла. */
+.goal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(120% 60% at 18% 0%, rgba(255, 255, 255, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.heading {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--goal-soft);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 2px 0 0;
+  color: var(--goal-ink);
+  font-family: var(--font-text);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  margin: var(--sp-1) 0 0;
+  color: var(--goal-soft);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--goal-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur), border-color var(--dur);
+}
+
+.cta:hover {
+  border-color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.cta:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 3px;
+}
+
+span.cta {
+  cursor: default;
+}
+
+/* ── Полоса ─────────────────────────────────────────────────────────────── */
+
+.track {
+  position: relative;
+  height: 8px;
+  margin-top: var(--sp-3);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 2px rgba(2, 20, 45, 0.45);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+
+/*
+ * Заливка — на всю ширину, сжатая `scaleX` от левого края: трансформация
+ * уезжает на композитор, layout не пересчитывается. Итог стоит в CSS
+ * (`--goal-ratio`), анимация только проигрывает путь к нему.
+ */
+.fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--goal-blue) 0%, var(--goal-sky) 70%, #FFFFFF 100%);
+  transform: scaleX(var(--goal-ratio, 0));
+  transform-origin: left center;
+  overflow: hidden;
+}
+
+/* Бегущий блик по заполненной части. */
+.fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: goal-shimmer 2.6s var(--goal-ease) infinite;
+}
+
+/*
+ * Свечение края: отдельный слой во всю ширину, сдвинутый так, чтобы его
+ * правый край совпал с концом заливки. Внутри `scaleX` точка растянулась бы.
+ */
+.edgeLayer {
+  position: absolute;
+  inset: 0;
+  transform: translateX(calc((var(--goal-ratio, 0) - 1) * 100%));
+  pointer-events: none;
+}
+
+.edge {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFFFFF 0%, rgba(124, 196, 245, 0.85) 45%, rgba(124, 196, 245, 0) 72%);
+  transform: translate(50%, -50%);
+  animation: goal-glow 2.2s ease-in-out infinite;
+}
+
+@keyframes goal-shimmer {
+  from {
+    background-position: -60% 0;
+  }
+  to {
+    background-position: 160% 0;
+  }
+}
+
+@keyframes goal-glow {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ── Подписи ────────────────────────────────────────────────────────────── */
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+  margin: var(--sp-2) 0 0;
+  color: var(--goal-soft);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta b {
+  color: var(--goal-ink);
+  font-weight: 700;
+}
+
+.badge {
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.92);
+  color: #0A3367 !important;
+  font-size: 13.5px;
+}
+
+.note {
+  margin: var(--sp-2) 0 0;
+  color: var(--goal-soft);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.noteLink {
+  color: var(--goal-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Цель достигнута: заливка целиком, свечение спокойнее. */
+.reached .edge {
+  animation: none;
+}
+
+/* ── Телефон: компактнее, описание прячется — форма должна остаться близко ── */
+
+@media (max-width: 767px) {
+  .goal {
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: 16px;
+  }
+
+  .title {
+    font-size: 16.5px;
+  }
+
+  .description {
+    display: none;
+  }
+
+  .cta {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 14.5px;
+  }
+
+  .meta {
+    font-size: 14px;
+  }
+}
+
+/* Стекло без размытия (старые браузеры) — плотнее подложка, контраст тот же. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .goal {
+    background: rgba(10, 51, 103, 0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill::after,
+  .edge {
+    animation: none;
+  }
+
+  .cta {
+    transition: none;
+  }
+}

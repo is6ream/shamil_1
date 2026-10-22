@@ -50,7 +50,10 @@ type Db = PrismaService | Prisma.TransactionClient;
  * не учитываются; отдельного статуса возврата в схеме нет.
  *
  * Сумма — `paid_amount_kopecks` (то, что подтвердил провайдер или бухгалтер),
- * как у триггера витрин. Окно — [starts_at; ends_at] включительно.
+ * как у триггера витрин. Окно — [starts_at; ends_at] включительно. У завершённого
+ * этапа окно закрывается ещё и моментом завершения (`LEAST` игнорирует NULL):
+ * иначе «На кирпичи» без даты окончания продолжал бы копить пожертвования,
+ * которые уже идут в следующий этап. Повторная активация `completed_at` стирает.
  *
  * Один агрегирующий запрос на любой набор этапов: строки донатов в память
  * не выбираются. Индекс — существующий (status, paid_at DESC, id DESC).
@@ -73,7 +76,8 @@ export class GoalProgressCalculator {
           ON d."campaign_id" = g."campaign_id"
          AND d."status" = 'paid'
          AND d."paid_at" >= g."starts_at"
-         AND (g."ends_at" IS NULL OR d."paid_at" <= g."ends_at")
+         AND (LEAST(g."ends_at", g."completed_at") IS NULL
+              OR d."paid_at" <= LEAST(g."ends_at", g."completed_at"))
        WHERE g."id" = ANY(${[...goalIds]}::uuid[])
        GROUP BY g."id"`;
 

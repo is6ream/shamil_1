@@ -18,6 +18,10 @@ describe("isAuthorizedRevalidation", () => {
 });
 
 describe("parseRevalidateBody", () => {
+  test("тег active-goal из админки этапов принимается", () => {
+    assert.deepEqual(parseRevalidateBody('{"tags":["active-goal"]}'), { ok: true, tags: ["active-goal"] });
+  });
+
   test("теги из allowlist, дубли схлопываются", () => {
     assert.deepEqual(parseRevalidateBody('{"tags":["stages","news","stages"]}'), {
       ok: true,

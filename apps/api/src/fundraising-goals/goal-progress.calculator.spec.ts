@@ -154,6 +154,25 @@ describeDatabase('GoalProgressCalculator на реальной БД', () => {
     expect((await calculator.progressOf(goal)).paidKopecks).toBe(100_00n);
   });
 
+  test('завершённый этап без даты окончания не копит пожертвования после завершения', async () => {
+    // Arrange
+    const goal = await createGoal({ endsAt: null });
+    const completedAt = new Date('2026-10-15T00:00:00.000Z');
+    await prisma.fundraisingGoal.update({
+      where: { id: goal.id },
+      data: { status: FundraisingGoalStatus.ACTIVE },
+    });
+    await prisma.fundraisingGoal.update({
+      where: { id: goal.id },
+      data: { status: FundraisingGoalStatus.COMPLETED, completedAt },
+    });
+    await paid(100_00n, completedAt);
+    await paid(200_00n, new Date(completedAt.getTime() + 1));
+
+    // Act + Assert: ровно момент завершения ещё в этапе, после — уже нет
+    expect((await calculator.progressOf(goal)).paidKopecks).toBe(100_00n);
+  });
+
   test('pending и failed не учитываются', async () => {
     // Arrange
     const goal = await createGoal();

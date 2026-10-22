@@ -8,6 +8,14 @@ import { SECTION_IDS } from "@/lib/content";
 const DONATION_FIRST_CONTROL = 'input[name="amount-preset"]:checked, input[name="amount"]';
 
 /**
+ * Если полей суммы нет (форма открыта на QR СБП — так по умолчанию, пока
+ * Robokassa не подключена), фокус уходит на первый доступный контрол формы:
+ * иначе он остаётся на нажатой кнопке, и клавиатура/скринридер теряют форму.
+ */
+const DONATION_ANY_CONTROL =
+  'input:not([type="hidden"]):not([tabindex="-1"]):not([disabled]), button:not([tabindex="-1"]):not([disabled]), a[href], [tabindex="0"]';
+
+/**
  * Событие «секцию нужно показать»: на телефоне секции свёрнуты в аккордеон
  * (`MobileAccordion`), и переход из меню должен её раскрыть.
  */
@@ -43,7 +51,8 @@ export function scrollToSection(id: string): boolean {
   window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${id}`);
 
   if (id === SECTION_IDS.donate) {
-    const control = target.querySelector<HTMLElement>(DONATION_FIRST_CONTROL);
+    const control =
+      target.querySelector<HTMLElement>(DONATION_FIRST_CONTROL) ?? target.querySelector<HTMLElement>(DONATION_ANY_CONTROL);
 
     // preventScroll: иначе фокус дёрнет страницу посреди плавной прокрутки.
     control?.focus({ preventScroll: true });

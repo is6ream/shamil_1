@@ -8,11 +8,11 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 /** Теги кеша витрины — строго список из `docs/admin/API.md`. */
-export const REVALIDATE_TAGS = ["content", "stages", "news", "gallery", "video", "campaign"] as const;
+export const REVALIDATE_TAGS = ["content", "stages", "news", "gallery", "video", "campaign", "active-goal"] as const;
 
 export type RevalidateTag = (typeof REVALIDATE_TAGS)[number];
 
-/** Тело больше этого — не наш бэкенд: шесть тегов занимают меньше 100 байт. */
+/** Тело больше этого — не наш бэкенд: семь тегов занимают меньше 100 байт. */
 export const MAX_REVALIDATE_BODY_BYTES = 1024;
 
 const BEARER_PREFIX = "Bearer ";
