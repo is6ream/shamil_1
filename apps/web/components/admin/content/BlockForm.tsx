@@ -30,7 +30,7 @@ export function BlockForm({ isPending, isDirty, serverErrors, hasErrors, onSubmi
       {children}
       {hasErrors ? <FormErrors messages={["Проверьте поля, отмеченные красным."]} /> : null}
       <FormErrors messages={serverErrors} />
-      <FormActions>
+      <FormActions isSticky>
         <Button type="submit" isBusy={isPending} disabled={!isDirty}>
           Сохранить
         </Button>

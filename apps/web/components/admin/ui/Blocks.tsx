@@ -42,8 +42,17 @@ export function FieldGrid({ children }: { readonly children: ReactNode }) {
 }
 
 /** Ряд кнопок под формой; на телефоне — во всю ширину. */
-export function FormActions({ children }: { readonly children: ReactNode }) {
-  return <div className={styles.formActions}>{children}</div>;
+interface FormActionsProps {
+  /**
+   * Длинные формы: «Сохранить» прилипает к низу экрана (над нижней панелью
+   * телефона) и всегда под рукой, пока форма видна.
+   */
+  readonly isSticky?: boolean;
+  readonly children: ReactNode;
+}
+
+export function FormActions({ isSticky = false, children }: FormActionsProps) {
+  return <div className={`${styles.formActions} ${isSticky ? styles.formActionsSticky : ""}`}>{children}</div>;
 }
 
 export interface KeyValueRow {

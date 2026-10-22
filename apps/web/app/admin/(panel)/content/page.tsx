@@ -11,6 +11,7 @@ import { HeroForm } from "@/components/admin/content/HeroForm";
 import { RequisitesForm } from "@/components/admin/content/RequisitesForm";
 import { Note, Section } from "@/components/admin/ui/Blocks";
 import { ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
+import { Tabs } from "@/components/admin/ui/Tabs";
 import { CONTENT_KEYS, DEFAULT_BLOCKS } from "@/lib/admin/content";
 import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import { useAdminQuery } from "@/lib/admin/hooks";
@@ -24,6 +25,28 @@ const TAB_LABELS: Readonly<Record<ContentKey, string>> = {
   contacts: "Контакты",
   requisites: "Реквизиты",
   faq: "Вопросы",
+};
+
+interface BlockPlace {
+  /** Где блок виден посетителю. */
+  readonly where: string;
+  /** Куда вести «Посмотреть на сайте»; `null` — блок на сайте не выводится. */
+  readonly href: string | null;
+}
+
+/** Якоря — из SECTION_IDS сайта (lib/content.ts). */
+const BLOCK_PLACES: Readonly<Record<ContentKey, BlockPlace>> = {
+  hero: { where: "Первый экран главной страницы и кнопка в шапке.", href: "/#top" },
+  about: { where: "Блок «О проекте» на главной странице.", href: "/#o-proekte" },
+  contacts: { where: "Телефон в шапке сайта и контакты в подвале каждой страницы.", href: "/#kontakty" },
+  requisites: {
+    where: "Блок «Реквизиты» на главной и страница перевода по реквизитам.",
+    href: "/#rekvizity",
+  },
+  faq: {
+    where: "Пока не выводится на сайте: вопросы сохраняются, но страницы с ними ещё нет.",
+    href: null,
+  },
 };
 
 function blockOf<K extends ContentKey>(blocks: readonly AdminBlock[], key: K): AdminBlock<K> | undefined {
@@ -66,36 +89,35 @@ export default function ContentPage() {
       title="Тексты сайта"
       lead="Тексты главной страницы. Хадисы, слоган и юридические данные организации здесь не меняются — их выверяет имам и правит разработчик."
     >
-      <div className={styles.tabs} role="tablist" aria-label="Блоки сайта">
-        {tabs.map((key) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            id={`tab-${key}`}
-            aria-selected={active === key}
-            aria-controls="content-panel"
-            className={styles.tab}
-            onClick={() => setActive(key)}
-          >
-            {TAB_LABELS[key]}
-          </button>
-        ))}
-      </div>
-
-      <div id="content-panel" role="tabpanel" aria-labelledby={`tab-${active}`}>
+      <Tabs
+        label="Блоки сайта"
+        items={tabs.map((key) => ({ value: key, label: TAB_LABELS[key] }))}
+        value={active}
+        onChange={setActive}
+      >
         {isLoading ? <LoadingState /> : null}
         {error ? <ErrorState message={error} onRetry={reload} /> : null}
         {data !== null
           ? tabs.map((key) => {
               const saved = blockOf(data, key);
               const formKey = `${key}:${saved?.updatedAt ?? "default"}`;
+              const place = BLOCK_PLACES[key];
 
               // Все формы смонтированы, неактивные скрыты: переключение вкладок
               // не теряет черновик.
               return (
                 <div key={key} hidden={key !== active}>
-                  <Section>
+                  <Section
+                    title={TAB_LABELS[key]}
+                    description={place.where}
+                    actions={
+                      place.href === null ? null : (
+                        <a href={place.href} target="_blank" rel="noopener noreferrer" className={styles.siteLink}>
+                          Посмотреть на сайте ↗
+                        </a>
+                      )
+                    }
+                  >
                     <p className={styles.updated}>
                       {saved
                         ? `Последнее сохранение: ${formatDateTime(saved.updatedAt)}`
@@ -107,7 +129,7 @@ export default function ContentPage() {
               );
             })
           : null}
-      </div>
+      </Tabs>
 
       {!can("requisites") ? (
         <Note>

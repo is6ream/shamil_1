@@ -32,7 +32,32 @@
   font-variant-numeric: tabular-nums;
 }
 
-.title {
+.thumb {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-field);
+  object-fit: cover;
+  background: var(--surface-sunken);
+}
+
+.body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.spent {
+  display: grid;
+  grid-template-columns: minmax(80px, 200px) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  color: var(--text-soft);
+  font-size: var(--fs-micro);
+}
+
+/* Специфичность выше `.admin-root h2`. */
+.stage .title {
   margin: 0;
   font-family: var(--font-text);
   font-size: 17px;

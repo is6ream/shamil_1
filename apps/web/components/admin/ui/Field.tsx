@@ -2,6 +2,8 @@ import { useId } from "react";
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 import field from "@/components/ui/field.module.css";
+import { charCounter } from "@/lib/admin/char-counter";
+import type { CharCounter } from "@/lib/admin/char-counter";
 
 import styles from "./Field.module.css";
 
@@ -16,7 +18,13 @@ interface FieldFrameProps {
   readonly label: string;
   readonly error?: string | null;
   readonly hint?: ReactNode;
+  readonly counter?: CharCounter | null;
   readonly children: ReactNode;
+}
+
+/** Счётчик есть только у управляемого поля с `maxLength`. */
+function counterOf(value: unknown, maxLength: number | undefined): CharCounter | null {
+  return typeof value === "string" ? charCounter(value, maxLength) : null;
 }
 
 /** Подсказку прячем, пока есть ошибка: обычно ошибка её же и повторяет. */
@@ -28,23 +36,34 @@ function describedBy(id: string, error?: string | null, hint?: ReactNode): strin
   return hint ? `${id}-hint` : undefined;
 }
 
-function FieldFrame({ id, label, error, hint, children }: FieldFrameProps) {
+function FieldFrame({ id, label, error, hint, counter = null, children }: FieldFrameProps) {
+  const message = error ? (
+    <p id={`${id}-error`} className={field.error}>
+      {error}
+    </p>
+  ) : hint ? (
+    <p id={`${id}-hint`} className={field.hint}>
+      {hint}
+    </p>
+  ) : null;
+
   return (
     <div className={styles.field}>
       <label className={field.label} htmlFor={id}>
         {label}
       </label>
       {children}
-      {hint && !error ? (
-        <p id={`${id}-hint`} className={field.hint}>
-          {hint}
-        </p>
-      ) : null}
-      {error ? (
-        <p id={`${id}-error`} className={field.error}>
-          {error}
-        </p>
-      ) : null}
+      {counter === null ? (
+        message
+      ) : (
+        <div className={styles.meta}>
+          {message ?? <span />}
+          {/* Лимит скринридер узнаёт из `maxlength`; счётчик — для глаз. */}
+          <span className={`${styles.counter} ${counter.isNear ? styles.counterNear : ""}`} aria-hidden="true">
+            {counter.text}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -59,7 +78,7 @@ export function TextField({ label, error, hint, className, ...input }: TextField
   const id = useId();
 
   return (
-    <FieldFrame id={id} label={label} error={error} hint={hint}>
+    <FieldFrame id={id} label={label} error={error} hint={hint} counter={counterOf(input.value, input.maxLength)}>
       <input
         {...input}
         id={id}
@@ -81,7 +100,7 @@ export function TextAreaField({ label, error, hint, className, ...textarea }: Te
   const id = useId();
 
   return (
-    <FieldFrame id={id} label={label} error={error} hint={hint}>
+    <FieldFrame id={id} label={label} error={error} hint={hint} counter={counterOf(textarea.value, textarea.maxLength)}>
       <textarea
         {...textarea}
         id={id}
