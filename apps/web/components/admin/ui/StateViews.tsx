@@ -67,6 +67,21 @@ export function Skeleton({ width = "100%", height = "1em", isRound = false }: Sk
   );
 }
 
+/** Скелет сетки превью (медиатека): плитки той же формы, что и фото. */
+export function SkeletonGrid({ count = 8, label = "Загружаем фото…" }: { readonly count?: number; readonly label?: string }) {
+  return (
+    <div className={styles.skeletonGrid} role="status">
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: count }, (_, index) => (
+        <div key={index} className={styles.skeletonTile}>
+          <Skeleton height="auto" />
+          <Skeleton width="70%" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Скелет списка или таблицы: `rows` строк по форме контента, а не спиннер на весь экран. */
 export function SkeletonRows({ rows = 5, label = "Загружаем…" }: { readonly rows?: number; readonly label?: string }) {
   return (

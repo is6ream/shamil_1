@@ -12,7 +12,7 @@ import { Section } from "@/components/admin/ui/Blocks";
 import { Button } from "@/components/admin/ui/Button";
 import { Pagination } from "@/components/admin/ui/DataTable";
 import { ConfirmDialog, Modal } from "@/components/admin/ui/Modal";
-import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
+import { EmptyState, ErrorState, SkeletonGrid } from "@/components/admin/ui/StateViews";
 import { useToast } from "@/components/admin/ui/Toasts";
 import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import { errorMessage } from "@/lib/admin/errors";
@@ -86,7 +86,7 @@ export default function MediaPage() {
 
   return (
     <AdminPage
-      title="Фото"
+      title="Медиатека"
       lead="Все картинки сайта — отсюда: галерея, ход стройки, новости, первый экран. Сервер сам уменьшает фото и убирает из них геометку."
       isWide
     >
@@ -95,7 +95,7 @@ export default function MediaPage() {
       </Section>
 
       <Section title="Медиатека">
-        {isLoading ? <LoadingState /> : null}
+        {isLoading ? <SkeletonGrid /> : null}
         {error ? <ErrorState message={error} onRetry={reload} /> : null}
         {data !== null && data.items.length === 0 ? (
           <EmptyState title="Фото пока нет.">
@@ -144,7 +144,17 @@ export default function MediaPage() {
       <ConfirmDialog
         isOpen={deleting !== null}
         title="Удалить фото?"
-        description={<p>Файл исчезнет из медиатеки. Если фото стоит на сайте, сервер не даст удалить и покажет где.</p>}
+        description={
+          deleting ? (
+            <div className={styles.confirmPreview}>
+              <AdminImage src={deleting.urls.sm} alt="" width={deleting.width} height={deleting.height} />
+              <p>
+                Фото «{deleting.altText ?? deleting.originalName ?? "без описания"}» исчезнет из медиатеки. Действие
+                нельзя отменить. Если фото стоит на сайте, удалить не получится — покажем, откуда его сначала убрать.
+              </p>
+            </div>
+          ) : null
+        }
         confirmLabel="Удалить"
         isDanger
         isBusy={isDeleting}
