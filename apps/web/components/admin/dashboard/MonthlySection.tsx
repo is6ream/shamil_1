@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Section } from "@/components/admin/ui/Blocks";
+import { Segmented } from "@/components/admin/ui/Segmented";
 import { ErrorState, SkeletonRows } from "@/components/admin/ui/StateViews";
 import { groupByMonth, MONTH_WINDOWS, monthLabel, resolveMonths } from "@/lib/admin/dashboard";
 import type { MonthsWindow } from "@/lib/admin/dashboard";
@@ -12,7 +13,6 @@ import { withQuery } from "@/lib/admin/query";
 import type { Dashboard } from "@/lib/admin/types";
 
 import { BarChart } from "./BarChart";
-import styles from "./dashboard.module.css";
 
 /**
  * Поступления по месяцам. Отдельного эндпоинта нет: тот же дашборд за
@@ -25,19 +25,12 @@ export function MonthlySection({ now }: { readonly now: number }) {
 
   return (
     <Section title="По месяцам" description="Текущий месяц — по сегодняшний день.">
-      <div className={styles.segmented} role="group" aria-label="Сколько месяцев показать">
-        {MONTH_WINDOWS.map((value) => (
-          <button
-            key={value}
-            type="button"
-            className={styles.segment}
-            aria-pressed={months === value}
-            onClick={() => setMonths(value)}
-          >
-            {value} мес.
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Сколько месяцев показать"
+        options={MONTH_WINDOWS.map((value) => ({ value, label: `${value} мес.` }))}
+        value={months}
+        onChange={setMonths}
+      />
       {data ? (
         <BarChart
           bars={groupByMonth(data.byDay, period.fromDay, period.toDay)}

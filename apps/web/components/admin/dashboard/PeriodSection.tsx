@@ -6,6 +6,7 @@ import { Section } from "@/components/admin/ui/Blocks";
 import { DataTable } from "@/components/admin/ui/DataTable";
 import type { Column } from "@/components/admin/ui/DataTable";
 import { TextField } from "@/components/admin/ui/Field";
+import { Segmented } from "@/components/admin/ui/Segmented";
 import { EmptyState, SkeletonRows } from "@/components/admin/ui/StateViews";
 import { Tabs } from "@/components/admin/ui/Tabs";
 import type { TabItem } from "@/components/admin/ui/Tabs";
@@ -120,19 +121,12 @@ export function PeriodSection({ period, onPeriodChange, anchored, data }: Props)
 
   return (
     <Section title="За период" description="По дате оплаты, время — по Уфе.">
-      <div className={styles.segmented} role="group" aria-label="Период">
-        {PRESETS.map((preset) => (
-          <button
-            key={preset.value}
-            type="button"
-            className={styles.segment}
-            aria-pressed={period.preset === preset.value}
-            onClick={() => onPeriodChange((current) => ({ ...current, preset: preset.value }))}
-          >
-            {preset.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Период"
+        options={PRESETS}
+        value={period.preset}
+        onChange={(preset) => onPeriodChange((current) => ({ ...current, preset }))}
+      />
       {period.preset === "custom" ? (
         <div className={styles.customPeriod}>
           <TextField

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useRef, useState } from "react";
 
 import { AdminPage } from "@/components/admin/AdminPage";
+import { ActiveFilters } from "@/components/admin/donations/ActiveFilters";
 import { DonationDrawer } from "@/components/admin/donations/DonationDrawer";
 import { DonationFiltersForm } from "@/components/admin/donations/DonationFiltersForm";
 import styles from "@/components/admin/donations/donations.module.css";
@@ -13,7 +14,7 @@ import { Button } from "@/components/admin/ui/Button";
 import { Pagination } from "@/components/admin/ui/DataTable";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
 import { useToast } from "@/components/admin/ui/Toasts";
-import { countActiveFilters, donationFiltersToParams, exportFileName } from "@/lib/admin/donations";
+import { EMPTY_DONATION_FILTERS, countActiveFilters, donationFiltersToParams, exportFileName } from "@/lib/admin/donations";
 import type { DonationFilters } from "@/lib/admin/donations";
 import { readDonationsUrl, writeDonationsUrl } from "@/lib/admin/donations-url";
 import type { DonationsUrlState } from "@/lib/admin/donations-url";
@@ -148,14 +149,24 @@ function DonationsScreen() {
         canSearchPersonalData={can("donorPersonalData")}
         onApply={applyFilters}
       />
+      <ActiveFilters filters={filters} regions={regions} onChange={applyFilters} />
 
       {isLoading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {data !== null && data.items.length === 0 ? (
-        <EmptyState title={hasFilters ? "По этим фильтрам ничего нет." : "Пожертвований пока нет."}>
+        <EmptyState
+          title={hasFilters ? "По этим фильтрам ничего нет." : "Пожертвований пока нет."}
+          action={
+            hasFilters ? (
+              <Button variant="ghost" isSmall onClick={() => applyFilters(EMPTY_DONATION_FILTERS)}>
+                Сбросить фильтры
+              </Button>
+            ) : null
+          }
+        >
           <p>
             {hasFilters
-              ? "Измените или сбросьте фильтры."
+              ? "Измените период или уберите лишние фильтры."
               : "Наличные и переводы по выписке вносятся кнопкой «Внести поступление»."}
           </p>
         </EmptyState>
