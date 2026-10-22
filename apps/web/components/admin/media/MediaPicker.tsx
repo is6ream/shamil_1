@@ -6,7 +6,7 @@ import { FormActions } from "@/components/admin/ui/Blocks";
 import { Button } from "@/components/admin/ui/Button";
 import { Pagination } from "@/components/admin/ui/DataTable";
 import { Modal } from "@/components/admin/ui/Modal";
-import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
+import { EmptyState, ErrorState, SkeletonGrid } from "@/components/admin/ui/StateViews";
 import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import { useAdminQuery } from "@/lib/admin/hooks";
 import { withQuery } from "@/lib/admin/query";
@@ -83,7 +83,7 @@ function PickerBody({ isMultiple = false, maxCount, onClose, onSelect }: Omit<Pr
           Загрузить новое фото
         </Button>
       )}
-      {isLoading ? <LoadingState /> : null}
+      {isLoading ? <SkeletonGrid count={6} /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {data !== null && data.items.length === 0 ? <EmptyState title="В медиатеке пока нет фото." /> : null}
       {data !== null && data.items.length > 0 ? (

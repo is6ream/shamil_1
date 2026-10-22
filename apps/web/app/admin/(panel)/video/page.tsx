@@ -10,7 +10,7 @@ import { Badge, Section } from "@/components/admin/ui/Blocks";
 import { Button } from "@/components/admin/ui/Button";
 import { ConfirmDialog } from "@/components/admin/ui/Modal";
 import { ReorderButtons } from "@/components/admin/ui/ReorderButtons";
-import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
+import { EmptyState, ErrorState, SkeletonRows } from "@/components/admin/ui/StateViews";
 import { SAVED_MESSAGE, useToast } from "@/components/admin/ui/Toasts";
 import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import { errorMessage } from "@/lib/admin/errors";
@@ -53,9 +53,16 @@ export default function VideoPage() {
     <AdminPage
       title="Видео"
       lead="Ролики со стройки. Видео не загружаются на сайт — только ссылки на YouTube, Rutube или VK Видео."
-      actions={<Button onClick={() => setEditing("new")}>Добавить видео</Button>}
+      actions={
+        <>
+          <Button onClick={() => setEditing("new")}>Добавить видео</Button>
+          <a href="/galereya" target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+            Посмотреть на сайте ↗
+          </a>
+        </>
+      }
     >
-      {isLoading ? <LoadingState /> : null}
+      {isLoading ? <SkeletonRows rows={3} label="Загружаем видео…" /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {list !== null && list.length === 0 ? (
         <>
@@ -107,7 +114,12 @@ export default function VideoPage() {
       <ConfirmDialog
         isOpen={deleting !== null}
         title="Удалить видео?"
-        description={<p>Ссылка на ролик исчезнет с сайта. Сам ролик на YouTube, Rutube или VK не удалится.</p>}
+        description={
+          <p>
+            Видео «{deleting?.title ?? "без названия"}» исчезнет с сайта. Сам ролик на YouTube, Rutube или VK
+            не удалится.
+          </p>
+        }
         confirmLabel="Удалить"
         isDanger
         isBusy={isDeleting}

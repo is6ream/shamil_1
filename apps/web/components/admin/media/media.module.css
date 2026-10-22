@@ -214,3 +214,23 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Подтверждение удаления: что именно удаляем — превью рядом с текстом. */
+.confirmPreview {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: start;
+  gap: var(--sp-4);
+}
+
+.confirmPreview img {
+  width: 96px;
+  height: 72px;
+  border-radius: var(--r-field);
+  object-fit: cover;
+  background: var(--surface-sunken);
+}
+
+.confirmPreview p {
+  margin: 0;
+}

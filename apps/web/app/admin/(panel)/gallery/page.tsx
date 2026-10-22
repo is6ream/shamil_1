@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { AdminPage } from "@/components/admin/AdminPage";
 import styles from "@/components/admin/gallery/gallery.module.css";
+import mediaStyles from "@/components/admin/media/media.module.css";
 import { GalleryItemDialog, takenOnLabel } from "@/components/admin/gallery/GalleryItemDialog";
 import { AdminImage } from "@/components/admin/media/AdminImage";
 import { MediaPicker } from "@/components/admin/media/MediaPicker";
@@ -11,7 +12,7 @@ import { Badge } from "@/components/admin/ui/Blocks";
 import { Button } from "@/components/admin/ui/Button";
 import { ConfirmDialog } from "@/components/admin/ui/Modal";
 import { ReorderButtons } from "@/components/admin/ui/ReorderButtons";
-import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
+import { EmptyState, ErrorState, SkeletonRows } from "@/components/admin/ui/StateViews";
 import { SAVED_MESSAGE, useToast } from "@/components/admin/ui/Toasts";
 import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import { errorMessage } from "@/lib/admin/errors";
@@ -74,20 +75,25 @@ export default function GalleryPage() {
 
   return (
     <AdminPage
-      title="Галерея"
+      title="Галерея на сайте"
       lead="Фото на странице «Фото и видео со стройки» — в этом порядке, от первых этапов."
       actions={
-        <Button isBusy={isAdding} onClick={() => setIsPicking(true)}>
-          Добавить из медиатеки
-        </Button>
+        <>
+          <Button isBusy={isAdding} onClick={() => setIsPicking(true)}>
+            Добавить из медиатеки
+          </Button>
+          <a href="/galereya" target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+            Посмотреть на сайте ↗
+          </a>
+        </>
       }
       isWide
     >
-      {isLoading ? <LoadingState /> : null}
+      {isLoading ? <SkeletonRows rows={4} label="Загружаем галерею…" /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {list !== null && list.length === 0 ? (
         <EmptyState title="В галерее пока нет фото — на сайте стоят плашки-заглушки.">
-          <p>Загрузите снимки в «Фото» и добавьте их сюда кнопкой «Добавить из медиатеки».</p>
+          <p>Загрузите снимки в «Медиатеку» и добавьте их сюда кнопкой «Добавить из медиатеки».</p>
         </EmptyState>
       ) : null}
       {list !== null && list.length > 0 ? (
@@ -138,7 +144,17 @@ export default function GalleryPage() {
       <ConfirmDialog
         isOpen={deleting !== null}
         title="Убрать фото из галереи?"
-        description={<p>Фото исчезнет с сайта, но останется в медиатеке — его можно вернуть.</p>}
+        description={
+          deleting ? (
+            <div className={mediaStyles.confirmPreview}>
+              <AdminImage src={deleting.image?.urls.sm ?? deleting.url} alt="" />
+              <p>
+                Фото «{deleting.caption ?? "без подписи"}» исчезнет со страницы галереи, но останется в медиатеке — его
+                можно вернуть.
+              </p>
+            </div>
+          ) : null
+        }
         confirmLabel="Убрать"
         isDanger
         isBusy={isDeleting}
