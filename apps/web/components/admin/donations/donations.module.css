@@ -40,6 +40,7 @@
 .stacked {
   display: inline-flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
 }
 
@@ -77,6 +78,20 @@
 .commentMark {
   color: var(--text-soft);
   font-weight: 400;
+}
+
+/* «Подтвердить перевод» под статусом: заметно, но не громче самой строки. */
+.rowAction {
+  margin-top: var(--sp-1);
+  color: var(--accent);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rowAction:hover {
+  color: var(--accent-hover);
 }
 
 .events {

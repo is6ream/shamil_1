@@ -50,6 +50,15 @@ interface Props {
 export function DonationFiltersForm({ applied, regions, canSearchPersonalData, onApply }: Props) {
   const [draft, setDraft] = useState<DonationFilters>(applied);
   const [isExpanded, setIsExpanded] = useState(countActiveFilters(applied) > 2);
+  const appliedKey = JSON.stringify(applied);
+  const [syncedKey, setSyncedKey] = useState(appliedKey);
+
+  // Фильтры сменились не отсюда — «Назад» в браузере или ссылка на выборку:
+  // черновик догоняет адрес, иначе форма показывала бы старое.
+  if (syncedKey !== appliedKey) {
+    setSyncedKey(appliedKey);
+    setDraft(applied);
+  }
   const check = donationFiltersToParams(draft);
   const errors = check.ok ? {} : check.errors;
   const activeCount = countActiveFilters(applied);

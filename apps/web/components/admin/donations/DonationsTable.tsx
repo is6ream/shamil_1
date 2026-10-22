@@ -1,9 +1,10 @@
 import Link from "next/link";
+import type { MouseEvent } from "react";
 
 import { Badge } from "@/components/admin/ui/Blocks";
 import { DataTable } from "@/components/admin/ui/DataTable";
 import type { Column } from "@/components/admin/ui/DataTable";
-import { isAmountMismatch } from "@/lib/admin/donations";
+import { canConfirmTransfer, isAmountMismatch } from "@/lib/admin/donations";
 import { DONATION_STATUS_LABELS, methodLabel, providerLabel } from "@/lib/admin/labels";
 import { formatKopecks } from "@/lib/admin/money";
 import { formatDateTime } from "@/lib/admin/time";
@@ -62,12 +63,25 @@ function UtmCell({ donation }: { readonly donation: AdminDonation }) {
   );
 }
 
-const COLUMNS: readonly Column<AdminDonation>[] = [
+/** Обычный клик — панель над списком; с Ctrl/Cmd/Shift и средней кнопкой — как ссылка, в новой вкладке. */
+function isPlainClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+}
+
+function columns(onOpen: (id: string) => void): readonly Column<AdminDonation>[] {
+  const open = (id: string) => (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isPlainClick(event)) {
+      event.preventDefault();
+      onOpen(id);
+    }
+  };
+
+  return [
   {
     key: "invoice",
     header: "№ счёта",
     render: (row) => (
-      <Link href={`/admin/donations/${row.id}`} className={styles.invoiceLink}>
+      <Link href={`/admin/donations/${row.id}`} className={styles.invoiceLink} onClick={open(row.id)}>
         № {row.invoiceNo}
         {row.adminComment ? (
           <span className={styles.commentMark} title="Есть комментарий" aria-label="есть комментарий">
@@ -77,7 +91,21 @@ const COLUMNS: readonly Column<AdminDonation>[] = [
       </Link>
     ),
   },
-  { key: "status", header: "Статус", render: (row) => <DonationStatusBadge status={row.status} /> },
+  {
+    key: "status",
+    header: "Статус",
+    render: (row) =>
+      canConfirmTransfer(row) ? (
+        <span className={styles.stacked}>
+          <DonationStatusBadge status={row.status} />
+          <Link href={`/admin/donations/${row.id}`} className={styles.rowAction} onClick={open(row.id)}>
+            Подтвердить перевод
+          </Link>
+        </span>
+      ) : (
+        <DonationStatusBadge status={row.status} />
+      ),
+  },
   { key: "amount", header: "Сумма", isNumeric: true, render: (row) => <AmountCell donation={row} /> },
   {
     key: "method",
@@ -102,8 +130,15 @@ const COLUMNS: readonly Column<AdminDonation>[] = [
   { key: "region", header: "Регион", render: (row) => row.region?.name ?? <span className={styles.muted}>—</span> },
   { key: "donor", header: "Жертвователь", render: (row) => <DonorCell donation={row} /> },
   { key: "utm", header: "Источник (UTM)", render: (row) => <UtmCell donation={row} /> },
-];
+  ];
+}
 
-export function DonationsTable({ rows }: { readonly rows: readonly AdminDonation[] }) {
-  return <DataTable caption="Пожертвования" columns={COLUMNS} rows={rows} rowKey={(row) => row.id} />;
+interface Props {
+  readonly rows: readonly AdminDonation[];
+  /** Открыть карточку панелью поверх списка. */
+  readonly onOpen: (id: string) => void;
+}
+
+export function DonationsTable({ rows, onOpen }: Props) {
+  return <DataTable caption="Пожертвования" columns={columns(onOpen)} rows={rows} rowKey={(row) => row.id} />;
 }
