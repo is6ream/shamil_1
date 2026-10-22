@@ -6,7 +6,11 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/admin/ui/Button";
 import { SelectField, TextField } from "@/components/admin/ui/Field";
 import type { SelectOption } from "@/components/admin/ui/Field";
-import { EMPTY_DONATION_FILTERS, countActiveFilters, donationFiltersToParams } from "@/lib/admin/donations";
+import { Segmented } from "@/components/admin/ui/Segmented";
+import type { SegmentOption } from "@/components/admin/ui/Segmented";
+import { PERIOD_PRESETS, activePreset, presetRange } from "@/lib/admin/donation-filter-chips";
+import type { PeriodPreset } from "@/lib/admin/donation-filter-chips";
+import { countActiveFilters, donationFiltersToParams } from "@/lib/admin/donations";
 import type { DonationFilters, DonationSort } from "@/lib/admin/donations";
 import { DONATION_STATUS_LABELS, METHOD_LABELS, PROVIDER_LABELS } from "@/lib/admin/labels";
 
@@ -26,6 +30,11 @@ const PROVIDER_OPTIONS: readonly SelectOption[] = Object.entries(PROVIDER_LABELS
   value,
   label,
 }));
+
+const PERIOD_OPTIONS: readonly SegmentOption<PeriodPreset | "custom">[] = [
+  ...PERIOD_PRESETS.map(({ key, label }) => ({ value: key, label })),
+  { value: "custom", label: "Свой период" },
+];
 
 const SORT_OPTIONS: readonly SelectOption[] = [
   { value: "createdAt:desc", label: "Сначала новые" },
@@ -61,7 +70,6 @@ export function DonationFiltersForm({ applied, regions, canSearchPersonalData, o
   }
   const check = donationFiltersToParams(draft);
   const errors = check.ok ? {} : check.errors;
-  const activeCount = countActiveFilters(applied);
 
   function set<K extends keyof DonationFilters>(key: K, value: DonationFilters[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -75,9 +83,20 @@ export function DonationFiltersForm({ applied, regions, canSearchPersonalData, o
     }
   }
 
-  function handleReset() {
-    setDraft(EMPTY_DONATION_FILTERS);
-    onApply(EMPTY_DONATION_FILTERS);
+  // Пресет применяется сразу, как кнопка; «Свой период» раскрывает поля дат.
+  function handlePeriod(preset: PeriodPreset | "custom") {
+    if (preset === "custom") {
+      setIsExpanded(true);
+      return;
+    }
+
+    const next = { ...draft, ...presetRange(preset) };
+
+    setDraft(next);
+
+    if (donationFiltersToParams(next).ok) {
+      onApply(next);
+    }
   }
 
   function handleSort(value: string) {
@@ -97,6 +116,12 @@ export function DonationFiltersForm({ applied, regions, canSearchPersonalData, o
 
   return (
     <form className={styles.filters} onSubmit={handleSubmit} aria-label="Фильтры пожертвований">
+      <Segmented
+        label="Период"
+        options={PERIOD_OPTIONS}
+        value={activePreset(applied)}
+        onChange={handlePeriod}
+      />
       <div className={styles.filterRow}>
         <TextField
           label="Поиск"
@@ -209,11 +234,6 @@ export function DonationFiltersForm({ applied, regions, canSearchPersonalData, o
         <Button variant="ghost" isSmall aria-expanded={isExpanded} onClick={() => setIsExpanded((value) => !value)}>
           {isExpanded ? "Меньше фильтров" : "Все фильтры"}
         </Button>
-        {activeCount > 0 ? (
-          <Button variant="ghost" isSmall onClick={handleReset}>
-            Сбросить ({activeCount})
-          </Button>
-        ) : null}
       </div>
     </form>
   );

@@ -52,44 +52,6 @@
 }
 
 /* ── Переключатель периода: сегменты одной плашкой ───────────────────── */
-.segmented {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1);
-  max-width: 100%;
-  padding: var(--sp-1);
-  border-radius: var(--r-md);
-  background: var(--surface-sunken);
-}
-
-.segment {
-  min-height: 40px;
-  padding: 0 var(--sp-3);
-  border: 0;
-  border-radius: var(--r-field);
-  background: transparent;
-  color: var(--text-soft);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.segment:hover {
-  color: var(--text-strong);
-}
-
-.segment[aria-pressed="true"] {
-  background: var(--surface);
-  color: var(--accent);
-  box-shadow: var(--shadow-sm);
-}
-
-.segment:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 1px;
-}
-
 /* ── Последние поступления: лента ─────────────────────────────────────── */
 .feed {
   margin: 0;

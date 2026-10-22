@@ -6,6 +6,26 @@
   background: var(--surface);
 }
 
+/* Пресеты периода — над полями, отдельной строкой. */
+.filters > [role="group"] {
+  margin-bottom: var(--sp-4);
+}
+
+/* Телефон: пресеты одной строкой с прокруткой вбок, а не тремя рядами. */
+@media (max-width: 600px) {
+  .filters > [role="group"] {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filters > [role="group"] > button {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
 .filterRow,
 .filterGrid {
   display: grid;
@@ -22,6 +42,86 @@
 .filterRow > *,
 .filterGrid > * {
   margin-top: 0 !important;
+}
+
+/* ── Выбранные фильтры плашками ─────────────────────────────────────── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  margin: calc(-1 * var(--sp-2)) 0 var(--sp-4);
+}
+
+.chips ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 36px;
+  padding: 0 var(--sp-1) 0 var(--sp-3);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.chipRemove {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Видимый крестик маленький, а зона касания — 44 px. */
+.chipRemove::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.chipRemove:hover {
+  background: var(--accent-soft-hover);
+}
+
+.chipRemove:focus-visible,
+.chipsReset:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.chipsReset {
+  min-height: 36px;
+  padding: 0 var(--sp-2);
+  border: 0;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.chipsReset:hover {
+  color: var(--text-strong);
 }
 
 .filterActions {
