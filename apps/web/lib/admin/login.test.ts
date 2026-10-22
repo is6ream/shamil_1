@@ -3,7 +3,7 @@ import { describe, test } from "node:test";
 
 import { createAdminClient } from "./api-client";
 import { AdminApiError, NETWORK_ERROR_STATUS } from "./errors";
-import { WRONG_CREDENTIALS, loginRequest } from "./login";
+import { WRONG_CREDENTIALS, loginHref, loginRequest, safeNextPath } from "./login";
 
 const BASE = "http://api.test/api";
 
@@ -92,5 +92,42 @@ describe("loginRequest", () => {
 
     assert.equal(error.status, NETWORK_ERROR_STATUS);
     assert.match(error.message, /Нет связи с сервером/);
+  });
+});
+
+describe("safeNextPath — куда вернуть после входа", () => {
+  test("внутренние пути кабинета, с query", () => {
+    assert.equal(safeNextPath("/admin/donations"), "/admin/donations");
+    assert.equal(safeNextPath("/admin/donations?status=paid&page=2"), "/admin/donations?status=paid&page=2");
+    assert.equal(safeNextPath("/admin"), "/admin");
+  });
+
+  test("чужое и опасное — на главную кабинета", () => {
+    for (const raw of [
+      null,
+      "",
+      "https://evil.example/admin",
+      "//evil.example/admin",
+      "/\\evil.example",
+      "/admin\\..\\x",
+      "/admin/../oferta",
+      "/admin/./users",
+      "javascript:alert(1)",
+      "/oferta",
+      "/administrator",
+      "/admin/login",
+      "/admin/login?next=/admin",
+      " /admin/users",
+    ]) {
+      assert.equal(safeNextPath(raw), "/admin", String(raw));
+    }
+  });
+});
+
+describe("loginHref — вход с возвратом", () => {
+  test("кодирует путь в next; главная кабинета — без next", () => {
+    assert.equal(loginHref("/admin/donations?status=paid"), "/admin/login?next=%2Fadmin%2Fdonations%3Fstatus%3Dpaid");
+    assert.equal(loginHref("/admin"), "/admin/login");
+    assert.equal(loginHref("/elsewhere"), "/admin/login");
   });
 });

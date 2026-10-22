@@ -1,21 +1,35 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
 import { Button } from "@/components/admin/ui/Button";
 import { FormErrors, TextField } from "@/components/admin/ui/Field";
+import { PasswordInput } from "@/components/admin/ui/PasswordInput";
 import { LoadingState } from "@/components/admin/ui/StateViews";
 import { AdminApiError, errorMessage } from "@/lib/admin/errors";
+import { safeNextPath } from "@/lib/admin/login";
 import { ADMIN_HOME } from "@/lib/admin/navigation";
 import { useAdminSession } from "@/lib/admin/session";
 
 import styles from "./login.module.css";
 
+/** `useSearchParams` требует границы Suspense, иначе Next не соберёт страницу. */
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingState label="Проверяем вход…" />}>
+      <LoginScreen />
+    </Suspense>
+  );
+}
+
+function LoginScreen() {
   const { state, login } = useAdminSession();
   const router = useRouter();
+  // Вернуть туда, где была страница до входа, — только внутрь кабинета.
+  const next = safeNextPath(useSearchParams().get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<readonly string[]>([]);
@@ -23,9 +37,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (state.status === "authenticated") {
-      router.replace(ADMIN_HOME);
+      router.replace(next);
     }
-  }, [state.status, router]);
+  }, [state.status, router, next]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,8 +66,18 @@ export default function LoginPage() {
   return (
     <main className={styles.page}>
       <form className={`card ${styles.card}`} onSubmit={handleSubmit} noValidate={false}>
-        <h1 className={styles.title}>Вход в админку</h1>
-        <p className={styles.lead}>Мечеть «Шамиль»</p>
+        <div className={styles.brand}>
+          <Image className={styles.logo} src="/brand/logo.svg" alt="" width={56} height={56} unoptimized priority />
+          <div>
+            <h1 className={styles.title}>Вход в кабинет</h1>
+            <p className={styles.lead}>Мечеть «Шамиль»</p>
+          </div>
+        </div>
+        {next !== ADMIN_HOME ? (
+          <p className={styles.notice} role="status">
+            Войдите, чтобы продолжить, — после входа вернём на ту же страницу.
+          </p>
+        ) : null}
         <TextField
           label="Электронная почта"
           type="email"
@@ -64,9 +88,8 @@ export default function LoginPage() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
-        <TextField
+        <PasswordInput
           label="Пароль"
-          type="password"
           name="password"
           autoComplete="current-password"
           required
