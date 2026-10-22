@@ -4,6 +4,7 @@ import { describe, test } from "node:test";
 import {
   EMPTY_DONATION_FILTERS,
   canConfirmTransfer,
+  feedPreview,
   checkManualDonation,
   countActiveFilters,
   donationFiltersToParams,
@@ -152,5 +153,34 @@ describe("checkManualDonation", () => {
   test("похожее на телефон в комментарии распознаётся", () => {
     assert.equal(looksLikePersonalData("перевёл +7 917 000-00-00"), true);
     assert.equal(looksLikePersonalData("Наличные, 2 конверта"), false);
+  });
+});
+
+describe("feedPreview — как пожертвование видно в ленте сайта", () => {
+  const paid = { status: "paid", isAnonymous: false, donorName: "Рустам", region: { slug: "02", name: "Башкортостан" } } as const;
+
+  test("имя, если анонимность снята", () => {
+    assert.deepEqual(feedPreview(paid), { isListed: true, title: "Рустам", shows: "name" });
+  });
+
+  test("анонимно — регион, как в ленте сайта; имя не выходит наружу", () => {
+    assert.deepEqual(feedPreview({ ...paid, isAnonymous: true }), {
+      isListed: true,
+      title: "Башкортостан",
+      shows: "region",
+    });
+  });
+
+  test("ни имени, ни региона — «Анонимное пожертвование»", () => {
+    assert.deepEqual(feedPreview({ ...paid, isAnonymous: true, region: null }), {
+      isListed: true,
+      title: "Анонимное пожертвование",
+      shows: "anonymous",
+    });
+  });
+
+  test("в ленте только оплаченные", () => {
+    assert.equal(feedPreview({ ...paid, status: "pending" }).isListed, false);
+    assert.equal(feedPreview({ ...paid, status: "failed" }).isListed, false);
   });
 });
