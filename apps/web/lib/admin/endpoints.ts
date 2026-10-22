@@ -66,6 +66,12 @@ export const ADMIN_PATHS = {
   monthlyGoals: "/admin/campaign/monthly-goals",
   monthlyGoal: (goalId: string) => `/admin/campaign/monthly-goals/${id(goalId)}`,
 
+  /** Этапы сбора: активный показывается на первом экране главной. */
+  fundraisingGoals: "/admin/goals",
+  fundraisingGoal: (goalId: string) => `/admin/goals/${id(goalId)}`,
+  fundraisingGoalAction: (goalId: string, action: "activate" | "complete" | "archive") =>
+    `/admin/goals/${id(goalId)}/${action}`,
+
   dashboard: "/admin/dashboard",
 
   /** Отчёт по источникам: оплаченные донаты по UTM-меткам за период. */
@@ -85,6 +91,11 @@ export const LIMITS = {
   uploadTypes: ["image/jpeg", "image/png", "image/webp"],
   /** §13: потолок ручного поступления, 240 млн ₽. */
   manualMaxKopecks: "24000000000",
+  /** §14а: цель этапа — от 1 000 до 100 000 000 ₽. */
+  stageGoalMinKopecks: "100000",
+  stageGoalMaxKopecks: "10000000000",
+  /** §14а: ручная корректировка этапа по модулю. */
+  stageAdjustmentMaxKopecks: "10000000000",
   /** §14: потолок общей цели, 10 млрд ₽. */
   goalMaxKopecks: "1000000000000",
   /** §11: смета и освоено этапа, 2,4 млрд ₽. */

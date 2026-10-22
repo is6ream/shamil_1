@@ -1,0 +1,101 @@
+/* Этапы сбора в админке: таблица и окно с живым превью блока главной. */
+
+.table {
+  margin-top: var(--sp-4);
+}
+
+/* Активный этап — тот, что сейчас на главной. */
+.activeRow {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.titleCell,
+.collectedCell {
+  display: grid;
+  gap: 2px;
+}
+
+.titleCell span,
+.collectedCell small {
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.percentCell {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 80px;
+}
+
+.statusCell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.period {
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.readOnly {
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+/* ── Окно этапа: форма слева, превью справа ────────────────────────────── */
+
+.dialogLayout {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+.dialogForm {
+  min-width: 0;
+}
+
+.previewPane {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-3);
+}
+
+.previewLabel {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+/* Подложка как у первого экрана: стекло блока видно только на тёмном. */
+.previewStage {
+  padding: var(--sp-5);
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 90% at 80% 0%, rgba(2, 106, 169, 0.55), transparent 60%),
+    var(--hero-bg-fill);
+}
+
+.previewEmpty {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--fs-small);
+}
+
+@media (min-width: 960px) {
+  .dialogLayout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  }
+
+  .previewPane {
+    position: sticky;
+    top: 0;
+  }
+}

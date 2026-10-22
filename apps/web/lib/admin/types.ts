@@ -403,6 +403,44 @@ export interface MonthlyGoalBody {
   readonly goalKopecks: string;
 }
 
+/* ── §14а Этапы сбора («малые цели») ──────────────────────────────────── */
+
+export const FUNDRAISING_GOAL_STATUSES = ["ACTIVE", "DRAFT", "COMPLETED", "ARCHIVED"] as const;
+
+export type FundraisingGoalStatus = (typeof FUNDRAISING_GOAL_STATUSES)[number];
+
+export interface FundraisingGoalRecord {
+  readonly id: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly status: FundraisingGoalStatus;
+  readonly targetAmountKopecks: string;
+  /** Может быть отрицательной: «-150000». */
+  readonly manualAdjustmentKopecks: string;
+  /** Оплаченные пожертвования за период этапа, без корректировки. */
+  readonly paidAmountKopecks: string;
+  /** Итог для сайта: пожертвования + корректировка, не ниже нуля. */
+  readonly collectedAmountKopecks: string;
+  readonly percent: number;
+  readonly isReached: boolean;
+  readonly startsAt: string;
+  readonly endsAt: string | null;
+  readonly completedAt: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly createdBy: string | null;
+  readonly updatedBy: string | null;
+}
+
+export interface FundraisingGoalBody {
+  readonly title: string;
+  readonly description: string | null;
+  readonly targetAmountKopecks: string;
+  readonly startsAt: string;
+  readonly endsAt: string | null;
+  readonly manualAdjustmentKopecks: string;
+}
+
 /* ── §15 Дашборд ─────────────────────────────────────────────────────── */
 
 export interface Dashboard {

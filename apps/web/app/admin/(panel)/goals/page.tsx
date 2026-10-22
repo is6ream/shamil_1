@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 
 import { AdminPage } from "@/components/admin/AdminPage";
+import { FundraisingGoalsSection } from "@/components/admin/fundraising-goals/FundraisingGoalsSection";
 import styles from "@/components/admin/goals/goals.module.css";
 import { MonthlyGoalDialog } from "@/components/admin/goals/MonthlyGoalDialog";
 import { FormActions, Meter, Note, Section } from "@/components/admin/ui/Blocks";
@@ -137,6 +138,8 @@ export default function GoalsPage() {
       lead={canEdit ? undefined : "Только просмотр: цели меняют суперадмин и редактор."}
       actions={canEdit ? <Button onClick={() => setEditing("new")}>Добавить цель месяца</Button> : null}
     >
+      <FundraisingGoalsSection />
+
       {isLoading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} onRetry={reload} /> : null}
       {data ? (

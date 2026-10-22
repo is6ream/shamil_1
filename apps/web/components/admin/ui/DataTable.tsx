@@ -16,6 +16,8 @@ interface DataTableProps<Row> {
   readonly columns: readonly Column<Row>[];
   readonly rows: readonly Row[];
   readonly rowKey: (row: Row) => string;
+  /** Выделение строки: например, активный этап сбора. */
+  readonly rowClassName?: (row: Row) => string | undefined;
 }
 
 /**
@@ -23,7 +25,7 @@ interface DataTableProps<Row> {
  * получает подпись столбца из `data-label`. Горизонтальная прокрутка
  * на 360 px заказчику не подходит.
  */
-export function DataTable<Row>({ caption, columns, rows, rowKey }: DataTableProps<Row>) {
+export function DataTable<Row>({ caption, columns, rows, rowKey, rowClassName }: DataTableProps<Row>) {
   return (
     <table className={styles.table}>
       <caption className="sr-only">{caption}</caption>
@@ -38,7 +40,7 @@ export function DataTable<Row>({ caption, columns, rows, rowKey }: DataTableProp
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={rowKey(row)}>
+          <tr key={rowKey(row)} className={rowClassName?.(row)}>
             {columns.map((column) => (
               <td
                 key={column.key}
