@@ -20,7 +20,7 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: readonly QuickAction[] = [
-  { href: "/admin/donations", label: "Пожертвования", Icon: DonationIcon, permission: "donations" },
+  { href: "/admin/donations?manual=1", label: "Внести поступление", Icon: DonationIcon, permission: "manualDonations" },
   { href: "/admin/stages", label: "Ход стройки", Icon: BuildIcon, permission: "content" },
   { href: "/admin/news/new", label: "Новость", Icon: NewsIcon, permission: "content" },
   { href: "/admin/media", label: "Загрузить фото", Icon: ImageIcon, permission: "content" },

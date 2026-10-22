@@ -1,6 +1,57 @@
+.frame {
+  position: relative;
+  max-width: 100%;
+}
+
 .scroll {
   max-width: 100%;
   overflow-x: auto;
+}
+
+.scroll:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.scrollHint {
+  margin: 0 0 var(--sp-2);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  text-align: right;
+}
+
+/* Тень у края, за которым спрятаны столбцы. Поверх таблицы, клики не ловит. */
+.frame::before,
+.frame::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  z-index: 1;
+  width: 28px;
+  height: var(--edge-height, 100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast);
+}
+
+.frame::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(11, 37, 72, 0.14), transparent);
+}
+
+.frame::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(11, 37, 72, 0.14), transparent);
+}
+
+.frame[data-more-start="true"]::before,
+.frame[data-more-end="true"]::after {
+  opacity: 1;
+}
+
+/* Подпись над таблицей тень не накрывает. */
+.frame:has(> .scrollHint) {
+  --edge-height: calc(100% - var(--fs-micro) * 1.5 - var(--sp-2));
 }
 
 .table {
@@ -64,6 +115,12 @@
 @media (max-width: 720px) {
   .scroll {
     overflow-x: visible;
+  }
+
+  .frame::before,
+  .frame::after,
+  .scrollHint {
+    display: none;
   }
 
   .table thead {

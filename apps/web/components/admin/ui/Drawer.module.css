@@ -1,0 +1,127 @@
+/* Телефон: лист снизу на всю ширину. С 768 px — панель справа во всю высоту. */
+.drawer {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 92dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  background: var(--surface);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-form);
+}
+
+.drawer::backdrop {
+  background: rgba(11, 37, 72, 0.45);
+}
+
+.drawer[open] {
+  animation: drawer-up var(--dur-fast, 180ms) ease-out;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  border-bottom: var(--stroke) solid var(--border);
+}
+
+/* Специфичность выше `.admin-root h2`. */
+.head .title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-h3);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  order: 3;
+  flex-basis: 100%;
+  font-size: var(--fs-small);
+}
+
+.close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 22px;
+  cursor: pointer;
+  transition: color var(--dur-fast), background var(--dur-fast);
+}
+
+.close:hover {
+  background: var(--surface-hover);
+  color: var(--text-strong);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--sp-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 768px) {
+  .drawer {
+    inset: 0 0 0 auto;
+    width: min(560px, 100vw - 64px);
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .drawer[open] {
+    animation-name: drawer-left;
+  }
+
+  .head {
+    padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  }
+
+  .body {
+    padding: var(--sp-5);
+  }
+}
+
+@keyframes drawer-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@keyframes drawer-left {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer[open] {
+    animation: none;
+  }
+}
