@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
+import { MANUAL_DONATION_KEY_PREFIX } from '../admin/manual-donation.service';
 import { PrismaService } from '../database/prisma.service';
 import { DonationStatus } from '../generated/prisma/enums';
 import type { Prisma } from '../generated/prisma/client';
@@ -46,7 +47,17 @@ export class FeedService {
     const rows = await this.prisma.donation.findMany({
       where: {
         status: DonationStatus.paid,
-        ...(cursor === undefined ? {} : afterCursor(cursor)),
+        // Ручные поступления из админки (наличные, переводы по выписке) в ленту
+        // не попадают, но остаются в сумме сбора. NULL — явно, иначе NOT LIKE его отбросит.
+        AND: [
+          {
+            OR: [
+              { providerPaymentId: null },
+              { NOT: { providerPaymentId: { startsWith: MANUAL_DONATION_KEY_PREFIX } } },
+            ],
+          },
+          ...(cursor === undefined ? [] : [afterCursor(cursor)]),
+        ],
       },
       orderBy: [{ paidAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
