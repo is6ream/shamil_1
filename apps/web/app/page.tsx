@@ -10,7 +10,6 @@ import { AboutSection } from "@/components/sections/AboutSection";
 import { HadithBand } from "@/components/sections/HadithBand";
 import { ReportsSection } from "@/components/sections/ReportsSection";
 import { RequisitesSection } from "@/components/sections/RequisitesSection";
-import { StatsGrid } from "@/components/sections/StatsGrid";
 import { SharePanel } from "@/components/share/SharePanel";
 import {
   GALLERY_PLACEHOLDERS,
@@ -89,10 +88,6 @@ export default async function HomePage() {
             <DonationWidget regions={regions} />
           </div>
         </aside>
-
-        <div className={styles.stats}>
-          {campaign === null ? null : <StatsGrid campaign={campaign} regionsCount={topRegions.length} />}
-        </div>
 
         <div className={styles.about}>
           <AboutSection about={content.about} />
