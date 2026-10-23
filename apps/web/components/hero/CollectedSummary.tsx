@@ -1,7 +1,7 @@
 import { AnimatedTrack } from "@/components/goal/AnimatedTrack";
 import type { Campaign } from "@/lib/api/types";
 import { COLLECTED } from "@/lib/content";
-import { formatCount, formatDayMonth, plural } from "@/lib/format";
+import { formatDayMonth } from "@/lib/format";
 import { kopecksToRubDisplay, kopecksToRubNumberDisplay, percentOfGoal } from "@/lib/money";
 
 import styles from "./CollectedSummary.module.css";
@@ -12,9 +12,6 @@ interface Props {
   /** Вариант подписей: полный для десктопа, короткий для телефона (макет v2). */
   readonly className?: string;
 }
-
-const DONATION_FORMS = ["пожертвование", "пожертвования", "пожертвований"] as const;
-const PAYMENT_FORMS = ["платёж", "платежа", "платежей"] as const;
 
 /** «5,3» — десятые через запятую, как пишут по-русски. */
 function formatPercent(percent: number): string {
@@ -42,7 +39,6 @@ export function CollectedSummary({ campaign, className }: Props) {
 
   const percent = percentOfGoal(campaign.collectedKopecks, campaign.goalKopecks);
   const percentText = `${formatPercent(percent)}%`;
-  const count = formatCount(campaign.donationsCount);
   const date = campaign.lastPaidAt === null ? null : formatDayMonth(campaign.lastPaidAt);
 
   return (
@@ -60,11 +56,10 @@ export function CollectedSummary({ campaign, className }: Props) {
 
       <div className={styles.meta}>
         <p className={styles.desktopOnly}>
-          <b>{percentText}</b> от цели · <b>{count}</b>{" "}
-          {plural(campaign.donationsCount, DONATION_FORMS)}
+          <b>{percentText}</b> от цели
         </p>
         <p className={styles.mobileOnly}>
-          <b>{percentText}</b> · <b>{count}</b> {plural(campaign.donationsCount, PAYMENT_FORMS)}
+          <b>{percentText}</b>
         </p>
 
         {date === null ? null : (
