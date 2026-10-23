@@ -519,6 +519,46 @@ interface CampaignAdmin {
 `collectedKopecks` новой (или сдвинутой) цели сразу включает уже оплаченные донаты периода; дальше растёт
 триггером. Пересечение периодов — 409, конец раньше начала — 400.
 
+## 14а. Этапы сбора («малые цели»)
+
+Активный этап показывается на первом экране главной: «Текущий этап: На кирпичи — 700 000 ₽».
+Чтение — все роли, запись — SA, EDITOR. Ревалидирует тег `active-goal`, когда правка видна на сайте
+(активный этап или его снятие). Физического удаления нет — `archive`.
+
+| Путь | Тело | Ответ |
+| --- | --- | --- |
+| `GET /admin/goals?page&pageSize&status?` | — | `Paged<FundraisingGoalAdmin>`; активный первым |
+| `GET /admin/goals/:id` | — | `FundraisingGoalAdmin` |
+| `POST /admin/goals` | `{ title, description?, targetAmountKopecks, startsAt?, endsAt?, manualAdjustmentKopecks? }` | 201, статус `DRAFT` |
+| `PATCH /admin/goals/:id` | те же поля, все необязательны; `description: null` и `endsAt: null` стирают | 200 |
+| `POST /admin/goals/:id/activate` | — | 200; текущий активный завершается в той же транзакции |
+| `POST /admin/goals/:id/complete` | — | 200; только из `ACTIVE` |
+| `POST /admin/goals/:id/archive` | — | 200; из `DRAFT`, `ACTIVE`, `COMPLETED` |
+
+- `title` 3–80 символов после trim, `description` до 200, без `<` и `>`.
+- `targetAmountKopecks` — строка копеек, от 1 000 до 100 000 000 ₽ (`100000`…`10000000000`).
+- `manualAdjustmentKopecks` — строка копеек со знаком, по модулю не больше 100 000 000 ₽.
+- `startsAt`/`endsAt` — ISO 8601 с поясом; `endsAt` > `startsAt`. Без `startsAt` — момент создания.
+- Переходы: `DRAFT → ACTIVE`, `ACTIVE → COMPLETED`, `COMPLETED → ACTIVE`, любой → `ARCHIVED`.
+  В `DRAFT` не возвращаются, `ARCHIVED` финален и не правится — 409. Это же держит триггер БД.
+- Параллельная активация другого этапа — 409 (частичный уникальный индекс «ACTIVE один»).
+- «Собрано» = SUM `paid_amount_kopecks` оплаченных донатов сбора за [`startsAt`; `min(endsAt, completedAt)`]
+  + `manualAdjustmentKopecks`, не ниже 0. `percent` = `min(100, floor(collected·100/target))`.
+  Сверх цели этап сам не завершается: `isReached: true`, решает админ.
+
+```ts
+FundraisingGoalAdmin = {
+  id, title, description: string | null,
+  status: 'ACTIVE' | 'DRAFT' | 'COMPLETED' | 'ARCHIVED',
+  targetAmountKopecks, manualAdjustmentKopecks,
+  paidAmountKopecks,       // пожертвования с сайта за окно этапа
+  collectedAmountKopecks,  // итог для сайта
+  percent: number, isReached: boolean,
+  startsAt, endsAt: string | null, completedAt: string | null,
+  createdAt, updatedAt, createdBy: string | null, updatedBy: string | null  // e-mail админа
+}
+```
+
 ## 15. Дашборд
 
 `GET /admin/dashboard?from&to` — все роли. Период по дате оплаты, по умолчанию последние 30 дней,
@@ -594,6 +634,10 @@ isActive, shortUrl, targetUrl, createdAt, updatedAt }`. Все изменени�
 | `GET /gallery` | `{ id, url, caption, takenAtLabel, thumbUrl, alt, width, height }[]` | `gallery` |
 | `GET /video` | `{ id, provider, embedUrl, sourceUrl, title, poster }[]` (только опубликованные) | `video` |
 | `GET /campaign` | без изменений | `campaign` |
+| `GET /public/goals/active` | `{ id, title, description, targetAmountKopecks, collectedAmountKopecks, percent, isReached }` или пустое тело (200), если активного этапа нет | `active-goal` |
+
+`/public/goals/active` — исключение из «без троттлинга»: 120 запросов в минуту на IP, ответ кешируется
+в памяти API на 30 с (сбрасывается при правке этапа). Сайт берёт его через ISR раз в 60 с.
 
 - `/content`: каждый блок — `null`, если ещё не заполнен (фронт показывает текущий хардкод как запасной).
   К блокам добавлены готовые ссылки: `hero.renderUrl` + `hero.render: PublicImage | null`,
@@ -618,7 +662,7 @@ Content-Type: application/json
 { "tags": ["content"] }
 ```
 
-Теги фиксированы: `content`, `stages`, `news`, `gallery`, `video`, `campaign`. Какой раздел шлёт какой тег:
+Теги фиксированы: `content`, `stages`, `news`, `gallery`, `video`, `campaign`, `active-goal`. Какой раздел шлёт какой тег:
 
 | Запись | Теги |
 | --- | --- |
@@ -628,6 +672,7 @@ Content-Type: application/json
 | галерея | `gallery` |
 | видео | `video` |
 | цель сбора и цели месяца | `campaign` |
+| этапы сбора (активный или его снятие) | `active-goal` |
 
 Ручное поступление и подтверждение перевода ревалидацию **не** шлют: цифры сбора у фронта и так живут 15 с
 (`LIVE_REVALIDATE_S`). Нет `REVALIDATE_SECRET` у API — ревалидация выключена.
