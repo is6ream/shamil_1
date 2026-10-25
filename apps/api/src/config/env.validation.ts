@@ -518,7 +518,7 @@ export class EnvVars {
   @IsEnum(RecurringEmulatorOutcome)
   RECURRING_EMULATOR_OUTCOME: RecurringEmulatorOutcome = RecurringEmulatorOutcome.Paid;
 
-  /** Swagger `/api/docs` для `/donor/*`. По умолчанию — только вне production. */
+  /** Swagger `/api/docs` для `/donor/*`. Вне production по умолчанию включён; в production — никогда. */
   @IsOptional()
   @envBoolean()
   @IsBoolean()
