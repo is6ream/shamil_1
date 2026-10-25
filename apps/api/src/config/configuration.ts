@@ -159,7 +159,7 @@ export interface AppConfig {
   readonly donor: DonorConfig;
   readonly mail: MailConfig;
   readonly billing: BillingConfig;
-  /** Swagger для `/donor/*`: явный флаг или «не production». */
+  /** Swagger для `/donor/*`: только вне production, по умолчанию включён. */
   readonly swaggerEnabled: boolean;
 }
 
@@ -347,6 +347,8 @@ export function configuration(): AppConfig {
       schedulerEnabled: env.BILLING_SCHEDULER_ENABLED,
       cron: env.BILLING_CRON,
     },
-    swaggerEnabled: env.SWAGGER_ENABLED ?? !isProduction,
+    // В production не поднимается даже с флагом: защищать его отдельной
+    // авторизацией ради контракта фронтенда — лишняя поверхность атаки.
+    swaggerEnabled: !isProduction && (env.SWAGGER_ENABLED ?? true),
   };
 }

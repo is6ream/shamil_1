@@ -220,6 +220,18 @@ describeDatabase('кабинет жертвователя: сквозной сц
     expect(donorInAdmin.status).toBe(401);
   });
 
+  test('Swagger вне production описывает только /donor/*', async () => {
+    // Act
+    const response = await fetch(`${e2e.apiUrl}/docs-json`);
+    const document = (await response.json()) as { paths: Record<string, unknown> };
+    const paths = Object.keys(document.paths);
+
+    // Assert
+    expect(response.status).toBe(200);
+    expect(paths).toContain('/api/donor/auth/request-code');
+    expect(paths.every((path) => path.startsWith('/api/donor/'))).toBe(true);
+  });
+
   test('разовый донат по-прежнему без периодичности: лишнее поле — 400', async () => {
     // Act
     const response = await api('/donations', {
