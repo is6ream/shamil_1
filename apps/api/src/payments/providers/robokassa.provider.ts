@@ -152,6 +152,15 @@ export class RobokassaProvider implements PaymentProvider {
       url.searchParams.set('IsTest', '1');
     }
 
+    if (input.recurring === true) {
+      // docs.robokassa.ru/ru/recurring-payments: «Recurring=true» у первого платежа.
+      // В подпись не входит — формула ссылки (MerchantLogin:OutSum:InvId[:Receipt]:Пароль#1[:Shp_*])
+      // его не содержит.
+      // TODO(robokassa): подтвердить на тестовом платеже после подключения рекуррентов,
+      // что подпись без Recurring принимается.
+      url.searchParams.set('Recurring', 'true');
+    }
+
     return {
       redirectUrl: url.toString(),
       externalId: invId,

@@ -20,6 +20,11 @@ export interface CreatePaymentInput {
   readonly amountKopecks: bigint;
   /** Назначение платежа: видит донатер на стороне провайдера. */
   readonly description: string;
+  /**
+   * Первый (материнский) платёж подписки: провайдер запоминает карту для
+   * автосписаний. У Robokassa — параметр `Recurring=true`.
+   */
+  readonly recurring?: boolean;
 }
 
 export interface CreatedPayment {

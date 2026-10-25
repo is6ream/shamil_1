@@ -11,6 +11,10 @@ import { PaymentCallbacksController } from './payment-callbacks.controller';
 import { PaymentsService } from './payments.service';
 import { ManualProvider } from './providers/manual.provider';
 import { RobokassaProvider } from './providers/robokassa.provider';
+import { RECURRING_GATEWAY } from './recurring/recurring-gateway';
+import type { RecurringGateway } from './recurring/recurring-gateway';
+import { RobokassaRecurringGateway } from './recurring/robokassa-recurring.gateway';
+import { SimulatedRecurringGateway } from './recurring/simulated-recurring.gateway';
 
 /**
  * Онлайн-провайдер приложения, если он включён.
@@ -58,6 +62,26 @@ export function createPaymentProviderResolver(config: ConfigService<AppConfig, t
   });
 }
 
+/**
+ * Шлюз автосписаний. Robokassa (или её эмулятор) — настоящий; при `manual`
+ * вне production — имитация, чтобы цикл подписки проверялся локально.
+ * В production с `manual` автосписаний нет вовсе (`null`): оформить подписку
+ * нельзя, планировщику нечего делать. Имитация в production означала бы
+ * «оплаченные» пожертвования без денег.
+ */
+export function createRecurringGateway(config: ConfigService<AppConfig, true>): RecurringGateway | null {
+  const payment = config.get('payment', { infer: true });
+
+  if (payment.provider === PaymentProviderCode.Robokassa) {
+    // Эмулятор отвечает мгновенно — сверять через 15 минут незачем.
+    return new RobokassaRecurringGateway(payment, payment.emulatorEnabled ? 0 : undefined);
+  }
+
+  return config.get('isProduction', { infer: true })
+    ? null
+    : new SimulatedRecurringGateway(payment.recurringEmulatorOutcome);
+}
+
 @Module({
   imports: [DatabaseModule, AuditModule],
   controllers: [PaymentCallbacksController],
@@ -68,10 +92,11 @@ export function createPaymentProviderResolver(config: ConfigService<AppConfig, t
       inject: [ConfigService],
       useFactory: createPaymentProviderResolver,
     },
+    { provide: RECURRING_GATEWAY, inject: [ConfigService], useFactory: createRecurringGateway },
   ],
   // PaymentsService экспортируется ради админского подтверждения ручного
   // доната: перевод pending → paid обязан идти через ту же машинерию, что
   // и вебхук, а не через вторую копию логики в админском модуле.
-  exports: [PaymentProviderResolver, PaymentsService],
+  exports: [PaymentProviderResolver, PaymentsService, RECURRING_GATEWAY],
 })
 export class PaymentsModule {}

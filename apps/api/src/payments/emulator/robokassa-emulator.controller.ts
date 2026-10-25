@@ -1,10 +1,16 @@
-import { Controller, Get, HttpStatus, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Res } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { IsHexadecimal, IsString, Length, MaxLength } from 'class-validator';
 import type { Response } from 'express';
 
 import { CheckoutRejectedError } from './checkout-request';
-import { EMULATOR_CHECKOUT_ROUTE, EMULATOR_PAY_ROUTE, EMULATOR_ROUTE_PREFIX } from './emulator.constants';
+import {
+  EMULATOR_CHECKOUT_ROUTE,
+  EMULATOR_OPSTATE_ROUTE,
+  EMULATOR_PAY_ROUTE,
+  EMULATOR_RECURRING_ROUTE,
+  EMULATOR_ROUTE_PREFIX,
+} from './emulator.constants';
 import { renderErrorPage } from './emulator-page';
 import { RobokassaEmulatorService } from './robokassa-emulator.service';
 import { ScenarioLinkError } from './scenario-link';
@@ -61,6 +67,18 @@ export class RobokassaEmulatorController {
 
       throw error;
     }
+  }
+
+  /** Автосписание по сохранённой «карте». Тело — urlencoded, как у Robokassa. */
+  @Post(EMULATOR_RECURRING_ROUTE)
+  @HttpCode(HttpStatus.OK)
+  recurring(@Body() body: Record<string, unknown>): string {
+    return this.emulator.recurring(body);
+  }
+
+  @Get(EMULATOR_OPSTATE_ROUTE)
+  opState(@Query() query: Record<string, unknown>, @Res() res: Response): void {
+    res.status(HttpStatus.OK).type('application/xml').send(this.emulator.opState(query));
   }
 
   @Get(EMULATOR_PAY_ROUTE)

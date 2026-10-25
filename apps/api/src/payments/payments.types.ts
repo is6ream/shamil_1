@@ -40,6 +40,30 @@ export interface ApplyEventInput {
   /** Тело события для разбора спорных платежей. ПДн сюда не попадают. */
   readonly payload: Readonly<Record<string, string>>;
   readonly onApplied?: OnEventApplied;
+  /** Причина отказа от провайдера — только для `failed`. Уходит слушателям. */
+  readonly failureReason?: string;
+}
+
+/** Событие, которое реально перевело донат в новый статус. */
+export interface AppliedPaymentEvent {
+  readonly donationId: string;
+  readonly status: DonationStatus;
+  readonly amountKopecks: bigint;
+  readonly appliedAt: Date;
+  readonly failureReason?: string;
+}
+
+/** Действие после коммита: письмо, внешний вызов. Его сбой деньги не откатывает. */
+export type AfterCommit = () => Promise<void>;
+
+/**
+ * Подписчик на применённые платёжные события — так подписки узнают о первом
+ * платеже и автосписаниях, не встраивая свою логику в платёжный модуль.
+ * Вызывается внутри транзакции зачисления: состояние подписки меняется
+ * атомарно с донатом, а повтор колбэка (duplicate) слушателя не вызывает вовсе.
+ */
+export interface PaymentEventListener {
+  onEventApplied(tx: Prisma.TransactionClient, event: AppliedPaymentEvent): Promise<AfterCommit | null>;
 }
 
 /**

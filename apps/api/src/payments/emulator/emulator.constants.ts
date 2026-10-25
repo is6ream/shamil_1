@@ -12,6 +12,12 @@
 export const EMULATOR_ROUTE_PREFIX = 'dev/robokassa';
 export const EMULATOR_CHECKOUT_ROUTE = 'checkout';
 export const EMULATOR_PAY_ROUTE = 'pay';
+/** Автосписание (`PAYMENT_ROBOKASSA_RECURRING_URL`) и статус операции (`PAYMENT_ROBOKASSA_OPSTATE_URL`). */
+export const EMULATOR_RECURRING_ROUTE = 'recurring';
+export const EMULATOR_OPSTATE_ROUTE = 'opstate';
+
+/** Через сколько эмулятор шлёт колбэк успешного автосписания. */
+export const RECURRING_CALLBACK_DELAY_MS = 300;
 
 /**
  * Сценарии страницы оплаты. Каждый проверяет одну гарантию из CLAUDE.md:
@@ -80,4 +86,6 @@ export const CHECKOUT_KNOWN_PARAMS: ReadonlySet<string> = new Set([
   'Culture',
   'Encoding',
   'Receipt',
+  // Первый платёж подписки: карта запоминается для автосписаний.
+  'Recurring',
 ]);

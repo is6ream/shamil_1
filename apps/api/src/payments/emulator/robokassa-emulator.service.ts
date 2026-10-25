@@ -6,6 +6,8 @@ import { ConfigService } from '@nestjs/config';
 import { waitUntil } from '@vercel/functions';
 
 import { API_GLOBAL_PREFIX } from '../../config/constants';
+import { RecurringEmulatorOutcome } from '../../config/env.validation';
+import { buildInitSignatureSource, hashSignature, signaturesMatch } from '../robokassa/signature';
 import type { AppConfig, PaymentConfig } from '../../config/configuration';
 import { THANKS_PATH } from '../payments.constants';
 import { buildResultUrl } from '../robokassa/robokassa.constants';
@@ -20,6 +22,7 @@ import {
   EMULATOR_PAY_ROUTE,
   EMULATOR_ROUTE_PREFIX,
   LONG_CALLBACK_DELAY_MS,
+  RECURRING_CALLBACK_DELAY_MS,
   SCENARIO_LINK_TTL_MS,
   SHORT_CALLBACK_DELAY_MS,
 } from './emulator.constants';
@@ -53,6 +56,8 @@ export class RobokassaEmulatorService implements OnModuleInit, OnModuleDestroy {
    * таймер обязан его отпустить, иначе функция висела бы до своего лимита.
    */
   private readonly timers = new Map<NodeJS.Timeout, () => void>();
+  /** Автосписания, принятые эмулятором: InvoiceID → исход. Только в памяти процесса. */
+  private readonly recurringCharges = new Map<string, { outSum: string; paid: boolean }>();
 
   constructor(config: ConfigService<AppConfig, true>) {
     this.payment = config.get('payment', { infer: true });
@@ -113,6 +118,62 @@ export class RobokassaEmulatorService implements OnModuleInit, OnModuleDestroy {
     await this.dispatch(scenario, order, method);
 
     return scenario === 'refuse' ? `${this.siteUrl}${FAIL_PATH}` : this.successUrl(order);
+  }
+
+  /**
+   * Автосписание как у Robokassa: проверка подписи `MerchantLogin:OutSum:InvoiceID:Пароль#1`,
+   * ответ «OK+InvoiceID». Успех — колбэк на Result URL; отказ — без колбэка,
+   * виден только через OpStateExt (State 60), ровно как у настоящей.
+   */
+  recurring(body: Readonly<Record<string, unknown>>): string {
+    const field = (name: string): string => (typeof body[name] === 'string' ? (body[name] as string) : '');
+    const invoiceId = field('InvoiceID');
+    const outSum = field('OutSum');
+    const expected = hashSignature(
+      buildInitSignatureSource({
+        merchantLogin: this.payment.merchantId,
+        outSum,
+        invId: invoiceId,
+        password: this.payment.secretKey,
+      }),
+      this.payment.hashAlgorithm,
+    );
+
+    if (field('MerchantLogin') !== this.payment.merchantId || !/^[1-9]\d*$/.test(invoiceId) || field('PreviousInvoiceID') === '') {
+      return 'ERROR: неверные параметры';
+    }
+
+    if (!signaturesMatch(expected, field('SignatureValue'))) {
+      return 'ERROR: подпись не сошлась';
+    }
+
+    const paid = this.payment.recurringEmulatorOutcome === RecurringEmulatorOutcome.Paid;
+
+    this.recurringCharges.set(invoiceId, { outSum, paid });
+
+    if (paid) {
+      this.schedule({ outSum, invId: invoiceId, shp: {} }, { method: 'card' }, RECURRING_CALLBACK_DELAY_MS);
+    }
+
+    return `OK+${invoiceId}`;
+  }
+
+  /** OpStateExt: XML с Result.Code и State.Code. Подпись — `MerchantLogin:InvoiceID:Пароль#2`. */
+  opState(query: Readonly<Record<string, unknown>>): string {
+    const invoiceId = typeof query.InvoiceID === 'string' ? query.InvoiceID : '';
+    const signature = typeof query.Signature === 'string' ? query.Signature : '';
+    const expected = hashSignature(
+      `${this.payment.merchantId}:${invoiceId}:${this.payment.webhookSecret}`,
+      this.payment.hashAlgorithm,
+    );
+
+    if (!signaturesMatch(expected, signature)) {
+      return opStateXml(1);
+    }
+
+    const charge = this.recurringCharges.get(invoiceId);
+
+    return charge === undefined ? opStateXml(3) : opStateXml(0, charge.paid ? 100 : 60, charge.outSum);
   }
 
   private async dispatch(scenario: EmulatorScenario, order: ScenarioOrder, method: EmulatorMethod): Promise<void> {
@@ -256,6 +317,13 @@ export class RobokassaEmulatorService implements OnModuleInit, OnModuleDestroy {
 
     return url.toString();
   }
+}
+
+function opStateXml(resultCode: number, stateCode?: number, outSum?: string): string {
+  const state = stateCode === undefined ? '' : `<State><Code>${stateCode}</Code></State>`;
+  const info = outSum === undefined ? '' : `<Info><OutSum>${outSum}</OutSum></Info>`;
+
+  return `<?xml version="1.0" encoding="utf-8"?><OperationStateResponse><Result><Code>${resultCode}</Code></Result>${state}${info}</OperationStateResponse>`;
 }
 
 /** Путь страницы оплаты — его вписывают в `PAYMENT_ROBOKASSA_URL`. */
