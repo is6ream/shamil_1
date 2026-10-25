@@ -44,6 +44,12 @@ export const EXPORT_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN, AdminR
 
 export const AUDIT_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN, AdminRole.ACCOUNTANT];
 
+/**
+ * Отмена чужой подписки администратором — деньги жертвователя, поэтому
+ * не редактор контента, а те, кто отвечает за поступления.
+ */
+export const SUBSCRIPTION_WRITE_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN, AdminRole.ACCOUNTANT];
+
 export const USERS_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN];
 
 export function canSeePersonalData(role: AdminRole): boolean {
