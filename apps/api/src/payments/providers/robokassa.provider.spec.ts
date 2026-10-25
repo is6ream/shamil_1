@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 
 import type { AppConfig, PaymentConfig } from '../../config/configuration';
-import { PaymentHashAlgorithm, PaymentProviderCode } from '../../config/env.validation';
+import { PaymentHashAlgorithm, PaymentProviderCode, RecurringEmulatorOutcome } from '../../config/env.validation';
 import { DonationStatus } from '../../generated/prisma/enums';
 import { WebhookParseError } from '../payment-provider.types';
 import { RobokassaProvider } from './robokassa.provider';
@@ -28,6 +28,9 @@ const BASE_PAYMENT: PaymentConfig = {
   paymentUrl: 'https://auth.robokassa.ru/Merchant/Index.aspx',
   emulatorEnabled: false,
   receipt: { enabled: false },
+  recurringUrl: 'https://auth.robokassa.ru/Merchant/Recurring',
+  opStateUrl: 'https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt',
+  recurringEmulatorOutcome: RecurringEmulatorOutcome.Paid,
 };
 
 function createProvider(overrides: Partial<PaymentConfig> = {}): RobokassaProvider {

@@ -2,7 +2,14 @@ import { randomBytes } from 'node:crypto';
 import { resolve as resolvePath } from 'node:path';
 import type { TaxationSystem, VatRate } from './constants';
 import { NodeEnv, StorageDriver, validateEnv } from './env.validation';
-import type { DeployStage, EnvVars, PaymentHashAlgorithm, PaymentProviderCode } from './env.validation';
+import type {
+  DeployStage,
+  EnvVars,
+  MailTransport,
+  PaymentHashAlgorithm,
+  PaymentProviderCode,
+  RecurringEmulatorOutcome,
+} from './env.validation';
 
 export interface HttpConfig {
   readonly port: number;
@@ -47,6 +54,37 @@ export interface PaymentConfig {
    */
   readonly emulatorLinkSecret?: string;
   readonly receipt: ReceiptConfig;
+  /** Рекуррентное списание Robokassa: боевой адрес или эмулятор. */
+  readonly recurringUrl: string;
+  /** OpStateExt — проверка статуса автосписания. */
+  readonly opStateUrl: string;
+  /** Что эмулятор ответит на автосписание. */
+  readonly recurringEmulatorOutcome: RecurringEmulatorOutcome;
+}
+
+/** Кабинет жертвователя. Ключи — свои, не админские (D-новое, REPORT.md). */
+export interface DonorConfig {
+  readonly enabled: boolean;
+  readonly jwtSecret: string;
+  readonly hmacSecret: string;
+  readonly cookieSecure: boolean;
+}
+
+export interface MailConfig {
+  readonly transport: MailTransport;
+  readonly from: string;
+  readonly smtp?: {
+    readonly host: string;
+    readonly port: number;
+    readonly secure: boolean;
+    readonly user: string;
+    readonly pass: string;
+  };
+}
+
+export interface BillingConfig {
+  readonly schedulerEnabled: boolean;
+  readonly cron: string;
 }
 
 export interface DatabaseConfig {
@@ -118,6 +156,11 @@ export interface AppConfig {
   readonly adminAuth: AdminAuthConfig;
   readonly media: MediaConfig;
   readonly revalidation: RevalidationConfig;
+  readonly donor: DonorConfig;
+  readonly mail: MailConfig;
+  readonly billing: BillingConfig;
+  /** Swagger для `/donor/*`: явный флаг или «не production». */
+  readonly swaggerEnabled: boolean;
 }
 
 const BYTES_IN_MB = 1024 * 1024;
@@ -140,6 +183,40 @@ function ephemeralJwtSecret(): string {
   processJwtSecret ??= randomBytes(32).toString('hex');
 
   return processJwtSecret;
+}
+
+/** Ключи кабинета вне production — так же случайные на процесс, но свои. */
+const processDonorSecrets = new Map<string, string>();
+
+function ephemeralDonorSecret(name: string): string {
+  const existing = processDonorSecrets.get(name);
+
+  if (existing !== undefined) {
+    return existing;
+  }
+
+  const secret = randomBytes(32).toString('hex');
+
+  processDonorSecrets.set(name, secret);
+
+  return secret;
+}
+
+function buildMailConfig(env: EnvVars): MailConfig {
+  return {
+    transport: env.MAIL_TRANSPORT,
+    from: env.MAIL_FROM,
+    smtp:
+      env.SMTP_HOST === undefined
+        ? undefined
+        : {
+            host: env.SMTP_HOST,
+            port: env.SMTP_PORT,
+            secure: env.SMTP_SECURE,
+            user: env.SMTP_USER ?? '',
+            pass: env.SMTP_PASS ?? '',
+          },
+  };
 }
 
 function buildMediaConfig(env: EnvVars, apiUrl: string): MediaConfig {
@@ -208,6 +285,9 @@ function buildPaymentConfig(env: EnvVars): PaymentConfig {
       itemName: env.PAYMENT_RECEIPT_ITEM_NAME,
       vat: env.PAYMENT_RECEIPT_VAT,
     },
+    recurringUrl: env.PAYMENT_ROBOKASSA_RECURRING_URL,
+    opStateUrl: env.PAYMENT_ROBOKASSA_OPSTATE_URL,
+    recurringEmulatorOutcome: env.RECURRING_EMULATOR_OUTCOME,
   };
 }
 
@@ -256,5 +336,17 @@ export function configuration(): AppConfig {
       secret: env.REVALIDATE_SECRET,
       url: trimTrailingSlash(env.WEB_REVALIDATE_URL ?? `${siteUrl}${REVALIDATE_PATH}`),
     },
+    donor: {
+      enabled: env.DONOR_CABINET_ENABLED,
+      jwtSecret: env.DONOR_JWT_SECRET ?? ephemeralDonorSecret('jwt'),
+      hmacSecret: env.DONOR_HMAC_SECRET ?? ephemeralDonorSecret('hmac'),
+      cookieSecure: env.DONOR_COOKIE_SECURE ?? isProduction,
+    },
+    mail: buildMailConfig(env),
+    billing: {
+      schedulerEnabled: env.BILLING_SCHEDULER_ENABLED,
+      cron: env.BILLING_CRON,
+    },
+    swaggerEnabled: env.SWAGGER_ENABLED ?? !isProduction,
   };
 }

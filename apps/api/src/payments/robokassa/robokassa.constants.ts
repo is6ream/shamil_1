@@ -5,6 +5,19 @@
  */
 export const ROBOKASSA_PAYMENT_URL = 'https://auth.robokassa.ru/Merchant/Index.aspx';
 
+/**
+ * Рекуррентное списание (docs.robokassa.ru/ru/recurring-payments): POST,
+ * `MerchantLogin`, `InvoiceID` (новый), `PreviousInvoiceID`, `OutSum`,
+ * `Description`, `SignatureValue`. Услуга подключается по согласованию с Robokassa.
+ */
+export const ROBOKASSA_RECURRING_URL = 'https://auth.robokassa.ru/Merchant/Recurring';
+
+/**
+ * XML-интерфейс статуса операции OpStateExt (docs.robokassa.ru/ru/xml-interfaces).
+ * Отказ автосписания Robokassa на Result URL не присылает — узнаём о нём только здесь.
+ */
+export const ROBOKASSA_OPSTATE_URL = 'https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt';
+
 /** С чего обязан начинаться адрес оплаты в production. */
 export const ROBOKASSA_PRODUCTION_URL_PREFIX = 'https://auth.robokassa.ru/';
 
