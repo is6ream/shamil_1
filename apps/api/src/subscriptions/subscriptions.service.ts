@@ -5,7 +5,7 @@ import { PrismaService } from '../database/prisma.service';
 import type { DonorPrincipal } from '../donor-auth/donor-auth.types';
 import { DonationType, SubscriptionStatus } from '../generated/prisma/enums';
 import { PaymentProviderResolver } from '../payments/payment-provider.resolver';
-import type { OnEventApplied } from '../payments/payments.types';
+import type { Prisma } from '../generated/prisma/client';
 import { RECURRING_GATEWAY } from '../payments/recurring/recurring-gateway';
 import type { RecurringGateway } from '../payments/recurring/recurring-gateway';
 import { lockSubscription } from './subscription-lifecycle.service';
@@ -16,6 +16,9 @@ import type { CancelSource } from './subscriptions.constants';
 
 /** Регион и источник атрибуции пишутся только вместе — CHECK `donation_region_source_consistency`. */
 const REGION_SOURCE_FORM = 'form';
+
+/** Запись журнала в транзакции отмены; получает статус до отмены. */
+export type OnCancelled = (tx: Prisma.TransactionClient, previousStatus: SubscriptionStatus) => Promise<void>;
 
 export interface CancelResult {
   readonly id: string;
@@ -134,7 +137,7 @@ export class SubscriptionsService {
   async cancel(
     id: string,
     source: CancelSource,
-    options: { readonly ownerId?: string; readonly onCancelled?: OnEventApplied } = {},
+    options: { readonly ownerId?: string; readonly onCancelled?: OnCancelled } = {},
   ): Promise<CancelResult> {
     const outcome = await this.prisma.$transaction(async (tx) => {
       const owner = await tx.subscription.findUnique({ where: { id }, select: { userId: true } });
@@ -155,7 +158,7 @@ export class SubscriptionsService {
       });
 
       if (options.onCancelled !== undefined) {
-        await options.onCancelled(tx);
+        await options.onCancelled(tx, subscription.status);
       }
 
       // Неоплаченное оформление — не подписка: письмо «остановлено» о нём только путает.
