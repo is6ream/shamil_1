@@ -7,9 +7,11 @@ import { isEffectiveTransition } from '../donations/donation-status';
 import { DonationStatus } from '../generated/prisma/enums';
 import type { ParsedWebhook, WebhookBody } from './payment-provider.types';
 import type {
+  AfterCommit,
   ApplyEventInput,
   ManualConfirmation,
   ManualConfirmationOptions,
+  PaymentEventListener,
   PaymentEventOutcome,
 } from './payments.types';
 import { MANUAL_EVENT_ID_PREFIX } from './payments.types';
@@ -59,11 +61,27 @@ function toStoredPayload(body: WebhookBody): Record<string, string> {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
+  private readonly listeners: PaymentEventListener[] = [];
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
   ) {}
+
+  /** Подписки регистрируются здесь при старте своего модуля. */
+  registerListener(listener: PaymentEventListener): void {
+    this.listeners.push(listener);
+  }
+
+  /**
+   * Событие от рекуррентного шлюза: сверка автосписания через OpStateExt
+   * или имитация. Та же машинерия, что у вебхука, — тот же ключ
+   * идемпотентности: успех по номеру счёта совпадает с ключом Result URL,
+   * и пришедший позже колбэк ляжет как повтор, а не как второй платёж.
+   */
+  async applyGatewayEvent(input: ApplyEventInput): Promise<PaymentEventOutcome> {
+    return this.applyEvent(input);
+  }
 
   /**
    * Применение проверенного колбэка.
@@ -226,6 +244,25 @@ export class PaymentsService {
    * источника правды разойдутся.
    */
   private async applyEvent(input: ApplyEventInput): Promise<PaymentEventOutcome> {
+    const afterCommit: AfterCommit[] = [];
+    const outcome = await this.applyInTransaction(input, afterCommit);
+
+    for (const action of afterCommit) {
+      try {
+        await action();
+      } catch (error: unknown) {
+        // Письмо не ушло — деньги всё равно зачислены; об этом нужно знать, а не падать.
+        this.logger.error(
+          `Действие после зачисления доната ${input.donationId} упало`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+
+    return outcome;
+  }
+
+  private async applyInTransaction(input: ApplyEventInput, afterCommit: AfterCommit[]): Promise<PaymentEventOutcome> {
     try {
       return await this.prisma.$transaction(async (tx) => {
         // Статус перечитывается внутри транзакции: между поиском доната
@@ -276,9 +313,26 @@ export class PaymentsService {
           await input.onApplied(tx);
         }
 
+        for (const listener of this.listeners) {
+          const action = await listener.onEventApplied(tx, {
+            donationId: input.donationId,
+            status: input.status,
+            amountKopecks: input.amountKopecks,
+            appliedAt: appliedAt ?? new Date(),
+            failureReason: input.failureReason,
+          });
+
+          if (action !== null) {
+            afterCommit.push(action);
+          }
+        }
+
         return 'applied';
       });
     } catch (error: unknown) {
+      // Транзакция откатилась — письма о несостоявшемся зачислении не нужны.
+      afterCommit.splice(0);
+
       if (isUniqueViolation(error)) {
         // Событие с этим ключом уже записано: ретрай агрегатора или повторное
         // подтверждение из админки. И то и другое обязано быть no-op.
