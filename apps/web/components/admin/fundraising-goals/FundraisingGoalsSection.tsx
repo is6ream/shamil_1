@@ -106,44 +106,37 @@ export function FundraisingGoalsSection() {
         </div>
       ),
     },
-    { key: "target", header: "Цель", isNumeric: true, render: (goal) => formatKopecks(goal.targetAmountKopecks) },
     {
       key: "collected",
-      header: "Собрано",
-      isNumeric: true,
+      header: "Собрано из цели",
       render: (goal) => (
         <div className={styles.collectedCell}>
-          <span>{formatKopecks(goal.collectedAmountKopecks)}</span>
-          {goal.manualAdjustmentKopecks === "0" ? null : (
-            <small>
-              сайт {formatKopecks(goal.paidAmountKopecks)} · вручную {formatKopecks(goal.manualAdjustmentKopecks)}
-            </small>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "percent",
-      header: "%",
-      isNumeric: true,
-      render: (goal) => (
-        <div className={styles.percentCell}>
-          <span>{goal.percent}%</span>
+          <span>
+            <b>{formatKopecks(goal.collectedAmountKopecks)}</b> из {formatKopecks(goal.targetAmountKopecks)}
+          </span>
           <Meter label={`Этап «${goal.title}»`} percent={goal.percent} />
+          <small>
+            {goal.percent}%
+            {goal.manualAdjustmentKopecks === "0"
+              ? null
+              : ` · сайт ${formatKopecks(goal.paidAmountKopecks)} · вручную ${formatKopecks(goal.manualAdjustmentKopecks)}`}
+          </small>
         </div>
       ),
     },
     {
       key: "status",
-      header: "Статус",
+      header: "Статус и период",
       render: (goal) => (
         <div className={styles.statusCell}>
-          <Badge tone={GOAL_STATUS_TONES[goal.status]}>{GOAL_STATUS_LABELS[goal.status]}</Badge>
-          {goal.isReached ? <Badge tone="success">Цель достигнута</Badge> : null}
+          <div className={styles.badges}>
+            <Badge tone={GOAL_STATUS_TONES[goal.status]}>{GOAL_STATUS_LABELS[goal.status]}</Badge>
+            {goal.isReached ? <Badge tone="success">Цель достигнута</Badge> : null}
+          </div>
+          <span className={styles.period}>{periodText(goal)}</span>
         </div>
       ),
     },
-    { key: "period", header: "Период", render: (goal) => <span className={styles.period}>{periodText(goal)}</span> },
     ...(canEdit
       ? [
           {

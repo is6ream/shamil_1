@@ -10,10 +10,17 @@
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-.titleCell,
-.collectedCell {
+.titleCell {
   display: grid;
   gap: 2px;
+  min-width: 9rem;
+}
+
+/* Сумма, шкала и процент одной ячейкой: столбцов меньше, таблица влезает в экран. */
+.collectedCell {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 12rem;
 }
 
 .titleCell span,
@@ -22,13 +29,12 @@
   font-size: 13px;
 }
 
-.percentCell {
+.statusCell {
   display: grid;
   gap: var(--sp-1);
-  min-width: 80px;
 }
 
-.statusCell {
+.badges {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-1);
