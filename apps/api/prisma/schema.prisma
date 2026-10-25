@@ -46,6 +46,15 @@ enum DonationStatus {
   @@map("donation_status")
 }
 
+/// Вид платежа: разовый, первый платёж подписки или автосписание по ней.
+enum DonationType {
+  ONE_TIME
+  PARENT
+  CHILD
+
+  @@map("donation_type")
+}
+
 /// Сбор. В MVP он один, но таблица — не singleton: заказчик может запустить
 /// второй сбор (например, на внутреннюю отделку), и переписывать схему не хочется.
 model Campaign {
@@ -65,8 +74,9 @@ model Campaign {
 
   stats        CampaignStats?
   monthlyGoals CampaignMonthlyGoal[]
-  donations    Donation[]
-  galleryItems GalleryItem[]
+  donations     Donation[]
+  galleryItems  GalleryItem[]
+  subscriptions Subscription[]
 
   @@map("campaign")
 }
@@ -135,8 +145,9 @@ model Region {
 
   parent    Region?      @relation("RegionHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
   children  Region[]     @relation("RegionHierarchy")
-  stats     RegionStats?
-  donations Donation[]
+  stats         RegionStats?
+  donations     Donation[]
+  subscriptions Subscription[]
 
   @@unique([countryCode, code])
   @@index([type, sortOrder, name])
@@ -236,14 +247,25 @@ model Donation {
   /// Обязателен для ручного поступления; ПДн сюда не пишут — подсказка в админке.
   adminComment String? @map("admin_comment") @db.VarChar(500)
 
+  /// Разовый донат, первый платёж подписки (PARENT, с `Recurring=true`)
+  /// или автосписание по ней (CHILD). Тип и подписка заполняются вместе —
+  /// CHECK `donation_type_subscription_consistency`.
+  type           DonationType @default(ONE_TIME)
+  /// Жертвователь из личного кабинета. У разового доната заполняется при входе
+  /// по совпадению e-mail из donation_contact; у платежей подписки — сразу.
+  userId         String?      @map("user_id") @db.Uuid
+  subscriptionId String?      @map("subscription_id") @db.Uuid
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   paidAt    DateTime? @map("paid_at") @db.Timestamptz(3)
 
-  campaign Campaign         @relation(fields: [campaignId], references: [id], onDelete: Restrict)
-  region   Region?          @relation(fields: [regionId], references: [id], onDelete: Restrict)
-  contact  DonationContact?
-  events   PaymentEvent[]
+  campaign     Campaign         @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  region       Region?          @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  user         DonorUser?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  subscription Subscription?    @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  contact      DonationContact?
+  events       PaymentEvent[]
 
   @@unique([provider, providerPaymentId])
   /// Индекс живой ленты: keyset-пагинация по (paid_at, id), без OFFSET.
@@ -256,6 +278,10 @@ model Donation {
   @@index([status, utmSource, utmCampaign])
   /// Отчёт по источникам, модель last-touch: оплаченные за период по last_utm_source.
   @@index([status, paidAt, lastUtmSource])
+  /// История платежей в личном кабинете.
+  @@index([userId, createdAt(sort: Desc)])
+  /// Поиск висящего автосписания подписки.
+  @@index([subscriptionId, status])
   @@map("donation")
 }
 
@@ -271,6 +297,9 @@ model DonationContact {
   /// Имя как его ввёл донатер — нужно для сверки поступлений по реквизитам.
   /// Публичная подпись — это donation.donor_name, а не это поле.
   fullName   String? @map("full_name") @db.VarChar(120)
+  /// E-mail для привязки разовых донатов к личному кабинету. Всегда в нижнем
+  /// регистре — CHECK `donation_contact_email_lowercase`.
+  email      String? @db.VarChar(254)
   /// Отметка согласия на обработку ПДн — обязательна: без неё строки быть не должно.
   personalDataConsentAt DateTime @map("personal_data_consent_at") @db.Timestamptz(3)
   consentIp             String?  @map("consent_ip") @db.Inet
@@ -278,6 +307,7 @@ model DonationContact {
 
   donation Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
 
+  @@index([email])
   @@map("donation_contact")
 }
 
@@ -598,4 +628,111 @@ model ShortLink {
 
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("short_link")
+}
+
+// ─── Личный кабинет жертвователя ────────────────────────────────────────────
+
+/// Жертвователь с личным кабинетом. Вход — только по коду на e-mail, паролей нет.
+/// Отдельно от admin_user: у кабинета нет ролей, а утечка одной таблицы
+/// не должна давать доступ к другой.
+model DonorUser {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Всегда в нижнем регистре — CHECK `donor_user_email_lowercase`.
+  email            String    @unique @db.VarChar(254)
+  name             String?   @db.VarChar(120)
+  /// E.164, как в donation_contact.
+  phoneE164        String?   @map("phone_e164") @db.VarChar(16)
+  /// IANA-зона: в ней считается время автосписаний. Уфа — UTC+5.
+  timezone         String    @default("Asia/Yekaterinburg") @db.VarChar(64)
+  marketingConsent Boolean   @default(false) @map("marketing_consent")
+  /// Версия сессий: входит в JWT и растёт при выходе — старые cookie
+  /// перестают приниматься сразу на всех устройствах.
+  tokenVersion     Int       @default(0) @map("token_version")
+  lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  donations     Donation[]
+  subscriptions Subscription[]
+
+  @@map("donor_user")
+}
+
+/// Одноразовый код входа. Сам код не хранится — только HMAC-SHA256 от него.
+model DonorAuthCode {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String    @db.VarChar(254)
+  codeHash  String    @map("code_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  /// Неверные попытки ввода. После пятой код недействителен.
+  attempts  Int       @default(0)
+  /// Заполнен — код использован или вытеснен более новым.
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([email, createdAt(sort: Desc)])
+  @@map("donor_auth_code")
+}
+
+enum SubscriptionPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+
+  @@map("subscription_period")
+}
+
+/// PENDING — ждём первый (PARENT) платёж; ACTIVE — списываем по расписанию;
+/// PAUSED — пользователь приостановил; CANCELLED — финально;
+/// FAILED — три неудачных автосписания подряд. Переходы — subscription-status.ts.
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  CANCELLED
+  FAILED
+
+  @@map("subscription_status")
+}
+
+/// Регулярное пожертвование через рекуррентные платежи Robokassa.
+/// Данных карты здесь нет и быть не может — только номер счёта первого
+/// платежа, на который ссылаются автосписания.
+model Subscription {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String             @map("user_id") @db.Uuid
+  campaignId        String             @map("campaign_id") @db.Uuid
+  /// Регион «Откуда вы?» — автосписания идут в рейтинг этого региона.
+  regionId          String?            @map("region_id") @db.Uuid
+  amountKopecks     BigInt             @map("amount_kopecks")
+  period            SubscriptionPeriod
+  /// Время списания `HH:mm` в часовом поясе пользователя.
+  chargeTime        String             @map("charge_time") @db.VarChar(5)
+  status            SubscriptionStatus @default(PENDING)
+  /// InvId первого платежа — `PreviousInvoiceID` автосписаний.
+  parentInvoiceNo   Int?               @map("parent_invoice_no")
+  /// Локальная дата активации: от неё берутся день недели и число месяца списаний.
+  billingAnchorDate DateTime?          @map("billing_anchor_date") @db.Date
+  /// Когда списывать в следующий раз. Пусто, пока подписка не активна
+  /// или пока висит предыдущее автосписание.
+  nextChargeAt      DateTime?          @map("next_charge_at") @db.Timestamptz(3)
+  /// Плановое время автосписания, которое сейчас в работе: от него считается следующее.
+  lastScheduledAt   DateTime?          @map("last_scheduled_at") @db.Timestamptz(3)
+  /// Неудачные автосписания подряд. Сбрасывается успешным.
+  failCount         Int                @default(0) @map("fail_count")
+  consentAcceptedAt DateTime           @map("consent_accepted_at") @db.Timestamptz(3)
+  consentIp         String?            @map("consent_ip") @db.Inet
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  cancelledAt       DateTime?          @map("cancelled_at") @db.Timestamptz(3)
+
+  user      DonorUser  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  region    Region?    @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  donations Donation[]
+
+  /// Выборка планировщика: ACTIVE с наступившим next_charge_at.
+  @@index([status, nextChargeAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("subscription")
 }
