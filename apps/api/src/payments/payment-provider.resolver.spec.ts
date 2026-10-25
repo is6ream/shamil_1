@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { MANUAL_PROVIDER_CODE, ROBOKASSA_PROVIDER_CODE } from '../config/constants';
 import type { AppConfig, PaymentConfig } from '../config/configuration';
-import { PaymentHashAlgorithm, PaymentProviderCode } from '../config/env.validation';
+import { PaymentHashAlgorithm, PaymentProviderCode, RecurringEmulatorOutcome } from '../config/env.validation';
 import { ONLINE_UNAVAILABLE_MESSAGE } from './payment-provider.resolver';
 import { createPaymentProviderResolver } from './payments.module';
 
@@ -17,6 +17,9 @@ const ROBOKASSA_PAYMENT: PaymentConfig = {
   paymentUrl: 'https://auth.robokassa.ru/Merchant/Index.aspx',
   emulatorEnabled: false,
   receipt: { enabled: false },
+  recurringUrl: 'https://auth.robokassa.ru/Merchant/Recurring',
+  opStateUrl: 'https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt',
+  recurringEmulatorOutcome: RecurringEmulatorOutcome.Paid,
 };
 
 /** Как `configuration()` собирает конфиг при `PAYMENT_PROVIDER=manual`: пароли пустые. */

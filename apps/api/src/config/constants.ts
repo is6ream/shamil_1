@@ -107,6 +107,18 @@ export const MAX_UPLOAD_MB_CEILING = 50;
 /** Минимальная длина HMAC-ключа ссылок эмулятора: те же 32 символа, что у админского токена. */
 export const EMULATOR_LINK_SECRET_MIN_LENGTH = 32;
 
+/** Минимальная длина ключей кабинета жертвователя (JWT и HMAC кодов/ссылок). */
+export const DONOR_SECRET_MIN_LENGTH = 32;
+
+/** Отправитель писем по умолчанию — почтовый ящик домена на REG.RU. */
+export const DEFAULT_MAIL_FROM = 'Мечеть «Шамиль» <noreply@mechetshamil.ru>';
+
+/** SMTP REG.RU: SSL на 465-м порту (help.reg.ru, «Настройка почтового клиента»). */
+export const DEFAULT_SMTP_PORT = 465;
+
+/** Раз в сколько планировщик ищет подписки, которым пора списываться. */
+export const DEFAULT_BILLING_CRON = '*/5 * * * *';
+
 /** Код агрегатора РФ: СБП, SberPay, T-Pay и карты одним мерчант-аккаунтом. */
 export const ROBOKASSA_PROVIDER_CODE = 'robokassa';
 

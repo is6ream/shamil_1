@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 
 import type { AppConfig, PaymentConfig } from '../../config/configuration';
-import { PaymentHashAlgorithm, PaymentProviderCode } from '../../config/env.validation';
+import { PaymentHashAlgorithm, PaymentProviderCode, RecurringEmulatorOutcome } from '../../config/env.validation';
 import { RobokassaProvider } from '../providers/robokassa.provider';
 import { buildCallbackBody, buildSuccessParams } from './callback-body';
 import { CheckoutRejectedError, parseCheckoutRequest } from './checkout-request';
@@ -31,6 +31,9 @@ const PAYMENT: PaymentConfig = {
   paymentUrl: 'http://localhost:3001/api/dev/robokassa/checkout',
   emulatorEnabled: true,
   receipt: { enabled: false },
+  recurringUrl: 'https://auth.robokassa.ru/Merchant/Recurring',
+  opStateUrl: 'https://auth.robokassa.ru/Merchant/WebService/Service.asmx/OpStateExt',
+  recurringEmulatorOutcome: RecurringEmulatorOutcome.Paid,
 };
 
 function literalHash(algorithm: 'md5' | 'sha256', source: string): string {

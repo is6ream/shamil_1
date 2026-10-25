@@ -15,13 +15,19 @@ import {
 } from 'class-validator';
 
 import {
+  ROBOKASSA_OPSTATE_URL,
   ROBOKASSA_PAYMENT_URL,
   ROBOKASSA_PRODUCTION_URL_PREFIX,
+  ROBOKASSA_RECURRING_URL,
 } from '../payments/robokassa/robokassa.constants';
 import {
   ADMIN_JWT_SECRET_MIN_LENGTH,
   ADMIN_TOKEN_MIN_LENGTH,
   DEFAULT_API_PORT,
+  DEFAULT_BILLING_CRON,
+  DEFAULT_MAIL_FROM,
+  DEFAULT_SMTP_PORT,
+  DONOR_SECRET_MIN_LENGTH,
   DEFAULT_MAX_UPLOAD_MB,
   MAX_UPLOAD_MB_CEILING,
   REVALIDATE_SECRET_MIN_LENGTH,
@@ -55,6 +61,18 @@ export enum DeployStage {
 export enum PaymentProviderCode {
   Manual = 'manual',
   Robokassa = 'robokassa',
+}
+
+/** Как уходят письма: `log` — в лог приложения (dev, тесты), `smtp` — почта домена. */
+export enum MailTransport {
+  Log = 'log',
+  Smtp = 'smtp',
+}
+
+/** Чем эмулятор отвечает на автосписание — чтобы локально проверять и отказ. */
+export enum RecurringEmulatorOutcome {
+  Paid = 'paid',
+  Declined = 'declined',
 }
 
 /** Хранилище медиатеки. `local` — каталог на диске хостинга, без внешних сервисов. */
@@ -409,6 +427,110 @@ export class EnvVars {
   @IsOptional()
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   WEB_REVALIDATE_URL?: string;
+
+  // ─── Кабинет жертвователя и ежемесячные пожертвования ─────────────────────
+
+  /**
+   * Рубильник кабинета: маршруты `/donor/*` и планировщик автосписаний.
+   * Выключен по умолчанию — прод без почты и ключей кабинета обязан
+   * стартовать как раньше, а не падать на новых обязательных переменных.
+   */
+  @envBoolean(false)
+  @IsBoolean()
+  DONOR_CABINET_ENABLED: boolean = false;
+
+  /**
+   * Ключ access/refresh-JWT жертвователя. Отдельный от `ADMIN_JWT_SECRET`
+   * намеренно: утечка одного не даёт подделать токен другого.
+   * Обязателен в production при включённом кабинете; локально — случайный на запуск.
+   */
+  @ValidateIf((env: EnvVars) => whenDonorCabinetInProduction(env) || env.DONOR_JWT_SECRET !== undefined)
+  @IsString()
+  @MinLength(DONOR_SECRET_MIN_LENGTH)
+  DONOR_JWT_SECRET?: string;
+
+  /** HMAC-ключ кодов входа и ссылок отмены из писем. */
+  @ValidateIf((env: EnvVars) => whenDonorCabinetInProduction(env) || env.DONOR_HMAC_SECRET !== undefined)
+  @IsString()
+  @MinLength(DONOR_SECRET_MIN_LENGTH)
+  DONOR_HMAC_SECRET?: string;
+
+  /** `Secure` у refresh-cookie кабинета. По умолчанию — как `NODE_ENV=production`. */
+  @IsOptional()
+  @envBoolean()
+  @IsBoolean()
+  DONOR_COOKIE_SECURE?: boolean;
+
+  @IsEnum(MailTransport)
+  MAIL_TRANSPORT: MailTransport = MailTransport.Log;
+
+  @IsString()
+  @MinLength(3)
+  MAIL_FROM: string = DEFAULT_MAIL_FROM;
+
+  /** SMTP почты домена mechetshamil.ru на REG.RU, например `mail.hosting.reg.ru`. */
+  @ValidateIf(whenSmtp)
+  @IsString()
+  @MinLength(1)
+  SMTP_HOST?: string;
+
+  @IsInt()
+  @Min(MIN_PORT)
+  @Max(MAX_PORT)
+  SMTP_PORT: number = DEFAULT_SMTP_PORT;
+
+  /** TLS с первого байта (465). Для 587 со STARTTLS — `false`. */
+  @envBoolean(true)
+  @IsBoolean()
+  SMTP_SECURE: boolean = true;
+
+  @ValidateIf(whenSmtp)
+  @IsString()
+  @MinLength(1)
+  SMTP_USER?: string;
+
+  @ValidateIf(whenSmtp)
+  @IsString()
+  @MinLength(1)
+  SMTP_PASS?: string;
+
+  /**
+   * Планировщик автосписаний. На App Platform экземпляров может быть несколько —
+   * это безопасно (SKIP LOCKED + уникальный индекс), но включать его стоит
+   * осознанно: каждый тик ходит в Robokassa. В тестах выключен.
+   */
+  @envBoolean(false)
+  @IsBoolean()
+  BILLING_SCHEDULER_ENABLED: boolean = false;
+
+  @IsString()
+  @MinLength(9)
+  BILLING_CRON: string = DEFAULT_BILLING_CRON;
+
+  /** Адрес рекуррентного списания. Меняется только ради эмулятора. */
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
+  PAYMENT_ROBOKASSA_RECURRING_URL: string = ROBOKASSA_RECURRING_URL;
+
+  /** Адрес OpStateExt. Меняется только ради эмулятора. */
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
+  PAYMENT_ROBOKASSA_OPSTATE_URL: string = ROBOKASSA_OPSTATE_URL;
+
+  @IsEnum(RecurringEmulatorOutcome)
+  RECURRING_EMULATOR_OUTCOME: RecurringEmulatorOutcome = RecurringEmulatorOutcome.Paid;
+
+  /** Swagger `/api/docs` для `/donor/*`. По умолчанию — только вне production. */
+  @IsOptional()
+  @envBoolean()
+  @IsBoolean()
+  SWAGGER_ENABLED?: boolean;
+}
+
+function whenSmtp(env: EnvVars): boolean {
+  return env.MAIL_TRANSPORT === MailTransport.Smtp;
+}
+
+function whenDonorCabinetInProduction(env: EnvVars): boolean {
+  return env.NODE_ENV === NodeEnv.Production && env.DONOR_CABINET_ENABLED;
 }
 
 /** Условие «поле обязательно, потому что медиатека в S3». */
@@ -448,10 +570,36 @@ function crossFieldErrors(env: EnvVars): readonly string[] {
     errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор требует PAYMENT_IS_TEST=true');
   }
 
+  errors.push(...donorCabinetErrors(env, isProduction));
+
   if (isProduction && env.STORAGE_DRIVER !== StorageDriver.S3) {
     // Диск контейнера Timeweb App Platform эфемерен: загруженные фото пропали
     // бы при первом же деплое, а ссылки на них остались бы в галерее битыми.
     errors.push('STORAGE_DRIVER: в production допустим только s3 — диск контейнера эфемерен');
+  }
+
+  return errors;
+}
+
+/** Межполевые правила кабинета: без почты код входа уходит в лог, а не человеку. */
+function donorCabinetErrors(env: EnvVars, isProduction: boolean): readonly string[] {
+  const errors: string[] = [];
+
+  if (isProduction && env.DONOR_CABINET_ENABLED && env.MAIL_TRANSPORT !== MailTransport.Smtp) {
+    errors.push('MAIL_TRANSPORT: кабинет в production требует smtp — иначе коды входа не дойдут');
+  }
+
+  if (env.BILLING_SCHEDULER_ENABLED && !env.DONOR_CABINET_ENABLED) {
+    errors.push('BILLING_SCHEDULER_ENABLED: планировщик работает только при DONOR_CABINET_ENABLED=true');
+  }
+
+  for (const [name, url] of [
+    ['PAYMENT_ROBOKASSA_RECURRING_URL', env.PAYMENT_ROBOKASSA_RECURRING_URL],
+    ['PAYMENT_ROBOKASSA_OPSTATE_URL', env.PAYMENT_ROBOKASSA_OPSTATE_URL],
+  ] as const) {
+    if (isProduction && !url.startsWith(ROBOKASSA_PRODUCTION_URL_PREFIX)) {
+      errors.push(`${name}: в production допустим только ${ROBOKASSA_PRODUCTION_URL_PREFIX}…`);
+    }
   }
 
   return errors;
