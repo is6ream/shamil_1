@@ -414,3 +414,77 @@ describe('сборка конфига', () => {
     expect(config.payment.receipt.enabled).toBe(false);
   });
 });
+
+describe('кабинет жертвователя и автосписания', () => {
+  /** Боевой минимум без кабинета — как сейчас на проде. */
+  const PRODUCTION_BASE: Readonly<Record<string, string>> = {
+    ...BASE_ENV,
+    NODE_ENV: NodeEnv.Production,
+    DEPLOY_STAGE: DeployStage.Production,
+    PAYMENT_PROVIDER: PaymentProviderCode.Manual,
+    ADMIN_API_TOKEN: 'a'.repeat(40),
+    ADMIN_JWT_SECRET: 'j'.repeat(40),
+    STORAGE_DRIVER: 's3',
+    S3_BUCKET: 'b',
+    S3_REGION: 'ru-1',
+    S3_ENDPOINT: 'https://s3.example.test',
+    S3_ACCESS_KEY_ID: 'k',
+    S3_SECRET_ACCESS_KEY: 's',
+    S3_PUBLIC_BASE_URL: 'https://cdn.example.test',
+  };
+
+  const CABINET_IN_PRODUCTION: Readonly<Record<string, string>> = {
+    ...PRODUCTION_BASE,
+    DONOR_CABINET_ENABLED: 'true',
+    DONOR_JWT_SECRET: 'd'.repeat(40),
+    DONOR_HMAC_SECRET: 'h'.repeat(40),
+    MAIL_TRANSPORT: 'smtp',
+    SMTP_HOST: 'mail.hosting.reg.ru',
+    SMTP_USER: 'noreply@mechetshamil.ru',
+    SMTP_PASS: 'secret',
+  };
+
+  test('выключенный кабинет не требует ни ключей, ни почты — прод стартует как раньше', () => {
+    expect(validateEnv(PRODUCTION_BASE).DONOR_CABINET_ENABLED).toBe(false);
+  });
+
+  test('полный набор для кабинета в production проходит', () => {
+    expect(validateEnv(CABINET_IN_PRODUCTION).DONOR_CABINET_ENABLED).toBe(true);
+  });
+
+  test('кабинет в production без своего ключа JWT не поднимается', () => {
+    expect(() => validateEnv({ ...CABINET_IN_PRODUCTION, DONOR_JWT_SECRET: undefined })).toThrow(/DONOR_JWT_SECRET/);
+  });
+
+  test('кабинет в production с письмами в лог не поднимается — коды входа не дойдут', () => {
+    expect(() => validateEnv({ ...CABINET_IN_PRODUCTION, MAIL_TRANSPORT: 'log' })).toThrow(/MAIL_TRANSPORT/);
+  });
+
+  test('smtp без пароля не поднимается', () => {
+    expect(() => validateEnv({ ...CABINET_IN_PRODUCTION, SMTP_PASS: undefined })).toThrow(/SMTP_PASS/);
+  });
+
+  test('планировщик без кабинета — ошибка конфигурации', () => {
+    expect(() => validateEnv({ ...BASE_ENV, BILLING_SCHEDULER_ENABLED: 'true' })).toThrow(/BILLING_SCHEDULER_ENABLED/);
+  });
+
+  test('в production рекуррент и OpStateExt — только на auth.robokassa.ru', () => {
+    const act = (): unknown =>
+      validateEnv({ ...CABINET_IN_PRODUCTION, PAYMENT_ROBOKASSA_RECURRING_URL: 'http://localhost:3001/api/dev/robokassa/recurring' });
+
+    expect(act).toThrow(/PAYMENT_ROBOKASSA_RECURRING_URL/);
+  });
+
+  test('Swagger в production не поднимается даже с флагом', () => {
+    // Окружение подменяется целиком: локальный .env (эмулятор и т. п.) в production не прошёл бы валидацию.
+    const saved = process.env;
+
+    process.env = { ...CABINET_IN_PRODUCTION, SWAGGER_ENABLED: 'true' };
+
+    try {
+      expect(configuration().swaggerEnabled).toBe(false);
+    } finally {
+      process.env = saved;
+    }
+  });
+});
