@@ -74,6 +74,12 @@ describeDatabase('гарантии схемы', () => {
         'campaign_goal_positive',
         // Без него короткая ссылка с "//чужой.домен" стала бы открытым редиректом.
         'short_link_target_path_format',
+        // Кабинет и подписки: автосписание без подписки и владельца некому показать.
+        'donation_type_subscription_consistency',
+        'donation_subscription_has_user',
+        'donor_user_email_lowercase',
+        'subscription_charge_time_format',
+        'subscription_active_has_parent',
       ]),
     );
   });
@@ -94,6 +100,9 @@ describeDatabase('гарантии схемы', () => {
         // По этому номеру обработчик вебхука находит донат: без уникальности
         // колбэк применится к случайному из двух.
         'donation_invoice_no_key',
+        // Второй pending CHILD по подписке — это двойное списание с карты.
+        'donation_one_pending_child_per_subscription',
+        'donation_one_parent_per_subscription',
       ]),
     );
   });
