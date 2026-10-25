@@ -674,17 +674,9 @@ model DonorAuthCode {
   @@map("donor_auth_code")
 }
 
-enum SubscriptionPeriod {
-  DAILY
-  WEEKLY
-  MONTHLY
-
-  @@map("subscription_period")
-}
-
 /// PENDING — ждём первый (PARENT) платёж; ACTIVE — списываем по расписанию;
 /// PAUSED — пользователь приостановил; CANCELLED — финально;
-/// FAILED — три неудачных автосписания подряд. Переходы — subscription-status.ts.
+/// FAILED — три неудачных автосписания подряд. Переходы — subscriptions/subscription-status.ts.
 enum SubscriptionStatus {
   PENDING
   ACTIVE
@@ -695,7 +687,8 @@ enum SubscriptionStatus {
   @@map("subscription_status")
 }
 
-/// Регулярное пожертвование через рекуррентные платежи Robokassa.
+/// Ежемесячное пожертвование через рекуррентные платежи Robokassa.
+/// Периодичность только помесячная (25.10.2026), поэтому колонки периода нет.
 /// Данных карты здесь нет и быть не может — только номер счёта первого
 /// платежа, на который ссылаются автосписания.
 model Subscription {
@@ -705,26 +698,35 @@ model Subscription {
   /// Регион «Откуда вы?» — автосписания идут в рейтинг этого региона.
   regionId          String?            @map("region_id") @db.Uuid
   amountKopecks     BigInt             @map("amount_kopecks")
-  period            SubscriptionPeriod
   /// Время списания `HH:mm` в часовом поясе пользователя.
-  chargeTime        String             @map("charge_time") @db.VarChar(5)
+  chargeTime        String             @default("12:00") @map("charge_time") @db.VarChar(5)
   status            SubscriptionStatus @default(PENDING)
   /// InvId первого платежа — `PreviousInvoiceID` автосписаний.
-  parentInvoiceNo   Int?               @map("parent_invoice_no")
-  /// Локальная дата активации: от неё берутся день недели и число месяца списаний.
+  parentInvoiceNo   Int?               @unique @map("parent_invoice_no")
+  /// Локальная дата активации: от неё берётся число месяца списаний
+  /// (31-е в феврале прижимается к последнему дню — billing-calendar.ts).
   billingAnchorDate DateTime?          @map("billing_anchor_date") @db.Date
-  /// Когда списывать в следующий раз. Пусто, пока подписка не активна
-  /// или пока висит предыдущее автосписание.
+  /// Когда списывать в следующий раз. У ACTIVE заполнено всегда
+  /// (CHECK `subscription_active_scheduled`); висящее автосписание видно
+  /// по pending CHILD, а не по пустому полю.
   nextChargeAt      DateTime?          @map("next_charge_at") @db.Timestamptz(3)
   /// Плановое время автосписания, которое сейчас в работе: от него считается следующее.
   lastScheduledAt   DateTime?          @map("last_scheduled_at") @db.Timestamptz(3)
+  /// Номер цикла, который списывается следующим: anchor + cycleNo месяцев.
+  /// Считается от якоря, а не от прошлого списания — иначе 31 → 28 → 28 → …
+  cycleNo           Int                @default(1) @map("cycle_no")
   /// Неудачные автосписания подряд. Сбрасывается успешным.
   failCount         Int                @default(0) @map("fail_count")
+  lastFailedAt      DateTime?          @map("last_failed_at") @db.Timestamptz(3)
+  /// Причина последнего отказа — для письма, кабинета и админки.
+  lastFailureReason String?            @map("last_failure_reason") @db.VarChar(255)
   consentAcceptedAt DateTime           @map("consent_accepted_at") @db.Timestamptz(3)
   consentIp         String?            @map("consent_ip") @db.Inet
   createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   cancelledAt       DateTime?          @map("cancelled_at") @db.Timestamptz(3)
+  /// 'donor' | 'link' | 'admin' — CHECK `subscription_cancel_source_consistency`.
+  cancelSource      String?            @map("cancel_source") @db.VarChar(16)
 
   user      DonorUser  @relation(fields: [userId], references: [id], onDelete: Restrict)
   campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Restrict)

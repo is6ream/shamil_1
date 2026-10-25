@@ -5,7 +5,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { BCRYPT_COST } from '../../auth/auth.constants';
 import type { AppConfig } from '../../config/configuration';
 import { PrismaClient } from '../../generated/prisma/client';
-import { AdminRole, DonationStatus, RegionType } from '../../generated/prisma/enums';
+import { AdminRole, DonationStatus, DonationType, RegionType, SubscriptionStatus } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma.service';
 import { DB_TESTS_ENV_FLAG } from './global-setup';
 
@@ -222,4 +222,59 @@ export async function markPaid(
     where: { id: donationId },
     data: { status: DonationStatus.paid, paidAmountKopecks, paidAt },
   });
+}
+
+export async function createTestDonor(prisma: PrismaClient, email = 'donor@example.test'): Promise<{ id: string }> {
+  return prisma.donorUser.create({ data: { email }, select: { id: true } });
+}
+
+export interface TestSubscriptionOptions {
+  readonly amountKopecks?: bigint;
+  /** ACTIVE — с оплаченным PARENT, якорем и датой следующего списания. */
+  readonly active?: boolean;
+  readonly nextChargeAt?: Date;
+  readonly provider?: string;
+}
+
+/**
+ * Подписка так, как её оставляет поток оплаты: PENDING с pending-PARENT
+ * или ACTIVE с оплаченным PARENT. `parentInvoiceNo` — номер счёта PARENT.
+ */
+export async function createTestSubscription(
+  prisma: PrismaClient,
+  fixtures: TestFixtures,
+  userId: string,
+  options: TestSubscriptionOptions = {},
+): Promise<{ id: string; parentId: string; parentInvoiceNo: number }> {
+  const amountKopecks = options.amountKopecks ?? TEST_DONATION_KOPECKS;
+  const subscription = await prisma.subscription.create({
+    data: { userId, campaignId: fixtures.campaignId, amountKopecks, consentAcceptedAt: TEST_PAID_AT },
+    select: { id: true },
+  });
+  const parent = await prisma.donation.create({
+    data: {
+      campaignId: fixtures.campaignId,
+      amountKopecks,
+      provider: options.provider ?? 'robokassa',
+      type: DonationType.PARENT,
+      subscriptionId: subscription.id,
+      userId,
+    },
+    select: { id: true, invoiceNo: true },
+  });
+
+  if (options.active === true) {
+    await markPaid(prisma, parent.id, amountKopecks);
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: SubscriptionStatus.ACTIVE,
+        parentInvoiceNo: parent.invoiceNo,
+        billingAnchorDate: new Date(Date.UTC(2026, 8, 15)),
+        nextChargeAt: options.nextChargeAt ?? new Date(Date.UTC(2026, 9, 15, 7)),
+      },
+    });
+  }
+
+  return { id: subscription.id, parentId: parent.id, parentInvoiceNo: parent.invoiceNo };
 }
