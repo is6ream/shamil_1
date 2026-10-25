@@ -116,7 +116,7 @@ async function login(browser, email, password) {
   page.on("pageerror", (error) => console.log(`    pageerror: ${String(error).slice(0, 200)}`));
   await go(page, `/admin/login`);
   await page.getByLabel("Электронная почта").fill(email);
-  await page.getByLabel("Пароль").fill(password);
+  await page.getByLabel("Пароль", { exact: true }).fill(password);
   await page.getByRole("button", { name: /Войти/ }).click();
   try {
     await page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 15_000 });
@@ -374,7 +374,7 @@ async function main() {
       assert(csv.split("\r\n")[0].includes(";"), "разделитель не «;»");
 
       await go(page, `/admin/content`);
-      await page.getByText("Этот раздел недоступен для вашей роли.").waitFor();
+      await page.getByText("Раздел «Тексты сайта» недоступен для роли «Бухгалтер».").waitFor();
     });
 
     await scenario("7. Тихий refresh при истёкшем access; две вкладки живут вместе", async () => {
