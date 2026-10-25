@@ -51,6 +51,7 @@ describeDatabase('гарантии схемы', () => {
         'donation_stats_sync_aiu',
         'campaign_stats_init_ai',
         'region_stats_init_ai',
+        'subscription_status_guard_bu',
       ]),
     );
   });
@@ -80,6 +81,9 @@ describeDatabase('гарантии схемы', () => {
         'donor_user_email_lowercase',
         'subscription_charge_time_format',
         'subscription_active_has_parent',
+        'subscription_active_scheduled',
+        'subscription_cancel_source_consistency',
+        'subscription_failure_fields',
       ]),
     );
   });
