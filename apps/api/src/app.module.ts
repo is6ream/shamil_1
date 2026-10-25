@@ -13,7 +13,9 @@ import type { AppConfig } from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { DonationsModule } from './donations/donations.module';
 import { FundraisingGoalsModule } from './fundraising-goals/fundraising-goals.module';
+import { DonorFeatureModule, isDonorCabinetEnabled } from './donor-cabinet/donor-feature.module';
 import { HealthModule } from './health/health.module';
+import { MailModule } from './mail/mail.module';
 import { MediaModule } from './media/media.module';
 import {
   PaymentEmulatorModule,
@@ -53,6 +55,10 @@ import { ShowcaseModule } from './showcase/showcase.module';
     FundraisingGoalsModule,
     ShortLinksModule,
     AnalyticsModule,
+    MailModule,
+    // Кабинет жертвователя и автосписания — только при DONOR_CABINET_ENABLED=true:
+    // прод без почты и ключей кабинета стартует как раньше.
+    ConditionalModule.registerWhen(DonorFeatureModule, isDonorCabinetEnabled),
     // Эмулятор оплаты — только локально: в production флаг запрещён
     // валидацией окружения, и маршрутов `/api/dev/…` там нет (404).
     ConditionalModule.registerWhen(PaymentEmulatorModule, isPaymentEmulatorEnabled),
