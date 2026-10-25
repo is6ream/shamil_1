@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AdminPage } from "@/components/admin/AdminPage";
-import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminShell } from "@/components/admin/shell/AdminShell";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
 import { loginHref } from "@/lib/admin/login";
-import { ADMIN_LOGIN, findSection } from "@/lib/admin/navigation";
+import { ADMIN_HOME, ADMIN_LOGIN, findSection } from "@/lib/admin/navigation";
+import { ROLE_LABELS } from "@/lib/admin/roles";
 import { useAdminSession } from "@/lib/admin/session";
 
 /**
@@ -48,7 +50,12 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
         children
       ) : (
         <AdminPage title="Нет доступа">
-          <EmptyState title="Этот раздел недоступен для вашей роли." />
+          <EmptyState
+            title={`Раздел «${section?.label ?? ""}» недоступен для роли «${ROLE_LABELS[state.user.role]}».`}
+            action={<Link href={ADMIN_HOME}>Вернуться к обзору</Link>}
+          >
+            Если доступ нужен по работе, попросите суперадмина сменить вам роль в разделе «Пользователи».
+          </EmptyState>
         </AdminPage>
       )}
     </AdminShell>

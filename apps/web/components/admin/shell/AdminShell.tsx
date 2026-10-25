@@ -12,10 +12,10 @@ import { ADMIN_HOME, findSection, menuGroups, mobileTabs } from "@/lib/admin/nav
 import { useAdminSession } from "@/lib/admin/session";
 import { useSidebarCollapsed } from "@/lib/admin/use-sidebar-collapsed";
 
-import { MobileTabBar } from "./shell/MobileTabBar";
-import { ProfileMenu } from "./shell/ProfileMenu";
-import styles from "./shell/Shell.module.css";
-import { Sidebar } from "./shell/Sidebar";
+import { MobileTabBar } from "./MobileTabBar";
+import { ProfileMenu } from "./ProfileMenu";
+import styles from "./Shell.module.css";
+import { Sidebar } from "./Sidebar";
 
 interface Props {
   readonly user: AdminUser;
