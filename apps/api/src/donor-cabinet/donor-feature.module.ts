@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { BillingModule } from '../billing/billing.module';
 import { validateEnv } from '../config/env.validation';
 import { DonorAuthModule } from '../donor-auth/donor-auth.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
@@ -10,7 +11,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
  * это 404 на `/donor/*`, а не полуработающие маршруты без почты и ключей.
  */
 @Module({
-  imports: [DonorAuthModule, SubscriptionsModule],
+  imports: [DonorAuthModule, SubscriptionsModule, BillingModule],
 })
 export class DonorFeatureModule {}
 
