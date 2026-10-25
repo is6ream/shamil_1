@@ -1,13 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 
 import type { AppConfig } from '../config/configuration';
 import { BillingService } from './billing.service';
-
-const JOB_NAME = 'billing-tick';
 
 /**
  * Тик автосписаний по `BILLING_CRON` (по умолчанию каждые 5 минут).
@@ -15,15 +12,19 @@ const JOB_NAME = 'billing-tick';
  *
  * Внутри процесса тики не перекрываются (`isRunning`), между процессами —
  * блокировки в БД (см. `BillingService`).
+ *
+ * `CronJob` из пакета `cron` напрямую, без `@nestjs/schedule`: версия 12
+ * поставляется только как ES-модуль, и jest на Node 22 её не загружает,
+ * а движок у неё тот же самый `cron`.
  */
 @Injectable()
 export class BillingScheduler implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(BillingScheduler.name);
   private isRunning = false;
+  private job: CronJob | null = null;
 
   constructor(
     private readonly billing: BillingService,
-    private readonly registry: SchedulerRegistry,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
@@ -36,17 +37,13 @@ export class BillingScheduler implements OnApplicationBootstrap, OnModuleDestroy
       return;
     }
 
-    const job = CronJob.from({ cronTime: billing.cron, onTick: () => this.tick(), start: false });
-
-    this.registry.addCronJob(JOB_NAME, job);
-    job.start();
+    this.job = CronJob.from({ cronTime: billing.cron, onTick: () => this.tick(), start: true });
     this.logger.log(`Планировщик автосписаний запущен: ${billing.cron}`);
   }
 
   onModuleDestroy(): void {
-    if (this.registry.doesExist('cron', JOB_NAME)) {
-      this.registry.deleteCronJob(JOB_NAME);
-    }
+    void this.job?.stop();
+    this.job = null;
   }
 
   async tick(): Promise<void> {
