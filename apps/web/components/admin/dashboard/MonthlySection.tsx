@@ -37,7 +37,7 @@ export function MonthlySection({ now }: { readonly now: number }) {
           title={(bar) => monthLabel(bar.date)}
           axisLabel={(bar) => monthLabel(bar.date, "short")}
           isEveryLabel
-          hint="Наведите на столбик, чтобы увидеть сумму за месяц"
+          hint="Наведите на столбик или коснитесь его, чтобы увидеть сумму за месяц"
           tableSummary="Таблица по месяцам"
           unitHeader="Месяц"
         />

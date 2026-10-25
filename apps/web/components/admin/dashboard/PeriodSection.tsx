@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { Section } from "@/components/admin/ui/Blocks";
@@ -85,7 +86,7 @@ function Breakdown({ view, data, anchored }: { readonly view: View; readonly dat
         bars={fillDays(data.byDay, anchored.period.fromDay, anchored.period.toDay)}
         title={(bar) => formatPlainDate(bar.date)}
         axisLabel={(bar) => formatPlainDate(bar.date).slice(0, 5)}
-        hint="Наведите на столбик, чтобы увидеть сумму за день"
+        hint="Наведите на столбик или коснитесь его, чтобы увидеть сумму за день"
         tableSummary="Таблица по дням"
         unitHeader="День"
       />
@@ -120,7 +121,11 @@ export function PeriodSection({ period, onPeriodChange, anchored, data }: Props)
   const [view, setView] = useState<View>("days");
 
   return (
-    <Section title="За период" description="По дате оплаты, время — по Уфе.">
+    <Section
+      title="За период"
+      description={view === "utm" ? "По дате оплаты, время — по Уфе. Источник — по первому переходу." : "По дате оплаты, время — по Уфе."}
+      actions={view === "utm" ? <Link href="/admin/sources">Подробнее в «Источниках» →</Link> : null}
+    >
       <Segmented
         label="Период"
         options={PRESETS}

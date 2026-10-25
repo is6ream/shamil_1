@@ -44,7 +44,7 @@ function barPath(x: number, width: number, height: number): string {
 
 /**
  * Поступления столбиками SVG — по дням или по месяцам. Один ряд — один цвет
- * и без легенды; подсказка по наведению, зона попадания — во всю высоту.
+ * и без легенды; подсказка по наведению или касанию, зона попадания — во всю высоту.
  * Те же числа — в раскрывающейся таблице (клавиатура, скринридер).
  */
 export function BarChart({ bars, title, axisLabel, isEveryLabel = false, hint, tableSummary, unitHeader }: BarChartProps) {
@@ -65,7 +65,7 @@ export function BarChart({ bars, title, axisLabel, isEveryLabel = false, hint, t
         preserveAspectRatio="none"
         className={styles.chartSvg}
         aria-hidden="true"
-        onMouseLeave={() => setActive(null)}
+        onPointerLeave={() => setActive(null)}
       >
         <line x1="0" x2="1000" y1={HEIGHT - 0.5} y2={HEIGHT - 0.5} className={styles.baseline} />
         {bars.map((bar, index) => {
@@ -73,7 +73,7 @@ export function BarChart({ bars, title, axisLabel, isEveryLabel = false, hint, t
           const x = index * slot + (slot - barWidth) / 2;
 
           return (
-            <g key={bar.date} onMouseEnter={() => setActive(index)}>
+            <g key={bar.date} onPointerEnter={() => setActive(index)} onPointerDown={() => setActive(index)}>
               <rect x={index * slot} y="0" width={slot} height={HEIGHT} className={styles.hit} />
               {height > 0 ? (
                 <path
