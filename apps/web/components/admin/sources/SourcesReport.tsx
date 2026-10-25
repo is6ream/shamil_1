@@ -4,10 +4,10 @@ import { useState } from "react";
 
 import dashboard from "@/components/admin/dashboard/dashboard.module.css";
 import { Note, Section } from "@/components/admin/ui/Blocks";
-import { Button } from "@/components/admin/ui/Button";
 import { DataTable } from "@/components/admin/ui/DataTable";
 import type { Column } from "@/components/admin/ui/DataTable";
 import { SelectField, TextField } from "@/components/admin/ui/Field";
+import { Segmented } from "@/components/admin/ui/Segmented";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
 import { GROUPING_OPTIONS, MODEL_OPTIONS, sourceLabel, sourceRowKey, sourcesReportPath } from "@/lib/admin/attribution";
 import { resolvePeriod } from "@/lib/admin/dashboard";
@@ -89,19 +89,12 @@ export function SourcesReport() {
   return (
     <>
       <Section title="Период и разрез">
-        <div className={dashboard.presets} role="group" aria-label="Период">
-          {PRESETS.map((preset) => (
-            <Button
-              key={preset.value}
-              isSmall
-              variant={period.preset === preset.value ? "primary" : "ghost"}
-              aria-pressed={period.preset === preset.value}
-              onClick={() => setPeriod((current) => ({ ...current, preset: preset.value }))}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
+        <Segmented
+          label="Период"
+          options={PRESETS}
+          value={period.preset}
+          onChange={(preset) => setPeriod((current) => ({ ...current, preset }))}
+        />
         {period.preset === "custom" ? (
           <div className={dashboard.customPeriod}>
             <TextField

@@ -39,10 +39,12 @@
   font-size: 13px;
 }
 
+/* Две кнопки в ряд, а не столбик из трёх: строка этапа не вытягивается в высоту. */
 .rowActions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
+  min-width: 14rem;
 }
 
 .readOnly {
@@ -87,6 +89,20 @@
   margin: 0;
   color: rgba(255, 255, 255, 0.8);
   font-size: var(--fs-small);
+}
+
+/* На телефоне строка — карточка: подпись не прилипает к полосе активного этапа. */
+@media (max-width: 720px) {
+  tbody tr.activeRow {
+    margin-inline: calc(var(--sp-3) * -1);
+    padding-inline: var(--sp-3);
+    border-radius: var(--r-sm);
+  }
+
+  .rowActions {
+    justify-content: flex-end;
+    min-width: 0;
+  }
 }
 
 @media (min-width: 960px) {
