@@ -291,6 +291,6 @@ describeDatabase('сессии админки', () => {
   });
 
   function principal(user: { id: string; email: string; role: AdminRole }): AdminPrincipal {
-    return { id: user.id, email: user.email, role: user.role, displayName: null };
+    return { id: user.id, email: user.email, role: user.role, displayName: null, mustChangePassword: false };
   }
 });

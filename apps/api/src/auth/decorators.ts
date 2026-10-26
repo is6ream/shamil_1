@@ -13,6 +13,16 @@ export const ROLES_METADATA_KEY = 'admin:roles';
 export const Roles = (...roles: readonly AdminRole[]): MethodDecorator & ClassDecorator =>
   SetMetadata(ROLES_METADATA_KEY, roles);
 
+export const PASSWORD_CHANGE_ALLOWED_KEY = 'admin:password-change-allowed';
+
+/**
+ * Маршрут доступен и с временным паролем. Без декоратора `JwtAuthGuard`
+ * отвечает такому пользователю 403 `PASSWORD_CHANGE_REQUIRED` — как и с
+ * `@Roles()`, забытый декоратор закрывает доступ, а не открывает.
+ */
+export const AllowWhilePasswordChangeRequired = (): MethodDecorator & ClassDecorator =>
+  SetMetadata(PASSWORD_CHANGE_ALLOWED_KEY, true);
+
 /** Текущий пользователь админки. Гард уже гарантировал, что он есть. */
 export const CurrentAdmin = createParamDecorator(
   (_data: unknown, context: ExecutionContext): AdminPrincipal => {

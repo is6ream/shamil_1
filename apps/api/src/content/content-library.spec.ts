@@ -47,7 +47,7 @@ describeDatabase('контент сайта', () => {
   beforeEach(async () => {
     await resetDatabase(prisma);
     const admin = await createTestAdmin(prisma);
-    actor = { id: admin.id, email: admin.email, role: admin.role, displayName: null };
+    actor = { id: admin.id, email: admin.email, role: admin.role, displayName: null, mustChangePassword: false };
   });
 
   async function mediaAsset(): Promise<string> {

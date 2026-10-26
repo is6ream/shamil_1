@@ -352,7 +352,12 @@ model AdminUser {
   /// Версия сессий. Входит в access-JWT и растёт при смене пароля, роли или
   /// деактивации: старые access-токены перестают приниматься сразу, а не через 15 минут.
   tokenVersion     Int       @default(0) @map("token_version")
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Пароль задан не самим человеком (суперадмин или сид) — он известен
+  /// ещё кому-то. Пока флаг стоит, API пускает только к смене пароля.
+  /// Ставит и снимает только сервер; по умолчанию false — пароли,
+  /// заведённые до появления флага, уже настоящие.
+  mustChangePassword Boolean @default(false) @map("must_change_password")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   refreshTokens AdminRefreshToken[]

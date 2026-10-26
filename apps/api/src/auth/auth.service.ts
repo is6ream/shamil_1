@@ -24,6 +24,7 @@ const USER_SELECT = {
   passwordHash: true,
   lockedUntil: true,
   tokenVersion: true,
+  mustChangePassword: true,
 } as const;
 
 type SessionUser = Prisma.AdminUserGetPayload<{ select: typeof USER_SELECT }>;
@@ -32,8 +33,16 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function toPrincipal(user: Pick<SessionUser, 'id' | 'email' | 'role' | 'displayName'>): AdminPrincipal {
-  return { id: user.id, email: user.email, role: user.role, displayName: user.displayName };
+function toPrincipal(
+  user: Pick<SessionUser, 'id' | 'email' | 'role' | 'displayName' | 'mustChangePassword'>,
+): AdminPrincipal {
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    displayName: user.displayName,
+    mustChangePassword: user.mustChangePassword,
+  };
 }
 
 @Injectable()
@@ -116,6 +125,8 @@ export class AuthService {
   /**
    * Смена своего пароля. Все прежние сессии гаснут (и access, и refresh),
    * текущая вкладка получает новую — человеку не нужно входить заново.
+   * Пароль, придуманный самим человеком, больше не временный — флаг
+   * снимается тем же UPDATE, что меняет хеш: одно без другого не бывает.
    */
   async changePassword(
     userId: string,
@@ -141,7 +152,7 @@ export class AuthService {
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.adminUser.update({
         where: { id: userId },
-        data: { passwordHash, tokenVersion: { increment: 1 } },
+        data: { passwordHash, mustChangePassword: false, tokenVersion: { increment: 1 } },
         select: USER_SELECT,
       });
 

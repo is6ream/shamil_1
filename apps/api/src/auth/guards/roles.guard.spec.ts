@@ -41,7 +41,7 @@ function contextFor(request: Partial<AuthRequest>, roles?: readonly AdminRole[])
 }
 
 function admin(role: AdminRole): AuthRequest['admin'] {
-  return { id: '00000000-0000-4000-8000-000000000001', email: 'a@b.test', role, displayName: null };
+  return { id: '00000000-0000-4000-8000-000000000001', email: 'a@b.test', role, displayName: null, mustChangePassword: false };
 }
 
 describe('гард ролей', () => {

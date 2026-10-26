@@ -65,7 +65,7 @@ describeDatabase('медиатека и галерея', () => {
     await resetDatabase(prisma);
     await seedFixtures(prisma, { campaignSlug: CAMPAIGN_SLUG });
     const admin = await createTestAdmin(prisma, { email: 'editor@example.test' });
-    actor = { id: admin.id, email: admin.email, role: admin.role, displayName: null };
+    actor = { id: admin.id, email: admin.email, role: admin.role, displayName: null, mustChangePassword: false };
   });
 
   async function photo(): Promise<Buffer> {

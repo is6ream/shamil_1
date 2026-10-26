@@ -6,6 +6,8 @@ export interface AdminMeResponse {
   readonly email: string;
   readonly role: AdminRole;
   readonly displayName: string | null;
+  /** `true` — фронт уводит на смену временного пароля; API всё равно не пустит дальше. */
+  readonly mustChangePassword: boolean;
 }
 
 /**
@@ -21,7 +23,13 @@ export interface SessionResponse {
 }
 
 export function toMeResponse(admin: AdminPrincipal): AdminMeResponse {
-  return { id: admin.id, email: admin.email, role: admin.role, displayName: admin.displayName };
+  return {
+    id: admin.id,
+    email: admin.email,
+    role: admin.role,
+    displayName: admin.displayName,
+    mustChangePassword: admin.mustChangePassword,
+  };
 }
 
 export function toSessionResponse(session: IssuedSession): SessionResponse {

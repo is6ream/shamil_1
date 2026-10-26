@@ -6,6 +6,8 @@ export interface AdminPrincipal {
   readonly email: string;
   readonly role: AdminRole;
   readonly displayName: string | null;
+  /** Пароль временный: пока не сменён, гард пускает только к смене пароля. */
+  readonly mustChangePassword: boolean;
 }
 
 /** Полезная нагрузка access-JWT. Роль не берётся отсюда — она перечитывается из БД. */

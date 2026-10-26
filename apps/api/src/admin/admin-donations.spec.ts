@@ -69,8 +69,8 @@ describeDatabase('пожертвования в админке', () => {
     fixtures = await seedFixtures(prisma, { campaignSlug: CAMPAIGN_SLUG });
     const e = await createTestAdmin(prisma, { email: 'editor@example.test', role: AdminRole.EDITOR });
     const a = await createTestAdmin(prisma, { email: 'accountant@example.test', role: AdminRole.ACCOUNTANT });
-    editor = { id: e.id, email: e.email, role: e.role, displayName: null };
-    accountant = { id: a.id, email: a.email, role: a.role, displayName: null };
+    editor = { id: e.id, email: e.email, role: e.role, displayName: null, mustChangePassword: false };
+    accountant = { id: a.id, email: a.email, role: a.role, displayName: null, mustChangePassword: false };
   });
 
   async function donationWithContact(): Promise<string> {
