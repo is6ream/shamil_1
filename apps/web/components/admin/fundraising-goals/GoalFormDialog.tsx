@@ -8,7 +8,7 @@ import { Button } from "@/components/admin/ui/Button";
 import { FormErrors, TextAreaField, TextField } from "@/components/admin/ui/Field";
 import { Modal } from "@/components/admin/ui/Modal";
 import { SAVED_MESSAGE, useToast } from "@/components/admin/ui/Toasts";
-import { GoalProgress } from "@/components/goal/GoalProgress";
+import { StageCard } from "@/components/goal/StageCard";
 import type { AdminClient } from "@/lib/admin/api-client";
 import { ADMIN_PATHS } from "@/lib/admin/endpoints";
 import {
@@ -144,7 +144,7 @@ function GoalFormBody({ goal, onClose, onSaved }: { readonly goal: FundraisingGo
           {preview === null ? (
             <p className={styles.previewEmpty}>Укажите цель этапа — появится превью.</p>
           ) : (
-            <GoalProgress goal={preview} isPreview />
+            <StageCard goal={preview} isPreview />
           )}
         </div>
         <Note>

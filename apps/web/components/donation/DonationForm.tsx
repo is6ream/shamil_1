@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 import { Checkbox } from "@/components/ui/Checkbox";
 import field from "@/components/ui/field.module.css";
 import type { Region } from "@/lib/api/types";
 import { DONATION_FORM, DONATION_MODES, PAGES } from "@/lib/content";
+import { DONATION_REQUEST_EVENT, readDonationRequest } from "@/lib/donation-request";
 import { formatCount } from "@/lib/format";
 
 import { AmountPresets } from "./AmountPresets";
@@ -32,6 +34,9 @@ const CONSENT_ID = "donation-consent";
 const CONSENT_ERROR_ID = `${CONSENT_ID}-error`;
 const MODE_PANEL_ID = "donation-mode-panel";
 
+/** Куда ставить фокус по запросу снаружи: выбранный пресет или поле суммы. */
+const CHECKED_PRESET = 'input[name="amount-preset"]:checked';
+
 /** Запас ширины поля суммы под курсор, в символах. */
 const AMOUNT_WIDTH_PADDING_CH = 0.5;
 
@@ -54,6 +59,53 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
   const form = useDonationForm(regions, initialRegionSlug);
   const { state, errors, status } = form;
   const [mode, setMode] = useState<DonationMode>(DONATION_MODES.defaultMode);
+  // Подписка одна на всю жизнь формы, а `selectPreset` новый на каждый рендер.
+  const selectPresetRef = useRef(form.selectPreset);
+
+  useEffect(() => {
+    selectPresetRef.current = form.selectPreset;
+  });
+
+  // Чипы «100 ₽ / 500 ₽ / 1 000 ₽» и «Другая сумма» в плашке этапа
+  // (`requestDonation`). Сумма есть только во вкладке «Через форму»,
+  // поэтому переключаемся на неё. flushSync — чтобы поля уже были в DOM,
+  // когда ставим фокус.
+  useEffect(() => {
+    const onRequest = (event: Event) => {
+      const request = readDonationRequest(event);
+
+      if (request === null) {
+        return;
+      }
+
+      const { amountRubles } = request;
+
+      flushSync(() => {
+        setMode("form");
+        if (amountRubles !== null) {
+          selectPresetRef.current(amountRubles);
+        }
+      });
+
+      const panel = document.getElementById(MODE_PANEL_ID);
+      const control =
+        amountRubles === null
+          ? document.getElementById(AMOUNT_ID)
+          : (panel?.querySelector<HTMLElement>(CHECKED_PRESET) ?? document.getElementById(AMOUNT_ID));
+
+      // preventScroll: страница в это время плавно едет к форме.
+      control?.focus({ preventScroll: true });
+      if (amountRubles === null && control instanceof HTMLInputElement) {
+        control.select();
+      }
+    };
+
+    document.addEventListener(DONATION_REQUEST_EVENT, onRequest);
+
+    return () => {
+      document.removeEventListener(DONATION_REQUEST_EVENT, onRequest);
+    };
+  }, []);
 
   const validAmount = selectValidAmount(state);
   const isBusy = status !== "idle";

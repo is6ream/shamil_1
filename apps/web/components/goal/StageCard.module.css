@@ -1,0 +1,250 @@
+/*
+ * Активный этап сбора — вариант B: белая сплошная карточка на синем hero.
+ * Без стекла, размытия, обводок и градиентов: на тёмном фоне белое само
+ * по себе главное пятно экрана.
+ *
+ * Цвета — токены из tokens.css (--ink, --blue, --ink-soft, --mist-deep, --mist);
+ * контраст на белом: --ink 15.3, --blue 8.78, --ink-soft 6.6 — всё выше 4.5.
+ *
+ * Плотность — по ширине самой карточки (container query), а не окна:
+ * превью в админке узкое при десктопном окне и должно выглядеть как телефон.
+ */
+
+.card {
+  container: stage / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 28px;
+  border-radius: 24px;
+  background: var(--white);
+  color: var(--ink);
+}
+
+/* ── Верх: что собираем и сколько ───────────────────────────────────────── */
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.heading,
+.figures {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.title {
+  margin: var(--sp-1) 0 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.figures {
+  flex: none;
+  text-align: right;
+}
+
+.headline {
+  margin: 0;
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.subline {
+  margin: var(--sp-1) 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Шкала ──────────────────────────────────────────────────────────────── */
+
+.track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--mist-deep);
+}
+
+/*
+ * Итог — в инлайновой переменной, анимация только проигрывает путь от нуля.
+ * 8px минимум: 0,1% на шкале иначе не увидеть, а «собрано не ноль» важно.
+ */
+.fill {
+  display: block;
+  width: calc(var(--stage-ratio, 0) * 100%);
+  min-width: 8px;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blue);
+  animation: stage-fill 800ms ease-out both;
+}
+
+@keyframes stage-fill {
+  from {
+    width: 0;
+  }
+}
+
+/* ── Суммы и «Другая сумма» ─────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip,
+.other {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border: 0;
+  border-radius: var(--r-field);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.chip {
+  padding: 0 18px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip:hover:not(:disabled) {
+  background: var(--mist-deep);
+}
+
+.other {
+  gap: var(--sp-2);
+  margin-left: auto;
+  padding: 0 24px;
+  background: var(--ink);
+  color: var(--white);
+  font-weight: 700;
+}
+
+.other:hover:not(:disabled) {
+  background: var(--blue);
+}
+
+.otherIcon {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.other:hover:not(:disabled) .otherIcon {
+  transform: translateX(2px);
+}
+
+.chip:focus-visible,
+.other:focus-visible,
+.noteLink:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.preview .chip,
+.preview .other {
+  cursor: default;
+}
+
+.preview .fill {
+  animation: none;
+}
+
+/* ── Оферта ─────────────────────────────────────────────────────────────── */
+
+.note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.noteLink {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Узкая карточка: телефон до 640px и превью в админке ────────────────── */
+
+@container stage (max-width: 600px) {
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .chip {
+    padding: 0 var(--sp-2);
+  }
+
+  .other {
+    grid-column: 1 / -1;
+    margin-left: 0;
+  }
+}
+
+/* Название и сумма в две колонки не влезают — сумма уходит под название. */
+@container stage (max-width: 400px) {
+  .top {
+    flex-direction: column;
+  }
+
+  .figures {
+    text-align: left;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    animation: none;
+  }
+
+  .chip,
+  .other,
+  .otherIcon {
+    transition: none;
+  }
+}

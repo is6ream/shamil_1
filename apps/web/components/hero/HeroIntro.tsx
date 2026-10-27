@@ -1,4 +1,4 @@
-import { GoalProgress } from "@/components/goal/GoalProgress";
+import { StageCard } from "@/components/goal/StageCard";
 import type { HeroContent } from "@/lib/api/site-content";
 import type { Campaign } from "@/lib/api/types";
 import type { ActiveGoal } from "@/lib/goal-progress";
@@ -40,7 +40,7 @@ export function HeroIntro({ campaign, hero = HERO, goal = null }: Props) {
 
       <CollectedSummary campaign={campaign} className={styles.collected} />
 
-      {goal === null ? null : <GoalProgress goal={goal} className={styles.goal} />}
+      {goal === null ? null : <StageCard goal={goal} className={styles.goal} />}
     </div>
   );
 }

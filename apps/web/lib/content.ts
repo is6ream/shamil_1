@@ -74,10 +74,11 @@ export const COLLECTED = {
  */
 export const ACTIVE_GOAL = {
   eyebrow: "Текущий этап",
-  reached: "Цель достигнута, спасибо!",
-  cta: "Помочь",
-  collected: "Собрано",
-  of: "из",
+  otherAmount: "Другая сумма",
+  presetsLabel: "Пожертвовать на этап",
+  /** Подпись шкалы для скринридера: «Собрано на этап «На бетон»». */
+  progressLabel: (title: string) => `Собрано на этап «${title}»`,
+  emptyValueText: "Пока не собрано ничего, сбор открыт",
   note: "Все пожертвования направляются на строительство мечети «Шамиль».",
   offerLink: "Оферта",
 } as const;
