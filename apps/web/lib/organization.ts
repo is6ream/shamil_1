@@ -11,12 +11,6 @@
  * показывать вместо него «реквизиты уточняются», а не печатать пустоту.
  */
 
-interface OrganizationDocument {
-  readonly title: string;
-  /** Путь к PDF в `public/docs`. `null` — файла ещё нет. */
-  readonly url: string | null;
-}
-
 /** Реквизиты расчётного счёта для перевода вручную. */
 export interface BankDetails {
   readonly accountNumber: string | null;
@@ -53,20 +47,6 @@ export const ORGANIZATION = {
   email: "mosqueshamil@gmail.com" as string | null,
   /** TODO(заказчик): Telegram-канал, имя без @ — «mechetshamil». */
   telegramChannel: null as string | null,
-
-  /**
-   * Пять документов в порядке макета v2. Файлы кладутся в `public/docs/`
-   * и подставляются сюда; `url: null` — строка неактивна, «скоро».
-   *
-   * TODO(заказчик): PDF всех пяти документов.
-   */
-  documents: [
-    { title: "Свидетельство о регистрации", url: null },
-    { title: "Устав организации", url: null },
-    { title: "Выписка ЕГРЮЛ", url: null },
-    { title: "Разрешение на строительство", url: null },
-    { title: "Агентский договор с платёжной платформой", url: null },
-  ] as readonly OrganizationDocument[],
 
   /** Обязательны по 152-ФЗ, готовятся вместе с юридической частью. */
   legalPages: [

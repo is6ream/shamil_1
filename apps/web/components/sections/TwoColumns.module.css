@@ -1,14 +1,9 @@
-/* Две колонки нижней части главной: отчёты, реквизиты + документы. */
+/* Две колонки нижней части главной: отчёты, реквизиты. */
 
 .columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--sp-16) var(--sp-20);
-}
-
-.wideLeft {
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: var(--sp-16);
 }
 
 .title {

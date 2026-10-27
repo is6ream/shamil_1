@@ -236,12 +236,6 @@ export const REQUISITES = {
   copied: "Скопировано",
 } as const;
 
-export const DOCUMENTS = {
-  title: "Документы",
-  pdf: "PDF",
-  soon: "скоро",
-} as const;
-
 export const MOBILE_SECTIONS = {
   construction: "Куда идут пожертвования",
   reports: "Отчёты и поступления",
