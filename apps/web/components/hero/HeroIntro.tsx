@@ -1,5 +1,4 @@
 import { GoalProgress } from "@/components/goal/GoalProgress";
-import { ShieldCheckIcon } from "@/components/icons/Icons";
 import type { HeroContent } from "@/lib/api/site-content";
 import type { Campaign } from "@/lib/api/types";
 import type { ActiveGoal } from "@/lib/goal-progress";
@@ -18,12 +17,8 @@ interface Props {
 }
 
 /**
- * Первый экран макета v2: бейдж, H1, лид, «Собрано», пункты доверия.
+ * Первый экран макета v2: бейдж, H1, лид, «Собрано».
  * Рендер мечети теперь не карточка, а фон экрана — см. `HeroBackdrop`.
- *
- * Порядок на телефоне другой: доверие идёт до «Собрано», чтобы
- * цифры сбора стояли прямо над формой. Меняет его CSS (`order`), а не
- * вторая копия разметки — один H1 на странице.
  *
  * Активный этап сбора стоит сразу под «Собрано»: на десктопе форма справа
  * его не касается, на телефоне он последним перед формой и компактен.
@@ -46,15 +41,6 @@ export function HeroIntro({ campaign, hero = HERO, goal = null }: Props) {
       <CollectedSummary campaign={campaign} className={styles.collected} />
 
       {goal === null ? null : <GoalProgress goal={goal} className={styles.goal} />}
-
-      <ul className={styles.trust}>
-        {hero.trust.map((item) => (
-          <li key={item}>
-            <ShieldCheckIcon className={styles.shield} />
-            {item}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
