@@ -1,5 +1,6 @@
 import { pluralize } from "@/lib/format";
 import { kopecksToRubDisplay } from "@/lib/money";
+import { MIN_DONATION_RUBLES } from "@/lib/site";
 
 import { HandsScene } from "./HandsScene";
 import styles from "./HeroSection.module.css";
@@ -48,7 +49,7 @@ export function HeroSection({ collectedKopecks, donationsCount, regionsCount }: 
 
           <div className={`cta ${styles.cta}`}>
             <a className="btn btn-primary" href="#donate">
-              Пожертвовать от 100 ₽
+              Пожертвовать от {MIN_DONATION_RUBLES} ₽
             </a>
             <a className="btn btn-ghost" href="#share">
               Поделиться сбором

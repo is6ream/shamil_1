@@ -58,7 +58,7 @@ model Campaign {
   /// Валюта учёта. Все суммы сбора сводятся к ней; платёж в тенге или сомах
   /// приходит в charged_currency доната.
   currency           String   @default("RUB") @db.Char(3)
-  minDonationKopecks BigInt   @default(10000) @map("min_donation_kopecks")
+  minDonationKopecks BigInt   @default(1000) @map("min_donation_kopecks")
   isActive           Boolean  @default(true) @map("is_active")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)

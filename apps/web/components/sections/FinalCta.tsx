@@ -1,3 +1,5 @@
+import { MIN_DONATION_RUBLES } from "@/lib/site";
+
 import styles from "./FinalCta.module.css";
 
 /**
@@ -25,7 +27,7 @@ export function FinalCta() {
 
           <div className={`cta ${styles.cta}`}>
             <a className="btn btn-primary" href="#donate">
-              Пожертвовать от 100 ₽
+              Пожертвовать от {MIN_DONATION_RUBLES} ₽
             </a>
           </div>
 

@@ -11,7 +11,7 @@ import type { DonationChannel } from "@/lib/api/donation-body";
 import type { RegionSource } from "@/lib/api/types";
 import { groupDigits } from "@/lib/format";
 import { parseRublesInput } from "@/lib/money";
-import { MAX_DONATION_RUBLES, MIN_DONATION_RUBLES } from "@/lib/site";
+import { MAX_DONATION_RUBLES, MIN_DONATION_RUBLES, SLOGAN_DONATION_RUBLES } from "@/lib/site";
 
 /**
  * Пресеты сумм — три пилюли справа от поля суммы. 100 ₽ обязателен:
@@ -81,8 +81,8 @@ export const INITIAL_FORM_STATE: DonationFormState = {
   channel: "online",
   // 100 ₽ по умолчанию: сумма из слогана. Вариант «1 000 ₽ поднимает средний
   // чек» остаётся открытым вопросом к заказчику (docs/design/handoff.md §10).
-  amountInput: String(MIN_DONATION_RUBLES),
-  selectedPreset: MIN_DONATION_RUBLES,
+  amountInput: String(SLOGAN_DONATION_RUBLES),
+  selectedPreset: SLOGAN_DONATION_RUBLES,
   onlineMethod: "sbp",
   // Включена по умолчанию: садака — скрытое поклонение (блок 9 ТЗ).
   isAnonymous: true,

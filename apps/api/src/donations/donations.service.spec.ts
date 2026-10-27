@@ -113,7 +113,7 @@ describeDatabase('создание доната', () => {
   test('сумма ниже минимума сбора отклоняется', async () => {
     // Arrange: минимум лежит в БД и меняется без миграции — проверять
     // его надо по базе, а не по константе сборки
-    const act = donations.create(dto({ amountKopecks: 5_000 }));
+    const act = donations.create(dto({ amountKopecks: 500 }));
 
     // Assert
     await expect(act).rejects.toBeInstanceOf(BadRequestException);
@@ -363,9 +363,9 @@ describe('валидация формы доната', () => {
     expect(validate({ amountKopecks: 100.5 })).toContain('amountKopecks');
   });
 
-  test('сумма ниже 100 ₽ и абсурдно большая не проходят', () => {
+  test('сумма ниже 10 ₽ и абсурдно большая не проходят', () => {
     // Assert
-    expect(validate({ amountKopecks: 99 })).toContain('amountKopecks');
+    expect(validate({ amountKopecks: 999 })).toContain('amountKopecks');
     expect(validate({ amountKopecks: 100_000_000_000 })).toContain('amountKopecks');
   });
 

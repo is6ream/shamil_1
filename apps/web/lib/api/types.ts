@@ -60,7 +60,7 @@ export const HOW_DID_YOU_HEAR = [
 export type HowDidYouHear = (typeof HOW_DID_YOU_HEAR)[number];
 
 export interface CreateDonationBody {
-  /** Целое число копеек, 10 000…1 000 000 000 (100 ₽ … 10 000 000 ₽). */
+  /** Целое число копеек, 1 000…1 000 000 000 (10 ₽ … 10 000 000 ₽). */
   readonly amountKopecks: number;
   readonly regionSlug?: string;
   readonly regionSource?: RegionSource;
