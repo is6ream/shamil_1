@@ -8,10 +8,10 @@ const REGION_SLUG_PATTERN = /^[a-z0-9-]+$/;
 
 /**
  * Сумма — число копеек, как у разового доната (`CreateDonationDto`):
- * 100 ₽ – 10 000 000 ₽ укладываются в безопасный диапазон number.
+ * 10 ₽ – 10 000 000 ₽ укладываются в безопасный диапазон number.
  */
 export class CreateSubscriptionDto {
-  @ApiProperty({ example: 50_000, description: 'Копейки в месяц: 100 ₽ – 10 000 000 ₽' })
+  @ApiProperty({ example: 50_000, description: 'Копейки в месяц: 10 ₽ – 10 000 000 ₽' })
   @IsInt()
   @Min(Number(SUBSCRIPTION_MIN_KOPECKS))
   @Max(Number(SUBSCRIPTION_MAX_KOPECKS))

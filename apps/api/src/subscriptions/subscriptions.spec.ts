@@ -31,8 +31,9 @@ describe('CreateSubscriptionDto', () => {
     expect(errorsFor({ amountKopecks: 50_000, recurringConsent: false })).toContain('recurringConsent');
   });
 
-  test('сумма — от 100 ₽ до 10 000 000 ₽', () => {
-    expect(errorsFor({ amountKopecks: 9_999, recurringConsent: true })).toContain('amountKopecks');
+  test('сумма — от 10 ₽ (как у разового доната) до 10 000 000 ₽', () => {
+    expect(errorsFor({ amountKopecks: 999, recurringConsent: true })).toContain('amountKopecks');
+    expect(errorsFor({ amountKopecks: 1_000, recurringConsent: true })).toEqual([]);
     expect(errorsFor({ amountKopecks: 1_000_000_001, recurringConsent: true })).toContain('amountKopecks');
     expect(errorsFor({ amountKopecks: 10_000, recurringConsent: true })).toEqual([]);
   });

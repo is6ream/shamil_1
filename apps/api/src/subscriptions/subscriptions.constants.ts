@@ -1,9 +1,11 @@
+import { MIN_DONATION_KOPECKS } from '../config/constants';
+
 /**
- * Границы суммы ежемесячного пожертвования — как в оферте: от 100 ₽
- * до 10 000 000 ₽. Нижняя совпадает со слоганом («дом в раю за 100 ₽»),
- * верхняя — с `MAX_DONATION_KOPECKS` разового доната.
+ * Границы суммы ежемесячного пожертвования: от 10 ₽ до 10 000 000 ₽.
+ * Нижняя — тот же `MIN_DONATION_KOPECKS`, что у разового доната (минимум
+ * снижен до 10 ₽ 27.10.2026), верхняя — `MAX_DONATION_KOPECKS`.
  */
-export const SUBSCRIPTION_MIN_KOPECKS = 10_000n;
+export const SUBSCRIPTION_MIN_KOPECKS = BigInt(MIN_DONATION_KOPECKS);
 export const SUBSCRIPTION_MAX_KOPECKS = 1_000_000_000n;
 
 /** Источник отмены — CHECK `subscription_cancel_source_consistency`. */
