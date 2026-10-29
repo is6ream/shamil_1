@@ -8,7 +8,7 @@ import helmet from 'helmet';
 import { API_GLOBAL_PREFIX } from './config/constants';
 import { MEDIA_ROUTE_PREFIX } from './config/configuration';
 import type { AppConfig } from './config/configuration';
-import { setupDonorSwagger } from './donor-cabinet/donor-swagger';
+import { isDonorSwaggerEnabled, setupDonorSwagger } from './donor-cabinet/donor-swagger';
 import { StorageDriver } from './config/env.validation';
 import { IMMUTABLE_CACHE_CONTROL } from './media/storage/storage.types';
 
@@ -60,7 +60,7 @@ export function configureApp(app: NestExpressApplication): void {
 
   app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
 
-  if (config.get('swaggerEnabled', { infer: true }) && config.get('donor', { infer: true }).enabled) {
+  if (isDonorSwaggerEnabled(config)) {
     setupDonorSwagger(app);
   }
 

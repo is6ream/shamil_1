@@ -1,4 +1,8 @@
+import { ConfigService } from '@nestjs/config';
+
+import { isDonorSwaggerEnabled } from '../donor-cabinet/donor-swagger';
 import { configuration } from './configuration';
+import type { AppConfig } from './configuration';
 import { DeployStage, NodeEnv, PaymentProviderCode, validateEnv } from './env.validation';
 
 /**
@@ -500,7 +504,25 @@ describe('кабинет жертвователя и автосписания', 
     process.env = { ...CABINET_IN_PRODUCTION, SWAGGER_ENABLED: 'true' };
 
     try {
-      expect(configuration().swaggerEnabled).toBe(false);
+      const config = configuration();
+
+      expect(config.swaggerEnabled).toBe(false);
+      // То самое условие, по которому bootstrap.ts вызывает setupDonorSwagger.
+      expect(isDonorSwaggerEnabled(new ConfigService<AppConfig, true>(config))).toBe(false);
+    } finally {
+      process.env = saved;
+    }
+  });
+
+  test('вне production Swagger кабинета поднимается только при включённом кабинете', () => {
+    const saved = process.env;
+
+    try {
+      process.env = { ...BASE_ENV, DONOR_CABINET_ENABLED: 'true', SWAGGER_ENABLED: 'true' };
+      expect(isDonorSwaggerEnabled(new ConfigService<AppConfig, true>(configuration()))).toBe(true);
+
+      process.env = { ...BASE_ENV, DONOR_CABINET_ENABLED: 'false', SWAGGER_ENABLED: 'true' };
+      expect(isDonorSwaggerEnabled(new ConfigService<AppConfig, true>(configuration()))).toBe(false);
     } finally {
       process.env = saved;
     }
