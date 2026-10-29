@@ -1,41 +1,55 @@
-import field from "@/components/ui/field.module.css";
+import { CheckMarkIcon } from "@/components/icons/Icons";
 import { DONATION_FORM } from "@/lib/content";
 
-import styles from "./ChoiceGrid.module.css";
-import type { OnlineMethodId } from "./donation-form.model";
+import type { PaymentOptionId } from "./donation-form.model";
+import { PaymentIcon } from "./PaymentIcons";
+import styles from "./PaymentMethods.module.css";
 
 interface Props {
-  readonly value: OnlineMethodId;
-  readonly onChange: (method: OnlineMethodId) => void;
+  readonly value: PaymentOptionId;
+  readonly onChange: (option: PaymentOptionId) => void;
 }
 
 /**
- * Способы оплаты. СБП стоит первым и выбран по умолчанию: нулевая комиссия
- * для плательщика и оплата в два тапа, в ленте референса он лидирует.
+ * Способы оплаты: сетка 2×2 и «Расчётный счёт» во всю ширину.
  *
- * Выбранный способ бэкенду НЕ передаётся — в `CreateDonationDto` поля метода
- * нет, а СБП, SberPay, T-Pay и карта — способы внутри Robokassa, их выбирают
- * на её странице. Кнопки отвечают на вопрос «а чем можно заплатить»
- * до перехода. TODO(api): передать способ, когда DTO его примет.
+ * Визуально — плитки с квадратной галочкой, по смыслу — одна радиогруппа:
+ * выбрать можно ровно один способ, стрелки клавиатуры работают нативно.
+ *
+ * Онлайн-метод бэкенду НЕ передаётся — в `CreateDonationDto` его нет,
+ * способ выбирают на странице Robokassa. «Расчётный счёт» меняет `channel`
+ * и уводит на реквизиты. TODO(api): передать метод, когда DTO его примет.
  */
 export function PaymentMethods({ value, onChange }: Props) {
   return (
-    <fieldset className={field.fieldset}>
-      <legend className={field.legend}>{DONATION_FORM.methodLegend}</legend>
+    <fieldset className={styles.fieldset}>
+      <legend className="sr-only">{DONATION_FORM.methodLegend}</legend>
       <div className={styles.grid}>
-        {DONATION_FORM.methods.map((method) => (
-          <label className={styles.choice} key={method.id}>
+        {DONATION_FORM.methods.map((option) => (
+          <label
+            className={option.isWide ? `${styles.tile} ${styles.wide}` : styles.tile}
+            key={option.id}
+          >
             <input
               className="sr-only"
               type="radio"
-              name="online-method"
-              value={method.id}
-              checked={value === method.id}
+              name="payment-option"
+              value={option.id}
+              checked={value === option.id}
               onChange={() => {
-                onChange(method.id);
+                onChange(option.id);
               }}
             />
-            {method.label}
+            <span className={styles.icon}>
+              <PaymentIcon option={option.id} />
+            </span>
+            <span className={styles.text}>
+              <span className={styles.label}>{option.label}</span>
+              {option.hint === null ? null : <span className={styles.hint}>{option.hint}</span>}
+            </span>
+            <span className={styles.check} aria-hidden="true">
+              <CheckMarkIcon className={styles.checkMark} />
+            </span>
           </label>
         ))}
       </div>

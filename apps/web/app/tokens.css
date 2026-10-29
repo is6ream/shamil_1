@@ -45,6 +45,11 @@
   --danger: #B3261E;                  /* ошибки полей, 6.2 на белом        */
   --danger-soft: rgba(179, 38, 30, 0.06);
   --band-bg: var(--blue);             /* полоса с хадисом во всю ширину    */
+  /* Полоса с хадисом (вариант «Гирих»). На --blue: золото 5.47,
+     --band-cite 6.22 — AA и для мелкого текста.                           */
+  --gold: #E6C98A;                    /* арабский текст, рамка, разделитель */
+  --girih-line: #9CC3EE;              /* линии фонового гириха             */
+  --band-cite: #C9DBF0;               /* источник хадиса                   */
   --panel-bg: var(--ink);             /* панель «поделиться» и футер       */
   --hero-bg-fill: #082F56;            /* край фоновой картинки первого экрана:
                                          заливка до загрузки и под кадром
@@ -56,11 +61,19 @@
   --grad-panel: radial-gradient(120% 110% at 50% 0%, #0E4A8C 0%, #0B2548 45%, #071A35 100%);
   --grad-stage: radial-gradient(120% 100% at 50% 0%, #0E4A8C 0%, #0B2548 42%, #071A35 100%);
   --grad-bar: var(--blue);
+  /* Форма доната: CTA и выбранный пресет суммы. Единственная яркая
+     заливка формы — глаз сразу находит, куда нажать.                       */
+  --grad-cta: linear-gradient(100deg, #1A6BB8 0%, var(--blue) 55%, #0A3D6E 100%);
+  --shadow-cta: 0 16px 32px -16px rgba(11, 76, 134, 0.6);
+  --surface-soft: var(--mist);        /* мягкое поле на белой карточке    */
+  --accent-soft: rgba(11, 76, 134, 0.06); /* фон выбранной плитки         */
+  --accent-ring: rgba(11, 76, 134, 0.16); /* кольцо поля в фокусе         */
 
   /* ── Шрифты ────────────────────────────────────────────────────────────  */
   --font-display: var(--font-philosopher, "Philosopher"), "PT Serif", Georgia, serif;
   --font-text: var(--font-golos, "Golos Text"), -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-arabic: var(--font-amiri, "Amiri"), "Traditional Arabic", serif;
+  --font-quote: var(--font-display);       /* перевод хадиса               */
 
   /* ── Шкала кеглей ──────────────────────────────────────────────────────
      Заголовки непрерывны через clamp(): крайние значения — телефон 390
@@ -69,9 +82,7 @@
   --fs-h2: clamp(28px, 2.8vw, 40px);
   --fs-h3: clamp(24px, 1.95vw, 28px);
   --fs-stat: clamp(32px, 2.8vw, 40px);      /* цифры статистики и фактов   */
-  --fs-quote: clamp(30px, 3.05vw, 44px);    /* перевод хадиса              */
   --fs-share-quote: clamp(24px, 2.2vw, 32px);
-  --fs-arabic: clamp(28px, 2.8vw, 40px);
   --fs-amount-lg: clamp(34px, 3.05vw, 44px);
   --fs-amount-md: clamp(20px, 2.6vw, 27px);
   --fs-amount-sm: 16px;

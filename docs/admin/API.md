@@ -478,7 +478,8 @@ interface AdminDonation {
   "paidAt": "2026-10-08T09:00:00.000Z",       // необязательно, по умолчанию сейчас; не в будущем
   "regionSlug": "02",                // необязательно
   "isAnonymous": true,               // по умолчанию true
-  "donorName": null                  // только при isAnonymous: false, ≤120
+  "donorName": null,                 // только при isAnonymous: false, ≤120
+  "howDidYouHear": "mosque"          // необязательно: telegram | whatsapp | instagram | vk | friends | mosque | banner_qr | other
 }
 ```
 
@@ -538,6 +539,46 @@ interface CampaignAdmin {
 
 `byDay` — дни по Уфе, только дни с поступлениями (пропуски дорисовывает фронт). `byUtm` — топ-50 по сумме,
 `null` — без метки. `monthlyGoal: null` — сейчас нет активной цели. `recent` — 10 последних оплаченных, без ПДн.
+
+### `GET /admin/analytics/donations-by-source?from&to&model&groupBy` — все роли
+
+Отчёт по источникам: **только `status = paid`**, период по дате оплаты (как у дашборда: по умолчанию 30 дней,
+не длиннее 366). `model`: `last` (по умолчанию — последний заход с метками) | `first` (первый заход).
+`groupBy`: `source` (по умолчанию) | `campaign` (источник + кампания) | `content` (источник + кампания +
+объявление) | `how_did_you_hear` (ответ «откуда узнали»; `model` не влияет).
+
+```json
+{
+  "period": { "from": "…", "to": "…" }, "model": "last", "groupBy": "source",
+  "rows": [{ "source": "telegram", "count": 12, "totalKopecks": "480000", "averageKopecks": "40000" }],
+  "unattributed": { "count": 3, "totalKopecks": "90000", "averageKopecks": "30000" },
+  "total": { "count": 15, "totalKopecks": "570000", "averageKopecks": "38000" }
+}
+```
+
+В разрезах `campaign`/`content` у строки есть `campaign` и `content` (`null` — метки не было). Топ-200 строк
+по сумме. «Без атрибуции» — нет cookie, ручное поступление, перевод без ответа. Источник без UTM бэкенд
+выводит из Referer: `t.me` → `telegram`/`referral`, Яндекс/Google → `yandex|google`/`organic`,
+пустой → `direct`/`none`.
+
+## 15б. Короткие ссылки
+
+`mechetshamil.ru/go/<slug>` → 302 на страницу сайта с UTM-метками. Ссылку открывает route handler сайта,
+он зовёт `GET /api/go/:slug` с user-agent человека.
+
+- `GET /go/:slug` — публичный, без троттлинга, `Cache-Control: no-store`. 302 на
+  `PUBLIC_SITE_URL + targetPath + ?utm_*`; клик считается атомарно, превью-боты (TelegramBot, WhatsApp,
+  facebookexternalhit, vkShare, поисковики) не считаются. Нет/выключена/неверный слаг/сбой базы — 302 на главную.
+- `GET /admin/short-links` — `{ items: AdminShortLink[] }` (≤500, новые сверху). `GET /admin/short-links/:id`.
+- `POST /admin/short-links` — `SUPER_ADMIN`, `EDITOR`:
+  `{ slug, title, targetPath?, utmSource, utmMedium?, utmCampaign?, utmContent?, utmTerm?, isActive? }`.
+  Слаг `^[a-z0-9]+(-[a-z0-9]+)*$` ≤64, занят — 409. `targetPath` — только путь (`/`, `/02/`), без домена и `?`.
+  Метки нормализуются (trim + нижний регистр).
+- `PATCH /admin/short-links/:id` — те же поля, кроме `slug` (он напечатан в QR); `null`/`""` стирает метку.
+- `DELETE /admin/short-links/:id` — 204 только при `clicks = 0`, иначе 409 (ссылку выключают, `isActive: false`).
+
+`AdminShortLink`: `{ id, slug, title, targetPath, utm: { source, medium, campaign, content, term }, clicks,
+isActive, shortUrl, targetUrl, createdAt, updatedAt }`. Все изменения — в журнале (`short_link.*`).
 
 ## 16. Публичные чтения (сайт)
 
@@ -610,4 +651,4 @@ Content-Type: application/json
 | Пароль | 12 символов … 72 байта |
 | Загрузка | `MEDIA_MAX_UPLOAD_MB` (15 МБ), JPEG/PNG/WebP, 1 файл |
 | Списки | `pageSize` ≤ 100 |
-| Дашборд | период ≤ 366 дней |
+| Дашборд, отчёт по источникам | период ≤ 366 дней |

@@ -1,0 +1,44 @@
+.form {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.form > * {
+  margin-top: 0 !important;
+}
+
+.utm {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.utm > * {
+  margin-top: 0 !important;
+}
+
+.url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--fs-micro);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+  margin: 0;
+}
+
+.target {
+  margin: var(--sp-2) 0 0;
+  color: var(--text-soft);
+  font-size: var(--fs-micro);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 720px) {
+  .utm {
+    grid-template-columns: 1fr 1fr;
+  }
+}

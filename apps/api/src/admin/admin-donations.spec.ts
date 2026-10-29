@@ -134,12 +134,15 @@ describeDatabase('пожертвования в админке', () => {
         comment: 'Наличные, пятничный намаз',
         paidAt: TEST_PAID_AT.toISOString(),
         regionSlug: '02',
+        howDidYouHear: 'mosque',
       },
       accountant,
       META,
     );
 
     // Assert
+    const stored = await prisma.donation.findUniqueOrThrow({ where: { id: result.orderId }, select: { howDidYouHear: true } });
+    expect(stored.howDidYouHear).toBe('mosque');
     const stats = await prisma.campaignStats.findUniqueOrThrow({ where: { campaignId: fixtures.campaignId } });
     const month = await prisma.campaignMonthlyGoal.findFirstOrThrow({ where: { campaignId: fixtures.campaignId } });
     const region = await prisma.regionStats.findUniqueOrThrow({ where: { regionId: fixtures.bashkortostanId } });

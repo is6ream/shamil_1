@@ -68,6 +68,12 @@ export const ADMIN_PATHS = {
 
   dashboard: "/admin/dashboard",
 
+  /** Отчёт по источникам: оплаченные донаты по UTM-меткам за период. */
+  donationsBySource: "/admin/analytics/donations-by-source",
+
+  shortLinks: "/admin/short-links",
+  shortLink: (linkId: string) => `/admin/short-links/${id(linkId)}`,
+
   /** Публичный справочник — для фильтра и формы региона. */
   regions: "/regions",
 } as const;

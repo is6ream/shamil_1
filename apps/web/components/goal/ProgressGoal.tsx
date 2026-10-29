@@ -6,10 +6,10 @@ import {
   kopecksToRubDisplay,
   kopecksToRubNumberDisplay,
   percentOfGoal,
-  remainderInMinDonations,
+  remainderInSloganDonations,
   remainderToGoal,
 } from "@/lib/money";
-import { MIN_DONATION_RUBLES } from "@/lib/site";
+import { SLOGAN_DONATION_RUBLES } from "@/lib/site";
 
 import { ProgressTrack } from "./ProgressTrack";
 
@@ -105,13 +105,13 @@ export function ProgressGoal({ campaign, regionsCount }: Props) {
               )}{" "}
               — это{" "}
               {formatCount(
-                remainderInMinDonations(monthly.collectedKopecks, monthly.goalKopecks),
+                remainderInSloganDonations(monthly.collectedKopecks, monthly.goalKopecks),
               )}{" "}
               {plural(
-                remainderInMinDonations(monthly.collectedKopecks, monthly.goalKopecks),
+                remainderInSloganDonations(monthly.collectedKopecks, monthly.goalKopecks),
                 ["пожертвование", "пожертвования", "пожертвований"],
               )}{" "}
-              по {MIN_DONATION_RUBLES} ₽
+              по {SLOGAN_DONATION_RUBLES} ₽
             </p>
           </Meter>
         )}

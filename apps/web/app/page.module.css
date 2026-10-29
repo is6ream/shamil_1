@@ -77,6 +77,12 @@
       [aside-start] var(--col-aside)
       [aside-end content-end] minmax(var(--gutter), 1fr)
       [full-end];
+
+    /* Поле под тень формы (.asideSticky, −var(--shadow-gap) по бокам)
+       шире правой колонки сетки, пока окно уже ~1290px, и раздвигало
+       страницу. clip, а не hidden: hidden делает .page контейнером
+       прокрутки, и sticky у формы перестаёт работать. */
+    overflow-x: clip;
   }
 
   .head,

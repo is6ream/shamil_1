@@ -1,31 +1,43 @@
 /**
- * Атрибуция first-touch: UTM-метки, внешний Referer и страница первого захода.
+ * Атрибуция визита: UTM-метки, внешний Referer и страница входа.
  *
- * Сохраняется один раз — при первом визите — в cookie на 30 дней и уходит
- * в `POST /donations` полем `utm`. Повторные заходы метки не перезаписывают:
- * считаем, откуда человек узнал о сборе, а не с какой ссылки вернулся.
+ * Две cookie на 90 дней, обе ставит `proxy.ts` на запросе страницы — до
+ * рендера, поэтому SSR и кэш страниц от них не зависят:
+ *
+ * - `shamil_ft` — first-touch: пишется один раз, при первом визите, и не
+ *   перезаписывается. Отвечает на вопрос «откуда человек узнал о сборе».
+ * - `shamil_lt` — last-touch: обновляется при каждом заходе **с метками**.
+ *   Прямой повторный заход его не трогает: «вернулся по закладке» — не канал.
+ *
+ * Форма доната читает обе cookie и отправляет их полем `attribution`.
+ * Источник по Referer здесь не вычисляется: это делает бэкенд
+ * (`AttributionService`), фронт передаёт сырой Referer.
  *
  * Метка не имеет права сорвать донат. Поэтому всё, что бэкенд отклонил бы
  * (длина, символы), отбрасывается здесь же, а не уходит на сервер.
- * Правила — зеркало `apps/api/src/donations/dto/donation-utm.dto.ts`.
+ * Правила — зеркало `apps/api/src/attribution/attribution.constants.ts`.
  *
- * Модуль чистый, кроме двух функций с `document`: их вызывают только
- * клиентские компоненты.
+ * Модуль чистый, кроме `readStoredAttribution` с `document`: её вызывают
+ * только клиентские компоненты.
  */
 
-import type { DonationUtm } from "@/lib/api/types";
+import type { DonationAttribution, UtmTouch } from "@/lib/api/types";
 
-export const ATTRIBUTION_COOKIE = "shamil_ft";
+/** Имя прежнее: cookie, выставленные до перехода на proxy, продолжают работать. */
+export const FIRST_TOUCH_COOKIE = "shamil_ft";
 
-/** 30 дней — окно атрибуции. */
-export const ATTRIBUTION_MAX_AGE_S = 30 * 24 * 60 * 60;
+export const LAST_TOUCH_COOKIE = "shamil_lt";
+
+/** 90 дней — окно атрибуции. Зеркало `ATTRIBUTION_WINDOW_DAYS` бэкенда. */
+export const ATTRIBUTION_MAX_AGE_S = 90 * 24 * 60 * 60;
 
 const UTM_VALUE_MAX_LENGTH = 128;
 const URL_MAX_LENGTH = 512;
-const UTM_VALUE_PATTERN = /^[\p{L}\p{N} _\-.~+%:@/|]+$/u;
+/** Без `@`: e-mail в метке — персональные данные. */
+const UTM_VALUE_PATTERN = /^[\p{L}\p{N} _\-.~+%:/|]+$/u;
 const LANDING_PAGE_PATTERN = /^\/[^\s<>"']*$/;
 
-/** Параметр URL → поле тела. */
+/** Параметр URL → поле касания. */
 const UTM_PARAMS = [
   ["utm_source", "source"],
   ["utm_medium", "medium"],
@@ -34,9 +46,20 @@ const UTM_PARAMS = [
   ["utm_term", "term"],
 ] as const;
 
-type MutableUtm = { -readonly [K in keyof DonationUtm]: DonationUtm[K] };
+type UtmField = (typeof UTM_PARAMS)[number][1];
 
-function cleanUtmValue(raw: string | null): string | undefined {
+type MutableTouch = { -readonly [K in keyof UtmTouch]: UtmTouch[K] };
+
+/** Содержимое cookie первого захода. `at` — ISO-время визита. */
+export interface FirstTouch extends UtmTouch {
+  readonly referrer?: string;
+  readonly landingPage?: string;
+  readonly at?: string;
+}
+
+type MutableFirstTouch = { -readonly [K in keyof FirstTouch]: FirstTouch[K] };
+
+function cleanUtmValue(raw: string | null | undefined): string | undefined {
   const value = raw?.trim();
 
   if (value === undefined || value === "" || value.length > UTM_VALUE_MAX_LENGTH) {
@@ -74,130 +97,221 @@ function cleanLandingPage(pathWithQuery: string): string | undefined {
   return LANDING_PAGE_PATTERN.test(pathWithQuery) ? pathWithQuery : undefined;
 }
 
-export interface LandingContext {
-  /** `location.search`, с `?` или без. */
-  readonly search: string;
-  /** `location.pathname`. */
-  readonly pathname: string;
-  /** `document.referrer`. */
-  readonly referrer: string;
-  /** `location.origin` — чтобы не считать свой домен источником. */
-  readonly origin: string;
+function cleanTimestamp(raw: unknown): string | undefined {
+  if (typeof raw !== "string" || raw.length > 40) {
+    return undefined;
+  }
+
+  const time = Date.parse(raw);
+
+  return Number.isNaN(time) ? undefined : new Date(time).toISOString();
 }
 
-/** Атрибуция первого захода из адреса страницы и Referer. */
-export function buildAttribution(context: LandingContext): DonationUtm {
-  const params = new URLSearchParams(context.search);
-  const utm: MutableUtm = {};
+function hasKeys(value: object): boolean {
+  return Object.keys(value).length > 0;
+}
+
+/** UTM-метки из query. `null` — меток нет: last-touch не обновляется. */
+export function readUtmParams(search: string): UtmTouch | null {
+  const params = new URLSearchParams(search);
+  const touch: MutableTouch = {};
 
   for (const [param, field] of UTM_PARAMS) {
     const value = cleanUtmValue(params.get(param));
 
     if (value !== undefined) {
-      utm[field] = value;
+      touch[field] = value;
     }
   }
 
+  return hasKeys(touch) ? touch : null;
+}
+
+export interface LandingContext {
+  /** Query страницы входа, с `?` или без. */
+  readonly search: string;
+  readonly pathname: string;
+  /** Заголовок `Referer` запроса страницы. */
+  readonly referrer: string;
+  /** Свой origin — чтобы не считать переход по сайту источником. */
+  readonly origin: string;
+  readonly now: Date;
+}
+
+/** Первое касание: метки, внешний Referer, страница и время захода. */
+export function buildFirstTouch(context: LandingContext): FirstTouch {
+  const touch: MutableFirstTouch = { ...readUtmParams(context.search) };
   const referrer = cleanReferrer(context.referrer, context.origin);
 
   if (referrer !== undefined) {
-    utm.referrer = referrer;
+    touch.referrer = referrer;
   }
 
-  const query = params.toString();
+  const query = new URLSearchParams(context.search).toString();
   const landingPage = cleanLandingPage(query === "" ? context.pathname : `${context.pathname}?${query}`);
 
   if (landingPage !== undefined) {
-    utm.landingPage = landingPage;
+    touch.landingPage = landingPage;
   }
 
-  return utm;
+  touch.at = context.now.toISOString();
+
+  return touch;
 }
 
-const ALLOWED_KEYS = new Set<string>([
-  ...UTM_PARAMS.map(([, field]) => field),
-  "referrer",
-  "landingPage",
-]);
-
-/**
- * Разбор cookie. Значение могли подменить руками, поэтому каждое поле
- * проверяется заново, а не принимается на веру.
- */
-export function parseAttributionCookie(cookieHeader: string): DonationUtm | null {
-  const entry = cookieHeader
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${ATTRIBUTION_COOKIE}=`));
-
-  if (entry === undefined) {
+function parseJsonObject(raw: string | undefined): Record<string, unknown> | null {
+  if (raw === undefined || raw === "") {
     return null;
   }
 
-  let parsed: unknown;
-
   try {
-    parsed = JSON.parse(decodeURIComponent(entry.slice(ATTRIBUTION_COOKIE.length + 1)));
+    const parsed: unknown = JSON.parse(raw);
+
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
   } catch {
     // Испорченная cookie — атрибуции нет, донат идёт без неё.
     return null;
   }
+}
 
-  if (typeof parsed !== "object" || parsed === null) {
-    return null;
-  }
+function pickUtm(source: Record<string, unknown>): MutableTouch {
+  const touch: MutableTouch = {};
 
-  const utm: MutableUtm = {};
+  for (const [, field] of UTM_PARAMS) {
+    const raw = source[field];
+    const value = typeof raw === "string" ? cleanUtmValue(raw) : undefined;
 
-  for (const [key, value] of Object.entries(parsed)) {
-    if (!ALLOWED_KEYS.has(key) || typeof value !== "string") {
-      continue;
-    }
-
-    const clean =
-      key === "referrer"
-        ? cleanReferrer(value, "")
-        : key === "landingPage"
-          ? cleanLandingPage(value)
-          : cleanUtmValue(value);
-
-    if (clean !== undefined) {
-      utm[key as keyof MutableUtm] = clean;
+    if (value !== undefined) {
+      touch[field as UtmField] = value;
     }
   }
 
-  return utm;
-}
-
-/** Есть ли что отправлять: пустой объект в теле — шум. */
-export function hasAttribution(utm: DonationUtm | null): utm is DonationUtm {
-  return utm !== null && Object.keys(utm).length > 0;
-}
-
-/** Атрибуция из cookie браузера. Только на клиенте. */
-export function readStoredAttribution(): DonationUtm | null {
-  return parseAttributionCookie(document.cookie);
+  return touch;
 }
 
 /**
- * Запись при первом визите. Уже есть cookie — ничего не делаем: first-touch.
- * `SameSite=Lax` — cookie живёт и после перехода по ссылке из мессенджера.
+ * Разбор cookie первого захода. Значение могли подменить руками, поэтому
+ * каждое поле проверяется заново, а не принимается на веру.
+ * Принимает и прежний формат без `at`.
  */
-export function captureFirstTouch(): void {
-  // Вход в админку — не визит жертвователя.
-  if (window.location.pathname.startsWith("/admin") || readStoredAttribution() !== null) {
-    return;
+export function parseFirstTouch(raw: string | undefined): FirstTouch | null {
+  const parsed = parseJsonObject(raw);
+
+  if (parsed === null) {
+    return null;
   }
 
-  const utm = buildAttribution({
-    search: window.location.search,
-    pathname: window.location.pathname,
-    referrer: document.referrer,
-    origin: window.location.origin,
-  });
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  const touch: MutableFirstTouch = pickUtm(parsed);
+  const referrer = typeof parsed.referrer === "string" ? cleanReferrer(parsed.referrer, "") : undefined;
+  const landingPage = typeof parsed.landingPage === "string" ? cleanLandingPage(parsed.landingPage) : undefined;
+  const at = cleanTimestamp(parsed.at);
 
-  document.cookie =
-    `${ATTRIBUTION_COOKIE}=${encodeURIComponent(JSON.stringify(utm))}` +
-    `; Max-Age=${ATTRIBUTION_MAX_AGE_S}; Path=/; SameSite=Lax${secure}`;
+  if (referrer !== undefined) {
+    touch.referrer = referrer;
+  }
+
+  if (landingPage !== undefined) {
+    touch.landingPage = landingPage;
+  }
+
+  if (at !== undefined) {
+    touch.at = at;
+  }
+
+  return touch;
+}
+
+export function parseLastTouch(raw: string | undefined): UtmTouch | null {
+  const parsed = parseJsonObject(raw);
+
+  if (parsed === null) {
+    return null;
+  }
+
+  const touch = pickUtm(parsed);
+
+  return hasKeys(touch) ? touch : null;
+}
+
+/** Какие cookie поставить на этот заход. Поле отсутствует — cookie не трогаем. */
+export interface AttributionCookiePlan {
+  readonly firstTouch?: string;
+  readonly lastTouch?: string;
+}
+
+/**
+ * Решение proxy, вынесенное в чистую функцию:
+ * first-touch — только если валидной cookie ещё нет;
+ * last-touch — только если в адресе есть метки.
+ * Значения — JSON; кодирует их для заголовка сам Next.
+ */
+export function planAttributionCookies(
+  context: LandingContext,
+  existingFirstTouch: string | undefined,
+): AttributionCookiePlan {
+  const plan: { firstTouch?: string; lastTouch?: string } = {};
+
+  if (parseFirstTouch(existingFirstTouch) === null) {
+    plan.firstTouch = JSON.stringify(buildFirstTouch(context));
+  }
+
+  const utm = readUtmParams(context.search);
+
+  if (utm !== null) {
+    plan.lastTouch = JSON.stringify(utm);
+  }
+
+  return plan;
+}
+
+/** Атрибуция для тела доната из значений cookie. `null` — cookie нет. */
+export function toDonationAttribution(
+  firstTouchRaw: string | undefined,
+  lastTouchRaw: string | undefined,
+): DonationAttribution | null {
+  const firstTouch = parseFirstTouch(firstTouchRaw);
+  const lastTouch = parseLastTouch(lastTouchRaw);
+
+  if (firstTouch === null && lastTouch === null) {
+    return null;
+  }
+
+  const { referrer, landingPage, at, ...utm } = firstTouch ?? {};
+
+  return {
+    ...(hasKeys(utm) ? { first: utm } : {}),
+    ...(lastTouch === null ? {} : { last: lastTouch }),
+    ...(referrer === undefined ? {} : { referrer }),
+    ...(landingPage === undefined ? {} : { landingPage }),
+    ...(at === undefined ? {} : { firstTouchAt: at }),
+  };
+}
+
+/** Значение cookie из заголовка `Cookie` / `document.cookie`, уже декодированное. */
+export function readCookie(cookieHeader: string, name: string): string | undefined {
+  const entry = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`));
+
+  if (entry === undefined) {
+    return undefined;
+  }
+
+  try {
+    return decodeURIComponent(entry.slice(name.length + 1));
+  } catch {
+    // Битая percent-кодировка — cookie как будто нет.
+    return undefined;
+  }
+}
+
+/** Атрибуция из cookie браузера. Только на клиенте. */
+export function readStoredAttribution(): DonationAttribution | null {
+  return toDonationAttribution(
+    readCookie(document.cookie, FIRST_TOUCH_COOKIE),
+    readCookie(document.cookie, LAST_TOUCH_COOKIE),
+  );
 }

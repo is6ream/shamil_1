@@ -105,10 +105,11 @@ export const ABOUT = {
 export const CONSTRUCTION = {
   eyebrow: "Ход строительства",
   title: "Куда идут пожертвования",
+  /** Будущие этапы подписи не имеют — номера в маркере достаточно. */
   status: {
     done: "Выполнено",
     current: "Идёт сейчас",
-    upcoming: "Впереди",
+    upcoming: null,
   },
   videoCaption: "Видео с объекта",
   videoPlayLabel: "Смотреть видео со стройки",
@@ -133,39 +134,46 @@ export const CONSTRUCTION_VIDEO = {
  */
 export const HADITH_BAND = {
   arabic: "مَنْ بَنَى مَسْجِدًا يَبْتَغِي بِهِ وَجْهَ اللَّهِ بَنَى اللَّهُ لَهُ مِثْلَهُ فِي الْجَنَّةِ",
-  translation: "«Кто построит мечеть ради Аллаха, тому Аллах построит дом в Раю»",
-  source: "Сахих аль-Бухари, Сахих Муслим",
+  /** Две строки: на десктопе перенос после запятой, на телефоне — свободный. */
+  translationLines: ["«Кто построит мечеть ради Аллаха,", "тому Аллах построит дом в Раю»"],
+  source: "Сахих аль-Бухари · Сахих Муслим",
 } as const;
 
 export const DONATION_FORM = {
-  title: "Внести вклад",
+  // Не «вклад»: юридически это пожертвование, слово «вклад» на сайте не используем.
+  title: "Поддержать строительство",
   subtitle: "Займёт меньше минуты",
-  amountLegend: "Сумма",
-  customAmountLabel: "Или своя сумма, ₽",
-  customAmountPlaceholder: "Например, 2 500",
+  presetsLegend: "Быстрый выбор суммы",
+  customAmountLabel: "Сумма пожертвования, ₽",
   methodLegend: "Способ оплаты",
+  // СБП первым и выбран по умолчанию: пока нет Robokassa, QR СБП — основной путь.
   methods: [
-    { id: "sbp", label: "СБП" },
-    { id: "card", label: "Картой" },
-    { id: "sberpay", label: "SberPay" },
-    { id: "tpay", label: "T-Pay" },
+    { id: "sbp", label: "СБП", hint: "по QR-коду", isWide: false },
+    { id: "card", label: "Картой", hint: null, isWide: false },
+    { id: "sberpay", label: "SberPay", hint: null, isWide: false },
+    { id: "tpay", label: "T-Pay", hint: null, isWide: false },
+    {
+      id: "transfer",
+      label: "Расчётный счёт",
+      hint: "Перевод по реквизитам, в т.ч. для юр. лиц",
+      isWide: true,
+    },
   ],
-  anonymous: "Пожертвовать анонимно",
+  anonymous: "Анонимно",
+  anonymousPlaceholder: "Аноним",
   nameLabel: "Имя",
-  namePlaceholder: "Как к вам обращаться",
+  namePlaceholder: "Ваше имя",
   // Не «телефон для чека»: чек ККТ не формируем (решение 20.09.2026).
-  phoneLabel: "Телефон",
-  phonePlaceholder: "+7",
-  consentPrefix: "Согласен на",
-  consentData: "обработку данных",
+  phoneLabel: "Телефон (необязательно)",
+  phonePlaceholder: "Телефон (необязательно)",
+  consentPrefix: "Я даю согласие на",
+  consentData: "обработку персональных данных",
   consentJoin: "и",
   consentTerms: "условия публичной оферты",
   submit: "Пожертвовать",
   submitting: "Отправляем…",
   success: "Джазакаллаху хайран! Переходим на страницу оплаты…",
-  commission: "Комиссия уже включена",
-  commissionLong: "Комиссия платёжных агентов уже включена",
-  transferLink: "Перевод по реквизитам",
+  commission: "Комиссия платёжных агентов уже включена",
   unknownError: "Что-то пошло не так. Попробуйте ещё раз.",
 } as const;
 

@@ -71,7 +71,9 @@ export function ConstructionTimeline({ timeline, gallery, video = null }: Props)
             <StageMarker stage={stage} index={index} />
             <div className={styles.stageText}>
               <p className={styles.stageTitle}>{stage.title}</p>
-              <p className={styles.stageStatus}>{CONSTRUCTION.status[stage.status]}</p>
+              {CONSTRUCTION.status[stage.status] === null ? null : (
+                <p className={styles.stageStatus}>{CONSTRUCTION.status[stage.status]}</p>
+              )}
             </div>
             {stage.amountKopecks === null ? null : (
               <p className={styles.stageAmount}>{kopecksToRubDisplay(stage.amountKopecks)}</p>

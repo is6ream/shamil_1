@@ -8,21 +8,20 @@
   padding: var(--panel-pad);
   border-radius: var(--r-panel);
   background: var(--panel-bg);
+  /* Под текстом и кнопками узора нет: виден только у краёв панели. */
+  --girih-fade-start: 45%;
+  --girih-divider-line: 48px;
 }
 
-.panel > :not(.ornament) {
+/* GirihPattern — первый ребёнок, absolute; содержимое поднимаем над ним. */
+.panel > :not(:first-child) {
   position: relative;
 }
 
-.ornament {
-  position: absolute;
-  top: -40px;
-  right: -10px;
-  width: 280px;
-  height: 280px;
-  color: var(--white);
-  opacity: 0.15;
-  pointer-events: none;
+/* .text — чтобы перебить порядок загрузки модуля GirihDivider. */
+.text .divider {
+  justify-content: flex-start;
+  margin-bottom: var(--sp-6);
 }
 
 .quote {
@@ -31,7 +30,7 @@
 
 .quote p {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-quote);
   font-size: var(--fs-share-quote);
   font-weight: 700;
   line-height: 1.35;
@@ -56,10 +55,5 @@
   .panel {
     padding: var(--sp-8) var(--sp-5);
     border-radius: var(--r-card);
-  }
-
-  .ornament {
-    width: 180px;
-    height: 180px;
   }
 }

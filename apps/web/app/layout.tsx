@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Amiri, Golos_Text, Philosopher } from "next/font/google";
 
-import { AttributionCapture } from "@/components/analytics/AttributionCapture";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, SLOGAN } from "@/lib/site";
 
 import "./globals.css";
@@ -66,7 +65,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ru" className={`${philosopher.variable} ${golos.variable} ${amiri.variable}`}>
       <body>
         {children}
-        <AttributionCapture />
       </body>
     </html>
   );

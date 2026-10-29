@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { GirihPattern } from "@/components/ornament/GirihPattern";
 import { FOOTER, PAGES, SECTION_IDS } from "@/lib/content";
 import type { ContactsContent } from "@/lib/api/site-content";
 import { ORGANIZATION, organizationDisplayName, toTelHref } from "@/lib/organization";
@@ -14,6 +15,7 @@ const MOBILE_HIDDEN_HREF: string = PAGES.cookie.href;
 
 /**
  * Футер макета v2: логотип и юрлицо, контакты, информация.
+ * Слабый гирих по фону и золотые акценты — в тон полосе с хадисом.
  *
  * Неизвестные значения (телефон, адрес, Telegram) — `null` в
  * lib/organization.ts с TODO(заказчик): строка с `null` не выводится,
@@ -24,6 +26,7 @@ export function SiteFooter({ contacts = ORGANIZATION }: { readonly contacts?: Co
 
   return (
     <footer className={styles.footer} id={SECTION_IDS.contacts}>
+      <GirihPattern opacity={0.12} />
       <div className={styles.inner}>
         <div className={styles.columns}>
           <div className={styles.brand}>

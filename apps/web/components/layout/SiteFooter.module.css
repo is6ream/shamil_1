@@ -3,12 +3,16 @@
 .footer {
   margin-top: 0;
   padding: var(--sp-20) 0 calc(var(--sp-16) + var(--mobile-bar-space, 0px));
+  position: relative;
+  overflow: hidden;
   background: var(--panel-bg);
   color: var(--text-soft);
   font-size: 15px;
 }
 
+/* Над GirihPattern (absolute) — иначе узор ляжет поверх ссылок. */
 .inner {
+  position: relative;
   width: min(100% - 2 * var(--gutter), var(--container));
   margin: 0 auto;
 }
@@ -31,6 +35,7 @@
   font-weight: 700;
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
+  color: var(--gold);   /* 9.54:1 на --ink — AA для мелкого текста */
 }
 
 .phone {
@@ -73,7 +78,7 @@
 .copyright {
   margin: var(--sp-12) 0 0;
   padding-top: var(--sp-6);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(230, 201, 138, 0.35);   /* --gold, как рамка полосы с хадисом */
   font-size: 13.5px;
 }
 

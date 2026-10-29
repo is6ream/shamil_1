@@ -12,7 +12,13 @@
 
 import { rublesToKopecks } from "@/lib/money";
 
-import type { CreateDonationBody, DonationChannel, DonationUtm, RegionSource } from "./types";
+import type {
+  CreateDonationBody,
+  DonationAttribution,
+  DonationChannel,
+  HowDidYouHear,
+  RegionSource,
+} from "./types";
 
 export type { DonationChannel } from "./types";
 
@@ -39,6 +45,12 @@ export interface DonationDraft {
    * с просьбой перевести по реквизитам.
    */
   readonly channel: DonationChannel;
+  /**
+   * «Откуда узнали о сборе» — для перевода по реквизитам, где меток обычно нет.
+   * У онлайн-оплаты не отправляется: там источник известен по cookie.
+   * Вкладки перевода в форме макета v2 сейчас нет — поле ждёт её возвращения.
+   */
+  readonly howDidYouHear?: HowDidYouHear;
 }
 
 /** Тело собирается по шагам, поэтому внутри функции оно изменяемое. */
@@ -59,7 +71,7 @@ function trimmedOrUndefined(value: string): string | undefined {
  */
 export function buildCreateDonationBody(
   draft: DonationDraft,
-  attribution: DonationUtm | null = null,
+  attribution: DonationAttribution | null = null,
 ): CreateDonationBody {
   const body: MutableDonationBody = {
     amountKopecks: rublesToKopecks(draft.amountRubles),
@@ -107,9 +119,13 @@ export function buildCreateDonationBody(
   // здесь, мы бы аккуратно провели бота через проверку.
   body.antispam = draft.antispam;
 
+  if (draft.channel === "transfer" && draft.howDidYouHear !== undefined) {
+    body.howDidYouHear = draft.howDidYouHear;
+  }
+
   // Атрибуция — только если есть что передать: пустой объект в теле — шум.
   if (attribution !== null && Object.keys(attribution).length > 0) {
-    body.utm = attribution;
+    body.attribution = attribution;
   }
 
   return body;

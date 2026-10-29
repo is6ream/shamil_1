@@ -6,7 +6,7 @@ export const SITE_NAME = "Мечеть «Шамиль»";
 export const SLOGAN = "построй себе дом в раю за 100 ₽";
 
 export const SITE_DESCRIPTION =
-  "Сбор на строительство мечети «Шамиль» в Уфе. Принимаем пожертвования от 100 ₽, " +
+  "Сбор на строительство мечети «Шамиль» в Уфе. Принимаем пожертвования от 10 ₽, " +
   "показываем ход стройки и рейтинг поддерживающих регионов.";
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -17,8 +17,14 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001
 /** Цель сбора из ТЗ, в рублях. Валюта на подтверждении у заказчика. */
 export const CAMPAIGN_GOAL_RUBLES = 240_000_000;
 
-/** Минимальный донат, ₽ — совпадает со слоганом. */
-export const MIN_DONATION_RUBLES = 100;
+/** Минимальный донат, ₽ — зеркало `MIN_DONATION_KOPECKS` бэкенда. */
+export const MIN_DONATION_RUBLES = 10;
+
+/**
+ * Сумма из слогана, ₽. Отдельно от минимума: это сумма по умолчанию в форме
+ * и «единица» в подсказке «осталось N пожертвований по 100 ₽».
+ */
+export const SLOGAN_DONATION_RUBLES = 100;
 
 /**
  * Потолок одного онлайн-доната, ₽ — зеркало `MAX_DONATION_KOPECKS` бэкенда.

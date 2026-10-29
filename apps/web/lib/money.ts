@@ -9,7 +9,7 @@
  */
 
 import { GROUP_SEPARATOR, groupDigits } from "@/lib/format";
-import { MIN_DONATION_RUBLES } from "@/lib/site";
+import { MIN_DONATION_RUBLES, SLOGAN_DONATION_RUBLES } from "@/lib/site";
 
 /** Сколько копеек в рубле. Дублирует `KOPECKS_IN_RUBLE` бэкенда. */
 const KOPECKS_IN_RUBLE = 100n;
@@ -31,6 +31,9 @@ const RUBLES_INPUT_PATTERN = /^\d+(?:[.,]\d{1,2})?$/;
 
 /** Минимальная сумма в копейках — зеркало `MIN_DONATION_KOPECKS` бэкенда. */
 export const MIN_DONATION_KOPECKS = MIN_DONATION_RUBLES * 100;
+
+/** Сумма из слогана в копейках. */
+const SLOGAN_DONATION_KOPECKS = SLOGAN_DONATION_RUBLES * 100;
 
 /**
  * Приводит сумму к `bigint`. Строки разбираются целиком, без `parseFloat`:
@@ -148,8 +151,8 @@ export function remainderToGoal(collected: string | number, goal: string | numbe
  * «17 000 человек по сотне» звучит достижимо, «1 700 000 ₽» — нет:
  * приём из прототипа (docs/design/prototype.html, блок цели).
  */
-export function remainderInMinDonations(collected: string | number, goal: string | number): number {
+export function remainderInSloganDonations(collected: string | number, goal: string | number): number {
   const left = BigInt(remainderToGoal(collected, goal));
 
-  return Number(left / BigInt(MIN_DONATION_KOPECKS));
+  return Number(left / BigInt(SLOGAN_DONATION_KOPECKS));
 }

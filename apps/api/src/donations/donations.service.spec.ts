@@ -20,6 +20,7 @@ import {
   ONLINE_UNAVAILABLE_MESSAGE,
   PaymentProviderResolver,
 } from '../payments/payment-provider.resolver';
+import { AttributionService } from '../attribution/attribution.service';
 import { DonationsService } from './donations.service';
 import { CreateDonationDto } from './dto/create-donation.dto';
 
@@ -36,6 +37,12 @@ const PROVIDER_STUB: PaymentProvider = {
 };
 
 /** Онлайн выключен: все донаты этих тестов идут по реквизитам, как раньше. */
+const ATTRIBUTION = new AttributionService(
+  new ConfigService<AppConfig, true>({
+    publicUrls: { siteUrl: 'https://mechetshamil.ru', apiUrl: 'https://api.mechetshamil.ru' },
+  }),
+);
+
 const RESOLVER = new PaymentProviderResolver({
   manual: PROVIDER_STUB,
   online: null,
@@ -66,7 +73,7 @@ describeDatabase('создание доната', () => {
 
   beforeAll(() => {
     prisma = createPrisma();
-    donations = new DonationsService(prisma, RESOLVER);
+    donations = new DonationsService(prisma, RESOLVER, ATTRIBUTION);
   });
 
   afterAll(async () => {
@@ -106,7 +113,7 @@ describeDatabase('создание доната', () => {
   test('сумма ниже минимума сбора отклоняется', async () => {
     // Arrange: минимум лежит в БД и меняется без миграции — проверять
     // его надо по базе, а не по константе сборки
-    const act = donations.create(dto({ amountKopecks: 5_000 }));
+    const act = donations.create(dto({ amountKopecks: 500 }));
 
     // Assert
     await expect(act).rejects.toBeInstanceOf(BadRequestException);
@@ -151,6 +158,43 @@ describeDatabase('создание доната', () => {
       referrer: 'https://vk.com/wall-1_2',
       landingPage: '/02/?utm_source=vk',
     });
+  });
+
+  test('first, last, время первого захода и «откуда узнали» сохраняются в pending-донате', async () => {
+    // Arrange
+    const firstTouchAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Act
+    const created = await donations.create(
+      dto({
+        channel: 'transfer',
+        howDidYouHear: 'banner_qr',
+        attribution: {
+          first: { campaign: 'oct' },
+          last: { source: 'qr', medium: 'offline', campaign: 'banner-mosque' },
+          referrer: 'https://t.me/',
+          landingPage: '/',
+          firstTouchAt,
+        },
+      }),
+    );
+
+    // Assert
+    const stored = await prisma.donation.findUniqueOrThrow({ where: { id: created.orderId } });
+
+    expect(stored).toMatchObject({
+      status: DonationStatus.pending,
+      // Без utm_source первого касания источник — по Referer
+      utmSource: 'telegram',
+      utmMedium: 'referral',
+      utmCampaign: 'oct',
+      lastUtmSource: 'qr',
+      lastUtmMedium: 'offline',
+      lastUtmCampaign: 'banner-mosque',
+      referrer: 'https://t.me/',
+      howDidYouHear: 'banner_qr',
+    });
+    expect(stored.firstTouchAt?.toISOString()).toBe(firstTouchAt);
   });
 
   test('донат без меток проходит с пустой атрибуцией', async () => {
@@ -232,7 +276,7 @@ describeDatabase('статус заказа', () => {
 
   beforeAll(() => {
     prisma = createPrisma();
-    donations = new DonationsService(prisma, RESOLVER);
+    donations = new DonationsService(prisma, RESOLVER, ATTRIBUTION);
   });
 
   afterAll(async () => {
@@ -319,9 +363,9 @@ describe('валидация формы доната', () => {
     expect(validate({ amountKopecks: 100.5 })).toContain('amountKopecks');
   });
 
-  test('сумма ниже 100 ₽ и абсурдно большая не проходят', () => {
+  test('сумма ниже 10 ₽ и абсурдно большая не проходят', () => {
     // Assert
-    expect(validate({ amountKopecks: 99 })).toContain('amountKopecks');
+    expect(validate({ amountKopecks: 999 })).toContain('amountKopecks');
     expect(validate({ amountKopecks: 100_000_000_000 })).toContain('amountKopecks');
   });
 
@@ -379,6 +423,7 @@ describeDatabase('канал оплаты', () => {
       new DonationsService(
         prisma,
         new PaymentProviderResolver({ manual: TRANSFER_STUB, online: ONLINE_STUB, defaultChannel: 'online' }),
+        ATTRIBUTION,
       );
 
     test('transfer — донат ручного перевода и ссылка на реквизиты, а не на оплату картой', async () => {
@@ -411,6 +456,7 @@ describeDatabase('канал оплаты', () => {
       new DonationsService(
         prisma,
         new PaymentProviderResolver({ manual: TRANSFER_STUB, online: null, defaultChannel: 'transfer' }),
+        ATTRIBUTION,
       );
 
     test('online — 400 с человеческим текстом и ни одного висящего заказа', async () => {

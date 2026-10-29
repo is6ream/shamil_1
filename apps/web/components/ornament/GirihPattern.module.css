@@ -1,0 +1,15 @@
+.root {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--girih-line);
+  pointer-events: none;
+
+  /* К центру узор гаснет. Начало затухания родитель может сдвинуть
+     через --girih-fade-start: SVG-маска так не умеет, у <stop> offset
+     не CSS-свойство. Эллипс 62% × 62% — как прежний radialGradient r=62%. */
+  --_fade: radial-gradient(62% 62% at 50% 50%, transparent var(--girih-fade-start, 28%), #000 100%);
+  -webkit-mask-image: var(--_fade);
+  mask-image: var(--_fade);
+}

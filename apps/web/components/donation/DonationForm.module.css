@@ -1,7 +1,12 @@
-/* Карточка формы «Внести вклад» (макет v2): белая, радиус 28, мягкая тень. */
+/*
+ * Карточка формы «Поддержать строительство»: белая, радиус 28, мягкая тень.
+ * Карточка — контейнер для container queries: пресеты и плитки
+ * перестраиваются по ширине формы, а не окна (форма живёт в узкой колонке).
+ */
 
 .card {
-  padding: var(--form-pad);
+  container-type: inline-size;
+  padding: var(--sp-6);
   border-radius: var(--r-card);
   background: var(--surface);
   box-shadow: var(--shadow-form);
@@ -9,13 +14,13 @@
 
 @media (max-width: 767px) {
   .card {
-    padding: var(--form-pad) var(--sp-5);
+    padding: var(--sp-5) var(--sp-4);
   }
 }
 
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--sp-4);
 }
@@ -30,12 +35,12 @@
   color: var(--text-soft);
 }
 
-/* Круглый знак справа от заголовка. На телефоне в макете его нет. */
+/* Круглый знак справа от заголовка. На телефоне его нет. */
 .mark {
   display: block;
   flex: none;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
 }
 
@@ -47,51 +52,117 @@
 
 .form {
   display: grid;
-  gap: var(--sp-6);
-  margin-top: var(--sp-6);
+  /* minmax(0, …): иначе колонка растягивается по min-content плиток
+     и форма вылезает за карточку на узком телефоне. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
 }
 
-.customLabel {
-  margin-top: var(--sp-3);
+/* ── Сумма: крупное число слева, пилюли пресетов справа ─────────────────── */
+
+.amountBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 64px;
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-5);
+  border: var(--stroke) solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
 }
 
-@media (min-width: 768px) {
-  /* На десктопе поле своей суммы идёт сразу под пресетами, без подписи —
-     как в макете; подпись остаётся для скринридера. */
-  .customLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+.amountBox:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.amountBox[data-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.amountField {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+  cursor: text;
+}
+
+/* Фокус показывает рамка всего блока (`.amountBox:focus-within`). */
+.amountInput {
+  min-width: 1ch;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.amountInput::placeholder {
+  color: var(--text-soft);
+}
+
+@container (max-width: 400px) {
+  .amountBox {
+    padding: var(--sp-3);
   }
 
-  .customLabel + input {
-    margin-top: var(--sp-3);
+  .amountField {
+    flex-basis: 100%;
+    padding: var(--sp-1) var(--sp-2) 0;
   }
 }
+
+/* ── Согласие: мелко и приглушённо, как сноска ──────────────────────────── */
+
+.consent label {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+/* ── Кнопка ─────────────────────────────────────────────────────────────── */
 
 .actions {
   display: grid;
-  gap: var(--sp-4);
+  gap: var(--sp-3);
 }
 
 .submit {
-  height: var(--control-h);
-  font-size: 17px;
+  height: 60px;
+  border-radius: var(--r-pill);
+  background: var(--grad-cta);
+  color: var(--on-accent);
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: var(--shadow-cta);
+  transition: transform var(--dur-fast), filter var(--dur-fast);
 }
 
-/* Кнопка во время отправки заблокирована, но не бледнеет: блеклая кнопка
+.submit:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Во время отправки кнопка заблокирована, но не бледнеет: блеклая кнопка
    читается как «что-то не так» ровно в момент, когда всё хорошо. */
 .submit[aria-busy="true"] {
   opacity: 1;
 }
 
 /*
- * Honeypot: полностью убран и от глаза, и от скринридера, и из табстопа.
- * Не `.sr-only` — та специально оставляет поле доступным для чтения вслух,
- * и человек с экранным диктором услышал бы поле и заполнил ловушку.
+ * Honeypot: убран и от глаза, и от скринридера, и из табстопа.
+ * Не `.sr-only` — та оставляет поле доступным для чтения вслух.
  */
 .honeypot {
   position: absolute;
@@ -104,11 +175,7 @@
   pointer-events: none;
 }
 
-/*
- * Ошибка ответа бэкенда. Живёт над кнопкой, а не под ней: под кнопкой
- * на телефоне она оказывается за краем экрана ровно в тот момент, когда
- * человек смотрит на кнопку и не понимает, почему ничего не произошло.
- */
+/* Ошибка бэкенда — над кнопкой, чтобы на телефоне не уехать за край. */
 .formError {
   margin: 0;
   padding: var(--sp-3) var(--sp-4);
@@ -134,23 +201,4 @@
   text-align: center;
   font-size: 13px;
   color: var(--text-soft);
-}
-
-.note a {
-  color: var(--accent);
-  text-underline-offset: 3px;
-}
-
-.mobileOnly {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .desktopOnly {
-    display: none;
-  }
-
-  .mobileOnly {
-    display: inline;
-  }
 }

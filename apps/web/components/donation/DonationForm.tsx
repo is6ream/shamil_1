@@ -6,12 +6,12 @@ import Link from "next/link";
 import { Checkbox } from "@/components/ui/Checkbox";
 import field from "@/components/ui/field.module.css";
 import type { Region } from "@/lib/api/types";
-import { DONATION_FORM, PAGES, SECTION_IDS } from "@/lib/content";
+import { DONATION_FORM, PAGES } from "@/lib/content";
 import { formatCount } from "@/lib/format";
 
 import { AmountPresets } from "./AmountPresets";
 import styles from "./DonationForm.module.css";
-import { selectValidAmount } from "./donation-form.model";
+import { paymentOptionChanges, selectPaymentOption, selectValidAmount } from "./donation-form.model";
 import { DonorFields } from "./DonorFields";
 import { PaymentMethods } from "./PaymentMethods";
 import { useDonationForm } from "./useDonationForm";
@@ -27,13 +27,16 @@ const AMOUNT_ERROR_ID = `${AMOUNT_ID}-error`;
 const CONSENT_ID = "donation-consent";
 const CONSENT_ERROR_ID = `${CONSENT_ID}-error`;
 
+/** Запас ширины поля суммы под курсор, в символах. */
+const AMOUNT_WIDTH_PADDING_CH = 0.5;
+
 /**
- * Форма «Внести вклад» (макет v2). Логика — в `useDonationForm`, здесь
- * только разметка.
+ * Форма «Поддержать строительство». Логика — в `useDonationForm`, здесь
+ * только разметка. Порядок сверху вниз: кто жертвует → сколько → чем →
+ * согласие → кнопка. Вся форма помещается в экран без прокрутки.
  *
- * Сумма в кнопке обновляется живьём: «Пожертвовать 2 500 ₽» — последнее,
- * что человек читает перед оплатой, и оно должно совпадать с тем, что
- * он выбрал. При невалидной сумме — просто «Пожертвовать».
+ * Сумма в кнопке обновляется живьём: «Пожертвовать 500 ₽» — последнее,
+ * что человек читает перед оплатой, и оно должно совпадать с выбранным.
  */
 export function DonationForm({ regions, initialRegionSlug }: Props) {
   const form = useDonationForm(regions, initialRegionSlug);
@@ -45,6 +48,8 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
     validAmount === null
       ? DONATION_FORM.submit
       : `${DONATION_FORM.submit} ${formatCount(validAmount)} ₽`;
+  // Поле суммы растёт вместе с числом, чтобы «₽» стоял сразу за цифрами.
+  const amountWidth = `${Math.max(state.amountInput.length, 1) + AMOUNT_WIDTH_PADDING_CH}ch`;
 
   return (
     <div className={styles.card}>
@@ -64,56 +69,10 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
       </div>
 
       <form className={styles.form} onSubmit={form.submit} noValidate>
-        <div>
-          <AmountPresets selectedPreset={state.selectedPreset} onSelect={form.selectPreset} />
-
-          <label className={`${field.label} ${styles.customLabel}`} htmlFor={AMOUNT_ID}>
-            {DONATION_FORM.customAmountLabel}
-          </label>
-          <input
-            className={field.input}
-            id={AMOUNT_ID}
-            name="amount"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder={DONATION_FORM.customAmountPlaceholder}
-            value={state.amountInput}
-            aria-invalid={errors.amount === undefined ? undefined : true}
-            aria-describedby={errors.amount === undefined ? undefined : AMOUNT_ERROR_ID}
-            onChange={(event) => {
-              form.setAmountInput(event.target.value);
-            }}
-            onBlur={() => {
-              form.validateField("amount");
-            }}
-          />
-          {errors.amount === undefined ? null : (
-            <p className={field.error} id={AMOUNT_ERROR_ID}>
-              {errors.amount}
-            </p>
-          )}
-        </div>
-
-        <PaymentMethods
-          value={state.onlineMethod}
-          onChange={(onlineMethod) => {
-            form.patch({ onlineMethod });
-          }}
-        />
-
-        <Checkbox
-          id="donation-anonymous"
-          name="isAnonymous"
-          checked={state.isAnonymous}
-          onChange={form.setAnonymous}
-        >
-          {DONATION_FORM.anonymous}
-        </Checkbox>
-
         <DonorFields
           state={state}
           errors={errors}
+          onAnonymousChange={form.setAnonymous}
           onNameChange={(donorName) => {
             form.clearError("donorName");
             form.patch({ donorName });
@@ -123,6 +82,51 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
         />
 
         <div>
+          <div
+            className={styles.amountBox}
+            data-invalid={errors.amount === undefined ? undefined : true}
+          >
+            <label className={styles.amountField} htmlFor={AMOUNT_ID}>
+              <span className="sr-only">{DONATION_FORM.customAmountLabel}</span>
+              <input
+                className={styles.amountInput}
+                id={AMOUNT_ID}
+                name="amount"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="0"
+                style={{ width: amountWidth }}
+                value={state.amountInput}
+                aria-invalid={errors.amount === undefined ? undefined : true}
+                aria-describedby={errors.amount === undefined ? undefined : AMOUNT_ERROR_ID}
+                onChange={(event) => {
+                  form.setAmountInput(event.target.value);
+                }}
+                onBlur={() => {
+                  form.validateField("amount");
+                }}
+              />
+              <span aria-hidden="true">₽</span>
+            </label>
+
+            <AmountPresets selectedPreset={state.selectedPreset} onSelect={form.selectPreset} />
+          </div>
+          {errors.amount === undefined ? null : (
+            <p className={field.error} id={AMOUNT_ERROR_ID}>
+              {errors.amount}
+            </p>
+          )}
+        </div>
+
+        <PaymentMethods
+          value={selectPaymentOption(state)}
+          onChange={(option) => {
+            form.patch(paymentOptionChanges(option));
+          }}
+        />
+
+        <div className={styles.consent}>
           <Checkbox
             id={CONSENT_ID}
             name="personalDataConsent"
@@ -173,7 +177,7 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
           )}
 
           <button
-            className={`btn btn-primary btn-block ${styles.submit}`}
+            className={`btn btn-block ${styles.submit}`}
             type="submit"
             aria-busy={isBusy}
             disabled={isBusy}
@@ -195,13 +199,7 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
           </div>
         </div>
 
-        <p className={styles.note}>
-          <span className={styles.desktopOnly}>
-            {DONATION_FORM.commission} ·{" "}
-            <a href={`#${SECTION_IDS.requisites}`}>{DONATION_FORM.transferLink}</a>
-          </span>
-          <span className={styles.mobileOnly}>{DONATION_FORM.commissionLong}</span>
-        </p>
+        <p className={styles.note}>{DONATION_FORM.commission}</p>
       </form>
     </div>
   );

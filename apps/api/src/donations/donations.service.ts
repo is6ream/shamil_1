@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { AttributionService } from '../attribution/attribution.service';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import { PrismaService } from '../database/prisma.service';
 import { PaymentProviderResolver } from '../payments/payment-provider.resolver';
 import type { CreateDonationDto } from './dto/create-donation.dto';
-import type { DonationUtmDto } from './dto/donation-utm.dto';
 import type {
   CreatedDonationResponse,
   DonationStatusResponse,
@@ -18,40 +18,12 @@ interface ResolvedRegion {
   readonly regionSource: string | null;
 }
 
-/** Колонки атрибуции доната. Пустые строки не пишем: «метки не было» — это `null`. */
-export interface AttributionColumns {
-  readonly utmSource: string | null;
-  readonly utmMedium: string | null;
-  readonly utmCampaign: string | null;
-  readonly utmContent: string | null;
-  readonly utmTerm: string | null;
-  readonly referrer: string | null;
-  readonly landingPage: string | null;
-}
-
-function nonEmpty(value: string | undefined): string | null {
-  const trimmed = value?.trim();
-
-  return trimmed === undefined || trimmed.length === 0 ? null : trimmed;
-}
-
-export function toAttributionColumns(utm: DonationUtmDto | undefined): AttributionColumns {
-  return {
-    utmSource: nonEmpty(utm?.source),
-    utmMedium: nonEmpty(utm?.medium),
-    utmCampaign: nonEmpty(utm?.campaign),
-    utmContent: nonEmpty(utm?.content),
-    utmTerm: nonEmpty(utm?.term),
-    referrer: nonEmpty(utm?.referrer),
-    landingPage: nonEmpty(utm?.landingPage),
-  };
-}
-
 @Injectable()
 export class DonationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly providers: PaymentProviderResolver,
+    private readonly attribution: AttributionService,
   ) {}
 
   /**
@@ -85,6 +57,9 @@ export class DonationsService {
     const isAnonymous = dto.isAnonymous ?? true;
     const region = await this.resolveRegion(dto);
     const contact = this.buildContact(dto, consentIp);
+    // Атрибуция пишется в pending-донат до редиректа к провайдеру: в Shp_-параметры
+    // метки не уходят, а «оплачен» донат станет только по ResultURL с подписью.
+    const attribution = this.attribution.resolve({ attribution: dto.attribution, utm: dto.utm });
 
     // Донат и его ПДн пишутся одной транзакцией; внешний вызов провайдера
     // за её границами — держать транзакцию открытой на время сетевого
@@ -103,7 +78,8 @@ export class DonationsService {
         // `donation_anonymous_has_no_public_name`: чего в таблице нет,
         // то невозможно показать по ошибке.
         donorName: isAnonymous ? null : (dto.donorName ?? null),
-        ...toAttributionColumns(dto.utm),
+        ...attribution,
+        howDidYouHear: dto.howDidYouHear ?? null,
         ...(contact === null ? {} : { contact: { create: contact } }),
       },
       select: { id: true, invoiceNo: true },
