@@ -1,4 +1,10 @@
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+import type { AppConfig } from '../config/configuration';
+import { MailTransport } from '../config/env.validation';
 import { LogMailSender, maskEmail } from './log-mail.sender';
+import { createMailSender } from './mail.module';
 import {
   chargeFailedMail,
   chargeSucceededMail,
@@ -96,5 +102,45 @@ describe('лог-отправитель', () => {
     expect(sender.outbox()).toHaveLength(1);
     expect(sender.outbox()[0]?.text).toContain('654321');
     expect(maskEmail('ivan@example.test')).toBe('iv***@example.test');
+  });
+
+  /** Всё, что лог-отправитель из `createMailSender` написал в лог при отправке кода. */
+  async function loggedWith(isProduction: boolean): Promise<string> {
+    const log = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+
+    try {
+      const sender = createMailSender(
+        new ConfigService<AppConfig, true>({
+          isProduction,
+          mail: { transport: MailTransport.Log, from: 'noreply@mechetshamil.test' },
+        }),
+      );
+
+      await sender.send(loginCodeMail('ivan.petrov@example.test', '654321', 10));
+
+      return log.mock.calls.map((call) => String(call[0])).join('\n');
+    } finally {
+      log.mockRestore();
+    }
+  }
+
+  test('в production в логе нет ни кода, ни темы, ни тела, ни полного адреса', async () => {
+    // Act
+    const logged = await loggedWith(true);
+
+    // Assert
+    expect(logged).toContain('[login_code] → iv***@example.test');
+    expect(logged).not.toContain('654321');
+    expect(logged).not.toContain('ivan.petrov@example.test');
+    expect(logged).not.toContain('Код');
+  });
+
+  test('вне production тело письма печатается — по нему входят при разработке', async () => {
+    // Act
+    const logged = await loggedWith(false);
+
+    // Assert
+    expect(logged).toContain('654321');
+    expect(logged).not.toContain('ivan.petrov@example.test');
   });
 });

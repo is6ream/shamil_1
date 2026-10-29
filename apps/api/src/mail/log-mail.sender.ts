@@ -15,7 +15,7 @@ export function maskEmail(email: string): string {
 /**
  * Письма в лог вместо почты — для разработки и тестов.
  *
- * Тело пишется в лог только вне production: в нём код входа и ссылка отмены,
+ * Тема и тело пишутся в лог только вне production: в нём код входа и ссылка отмены,
  * а логи хостинга читают не только владельцы сайта. В production этот
  * транспорт при включённом кабинете запрещён валидацией окружения.
  */
@@ -32,9 +32,10 @@ export class LogMailSender implements MailSender {
       this.sent.shift();
     }
 
-    const head = `[${message.kind}] → ${maskEmail(message.to)}: ${message.subject}`;
+    const head = `[${message.kind}] → ${maskEmail(message.to)}`;
 
-    this.logger.log(this.printBody ? `${head}\n${message.text}` : head);
+    // Тема тоже секрет: в письме входа код стоит прямо в ней.
+    this.logger.log(this.printBody ? `${head}: ${message.subject}\n${message.text}` : head);
   }
 
   /** Отправленные письма, новые в конце. Копия — снаружи список не изменить. */
