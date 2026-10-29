@@ -183,6 +183,8 @@ ALTER TABLE "subscription"
 -- будут кабинет, админка, вебхук и планировщик. CANCELLED финален (повторная
 -- отмена — no-op на стороне сервиса), в PENDING не возвращаются никогда:
 -- иначе оплаченная подписка снова ждала бы первый платёж.
+-- Список разрешённых переходов — явный и совпадает с subscription-status.ts
+-- (тест subscription-schema.spec.ts сверяет все 25 пар).
 CREATE FUNCTION "subscription_status_guard"() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -190,10 +192,12 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  IF OLD."status" = 'CANCELLED'
-     OR NEW."status" = 'PENDING'
-     OR (OLD."status" = 'FAILED' AND NEW."status" <> 'CANCELLED')
-     OR (OLD."status" = 'PENDING' AND NEW."status" NOT IN ('ACTIVE', 'CANCELLED')) THEN
+  IF NOT (
+       (OLD."status" = 'PENDING' AND NEW."status" IN ('ACTIVE', 'CANCELLED'))
+    OR (OLD."status" = 'ACTIVE'  AND NEW."status" IN ('PAUSED', 'CANCELLED', 'FAILED'))
+    OR (OLD."status" = 'PAUSED'  AND NEW."status" IN ('ACTIVE', 'CANCELLED'))
+    OR (OLD."status" = 'FAILED'  AND NEW."status" = 'CANCELLED')
+  ) THEN
     RAISE EXCEPTION 'subscription_status_guard: переход подписки % -> % запрещён', OLD."status", NEW."status"
       USING ERRCODE = 'check_violation';
   END IF;

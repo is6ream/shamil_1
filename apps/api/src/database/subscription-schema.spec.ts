@@ -1,5 +1,6 @@
-import type { PrismaClient } from '../generated/prisma/client';
+import type { Prisma, PrismaClient } from '../generated/prisma/client';
 import { DonationType, SubscriptionStatus } from '../generated/prisma/enums';
+import { canTransitionSubscription } from '../subscriptions/subscription-status';
 import {
   createPendingDonation,
   createTestClient,
@@ -159,6 +160,54 @@ describeDatabase('подписки: гарантии схемы', () => {
     // Assert
     await expect(act).rejects.toThrow(/subscription_failure_fields/);
   });
+
+  /** Поля, с которыми статус `to` проходит все CHECK — чтобы ловить только сторож переходов. */
+  function statusData(to: SubscriptionStatus, parentInvoiceNo: number): Prisma.SubscriptionUpdateInput {
+    const isCancelled = to === SubscriptionStatus.CANCELLED;
+
+    return {
+      status: to,
+      parentInvoiceNo,
+      billingAnchorDate: new Date(Date.UTC(2026, 8, 15)),
+      nextChargeAt: new Date(Date.UTC(2026, 9, 15, 7)),
+      cancelledAt: isCancelled ? new Date() : null,
+      cancelSource: isCancelled ? 'admin' : null,
+    };
+  }
+
+  const STATUSES = Object.values(SubscriptionStatus);
+
+  test.each(STATUSES.flatMap((from) => STATUSES.map((to) => [from, to] as const)))(
+    'триггер и subscription-status.ts согласны: %s → %s',
+    async (from, to) => {
+      // Arrange: подписка в статусе `from` — разрешённым путём
+      const subscription = await createTestSubscription(prisma, fixtures, userId, { active: from !== SubscriptionStatus.PENDING });
+
+      if (from !== SubscriptionStatus.PENDING && from !== SubscriptionStatus.ACTIVE) {
+        await prisma.subscription.update({
+          where: { id: subscription.id },
+          data: statusData(from, subscription.parentInvoiceNo),
+        });
+      }
+
+      // Act
+      const outcome = await prisma.subscription
+        .update({ where: { id: subscription.id }, data: statusData(to, subscription.parentInvoiceNo) })
+        .then(
+          () => 'allowed',
+          (error: unknown) => {
+            if (error instanceof Error && error.message.includes('subscription_status_guard')) {
+              return 'blocked';
+            }
+
+            throw error;
+          },
+        );
+
+      // Assert
+      expect(outcome).toBe(canTransitionSubscription(from, to) ? 'allowed' : 'blocked');
+    },
+  );
 
   test('e-mail жертвователя хранится только в нижнем регистре', async () => {
     await expect(createTestDonor(prisma, 'Donor@Example.test')).rejects.toThrow(/donor_user_email_lowercase/);
