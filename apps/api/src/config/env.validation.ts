@@ -589,6 +589,19 @@ function donorCabinetErrors(env: EnvVars, isProduction: boolean): readonly strin
     errors.push('MAIL_TRANSPORT: кабинет в production требует smtp — иначе коды входа не дойдут');
   }
 
+  // Отдельные ключи бессмысленны, если они совпали: утечка одного снова
+  // даёт подделать токен другого (aud спасает от подмены, но не от подделки).
+  if (env.DONOR_JWT_SECRET !== undefined && env.DONOR_JWT_SECRET === env.ADMIN_JWT_SECRET) {
+    errors.push('DONOR_JWT_SECRET: не должен совпадать с ADMIN_JWT_SECRET');
+  }
+
+  if (
+    env.DONOR_HMAC_SECRET !== undefined &&
+    (env.DONOR_HMAC_SECRET === env.DONOR_JWT_SECRET || env.DONOR_HMAC_SECRET === env.ADMIN_JWT_SECRET)
+  ) {
+    errors.push('DONOR_HMAC_SECRET: не должен совпадать с DONOR_JWT_SECRET и ADMIN_JWT_SECRET');
+  }
+
   if (env.BILLING_SCHEDULER_ENABLED && !env.DONOR_CABINET_ENABLED) {
     errors.push('BILLING_SCHEDULER_ENABLED: планировщик работает только при DONOR_CABINET_ENABLED=true');
   }

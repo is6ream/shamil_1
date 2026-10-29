@@ -456,6 +456,24 @@ describe('кабинет жертвователя и автосписания', 
     expect(() => validateEnv({ ...CABINET_IN_PRODUCTION, DONOR_JWT_SECRET: undefined })).toThrow(/DONOR_JWT_SECRET/);
   });
 
+  test('ключ JWT кабинета, совпавший с админским, — ошибка конфигурации', () => {
+    expect(() => validateEnv({ ...CABINET_IN_PRODUCTION, DONOR_JWT_SECRET: CABINET_IN_PRODUCTION.ADMIN_JWT_SECRET })).toThrow(
+      /DONOR_JWT_SECRET: не должен совпадать с ADMIN_JWT_SECRET/,
+    );
+  });
+
+  test('совпадение ключей ловится и вне production', () => {
+    const shared = 'x'.repeat(40);
+
+    expect(() => validateEnv({ ...BASE_ENV, ADMIN_JWT_SECRET: shared, DONOR_JWT_SECRET: shared })).toThrow(/DONOR_JWT_SECRET/);
+  });
+
+  test('HMAC-ключ кабинета, совпавший с ключом JWT, — ошибка конфигурации', () => {
+    expect(() => validateEnv({ ...CABINET_IN_PRODUCTION, DONOR_HMAC_SECRET: CABINET_IN_PRODUCTION.DONOR_JWT_SECRET })).toThrow(
+      /DONOR_HMAC_SECRET/,
+    );
+  });
+
   test('кабинет в production с письмами в лог не поднимается — коды входа не дойдут', () => {
     expect(() => validateEnv({ ...CABINET_IN_PRODUCTION, MAIL_TRANSPORT: 'log' })).toThrow(/MAIL_TRANSPORT/);
   });
