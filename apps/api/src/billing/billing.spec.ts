@@ -1,3 +1,4 @@
+import { ROBOKASSA_PROVIDER_CODE } from '../config/constants';
 import { RecurringEmulatorOutcome } from '../config/env.validation';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import type { PrismaService } from '../database/prisma.service';
@@ -9,6 +10,7 @@ import {
   seedFixtures,
 } from '../database/testing/test-database';
 import { DonationStatus, DonationType, SubscriptionStatus } from '../generated/prisma/enums';
+import type { ParsedWebhook } from '../payments/payment-provider.types';
 import type { ChargeState, RecurringGateway, RecurringSubmitResult } from '../payments/recurring/recurring-gateway';
 import { MAX_FAILED_CHARGES } from '../subscriptions/billing-calendar';
 import { createSubscriptionHarness } from '../subscriptions/testing/subscription-harness';
@@ -169,6 +171,79 @@ describeDatabase('планировщик автосписаний', () => {
         DonationStatus.failed,
         DonationStatus.failed,
       ]);
+    });
+  });
+
+  describe('Result URL по автосписанию', () => {
+    beforeEach(() => setUp(RecurringEmulatorOutcome.Paid));
+
+    /** Robokassa, которая принимает списание и (после задержки) сообщает об успехе. */
+    function robokassa(reconcileDelayMs: number): RecurringGateway {
+      return {
+        providerCode: ROBOKASSA_PROVIDER_CODE,
+        reconcileDelayMs,
+        submit: async (): Promise<RecurringSubmitResult> => ({ accepted: true }),
+        checkState: async (): Promise<ChargeState> => ({ kind: 'paid', amountKopecks: 50_000n }),
+      };
+    }
+
+    /** Колбэк в том виде, в каком его отдаёт RobokassaProvider.parseWebhook: ключ — InvId. */
+    async function deliverResultUrl(invoiceNo: number): Promise<void> {
+      const parsed: ParsedWebhook = {
+        provider: ROBOKASSA_PROVIDER_CODE,
+        providerEventId: String(invoiceNo),
+        invoiceNo,
+        status: DonationStatus.paid,
+        amountKopecks: 50_000n,
+        acknowledgement: `OK${invoiceNo}`,
+      };
+
+      await harness.payments.applyWebhook(parsed, { OutSum: '500.00', InvId: String(invoiceNo) });
+    }
+
+    async function pendingChildInvoice(): Promise<number> {
+      const child = await prisma.donation.findFirstOrThrow({
+        where: { subscriptionId, type: DonationType.CHILD },
+        select: { invoiceNo: true, status: true },
+      });
+      expect(child.status).toBe(DonationStatus.pending);
+
+      return child.invoiceNo;
+    }
+
+    test('повтор колбэка по CHILD не задваивает ни сбор, ни цикл подписки', async () => {
+      // Arrange: списание отправлено, сверка ещё не наступила
+      await billing(robokassa(60 * 60_000)).runTick();
+      const invoiceNo = await pendingChildInvoice();
+      const before = await prisma.campaignStats.findFirstOrThrow();
+
+      // Act: Robokassa ретраит Result URL
+      await deliverResultUrl(invoiceNo);
+      await deliverResultUrl(invoiceNo);
+
+      // Assert
+      expect(await children()).toEqual([{ status: DonationStatus.paid }]);
+      const after = await prisma.campaignStats.findFirstOrThrow();
+      expect(after.paidTotalKopecks - before.paidTotalKopecks).toBe(50_000n);
+      const subscription = await prisma.subscription.findUniqueOrThrow({ where: { id: subscriptionId } });
+      expect(subscription.cycleNo).toBe(2);
+      expect(harness.mail.outbox().filter((mail) => mail.kind === 'charge_succeeded')).toHaveLength(1);
+    });
+
+    test('сверка успела раньше колбэка — поздний Result URL ложится повтором', async () => {
+      // Arrange: сверка OpStateExt зачисляет CHILD в том же тике
+      await billing(robokassa(0)).runTick();
+      const child = await prisma.donation.findFirstOrThrow({ where: { subscriptionId, type: DonationType.CHILD } });
+      expect(child.status).toBe(DonationStatus.paid);
+      const before = await prisma.campaignStats.findFirstOrThrow();
+
+      // Act
+      await deliverResultUrl(child.invoiceNo);
+
+      // Assert
+      const after = await prisma.campaignStats.findFirstOrThrow();
+      expect(after.paidTotalKopecks).toBe(before.paidTotalKopecks);
+      expect(await prisma.paymentEvent.count({ where: { donationId: child.id } })).toBe(1);
     });
   });
 
