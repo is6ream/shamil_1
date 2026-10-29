@@ -32,6 +32,29 @@ describe('календарь автосписаний', () => {
     expect(march.toISOString()).toBe('2027-03-31T07:00:00.000Z');
   });
 
+  test.each([
+    // [якорь, лет, месяцев вперёд, ожидаемая дата]
+    [29, 2027, 1, { year: 2027, month: 1, day: 28 }],
+    [29, 2028, 1, { year: 2028, month: 1, day: 29 }],
+    [30, 2027, 1, { year: 2027, month: 1, day: 28 }],
+    [30, 2028, 1, { year: 2028, month: 1, day: 29 }],
+    [30, 2027, 2, { year: 2027, month: 2, day: 30 }],
+    [31, 2027, 3, { year: 2027, month: 3, day: 30 }],
+    [29, 2027, 13, { year: 2028, month: 1, day: 29 }],
+  ])('якорь %i января %i + %i мес. — %o', (day, year, months, expected) => {
+    expect(addMonthsClamped({ year, month: 0, day }, months)).toEqual(expected);
+  });
+
+  test('подписка от 30 января: февраль — последний день, март — снова 30-е', () => {
+    // Arrange
+    const anchor = toDbDate({ year: 2027, month: 0, day: 30 });
+    const schedule = { anchorDate: anchor, chargeTime: '12:00', timeZone: UFA };
+
+    // Act & Assert
+    expect(chargeMoment({ ...schedule, cycleNo: 1 }).toISOString()).toBe('2027-02-28T07:00:00.000Z');
+    expect(chargeMoment({ ...schedule, cycleNo: 2 }).toISOString()).toBe('2027-03-30T07:00:00.000Z');
+  });
+
   test('переход через год: декабрь + 1 = январь следующего года', () => {
     expect(addMonthsClamped({ year: 2026, month: 11, day: 15 }, 1)).toEqual({ year: 2027, month: 0, day: 15 });
   });

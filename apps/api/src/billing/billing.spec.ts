@@ -123,6 +123,20 @@ describeDatabase('планировщик автосписаний', () => {
   describe('отказы', () => {
     beforeEach(() => setUp(RecurringEmulatorOutcome.Declined));
 
+    test('после отказа следующий тик и параллельные экземпляры не списывают до срока повтора', async () => {
+      // Arrange: первый отказ
+      await billing().runTick();
+
+      // Act: сразу ещё три тика, два — одновременно
+      await billing().runTick();
+      await Promise.all([billing().runTick(), billing().runTick()]);
+
+      // Assert: один CHILD, один отказ
+      expect(await children()).toEqual([{ status: DonationStatus.failed }]);
+      const subscription = await prisma.subscription.findUniqueOrThrow({ where: { id: subscriptionId } });
+      expect(subscription.failCount).toBe(1);
+    });
+
     test('повтор через сутки, через трое, после третьего отказа — FAILED и письмо', async () => {
       // Act 1: первый отказ
       await billing().runTick();
