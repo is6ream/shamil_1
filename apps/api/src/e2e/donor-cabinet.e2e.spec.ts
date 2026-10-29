@@ -1,5 +1,9 @@
+import { ModulesContainer } from '@nestjs/core';
+
+import { BillingScheduler } from '../billing/billing.scheduler';
 import { BillingService } from '../billing/billing.service';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
+import { DONOR_SWAGGER_PATH } from '../donor-cabinet/donor-swagger';
 import {
   createTestAdmin,
   createTestClient,
@@ -124,6 +128,16 @@ describeDatabase('кабинет жертвователя: сквозной сц
 
     return created.body.subscriptionId;
   }
+
+  test('включённый кабинет: планировщик создан, Swagger вне production отвечает', async () => {
+    // Контроль к donor-cabinet-disabled.e2e: там те же проверки обязаны дать «нет».
+    const providers = [...e2e.app.get(ModulesContainer).values()].flatMap((module) => [...module.providers.keys()]);
+    const swagger = await fetch(`${e2e.apiUrl.replace(/\/api$/, '')}/${DONOR_SWAGGER_PATH}-json`);
+
+    expect(providers).toContain(BillingScheduler);
+    expect(swagger.status).toBe(200);
+    expect(Object.keys(((await swagger.json()) as { paths: Record<string, unknown> }).paths).every((path) => path.startsWith('/api/donor/'))).toBe(true);
+  });
 
   test('вход → подписка → автосписание → история → отмена по ссылке из письма', async () => {
     // Arrange
