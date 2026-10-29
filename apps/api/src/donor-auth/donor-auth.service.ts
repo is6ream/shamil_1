@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 
 import type { AppConfig } from '../config/configuration';
+import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { loginCodeMail } from '../mail/mail-templates';
 import { MAIL_SENDER } from '../mail/mail.types';
@@ -10,6 +11,7 @@ import {
   CODE_HOURLY_LIMIT,
   CODE_RESEND_INTERVAL_MS,
   CODE_WINDOW_MS,
+  LOGIN_CODE_HMAC_DOMAIN,
   LOGIN_CODE_TTL_MINUTES,
   LOGIN_CODE_TTL_MS,
   MAX_CODE_ATTEMPTS,
@@ -45,25 +47,34 @@ export class DonorAuthService {
    * проверить, жертвует ли человек мечети.
    */
   async requestCode(email: string, now: Date = new Date()): Promise<void> {
-    if (await this.isRateLimited(email, now)) {
-      this.logger.warn('Лимит кодов на адрес исчерпан — письмо не отправлено');
-
-      return;
-    }
-
     const code = generateLoginCode();
+    const issued = await this.prisma.$transaction(async (tx) => {
+      // Лимит и вставка — под одной блокировкой на адрес: иначе параллельные
+      // запросы прочитают «кодов ещё не было» и разошлют по письму каждый.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`${LOGIN_CODE_HMAC_DOMAIN}:${email}`}, 0))`;
 
-    await this.prisma.$transaction([
+      if (await isRateLimited(tx, email, now)) {
+        return false;
+      }
+
       // Новый код вытесняет старые: в почте действует только последнее письмо.
-      this.prisma.donorAuthCode.updateMany({ where: { email, usedAt: null }, data: { usedAt: now } }),
-      this.prisma.donorAuthCode.create({
+      await tx.donorAuthCode.updateMany({ where: { email, usedAt: null }, data: { usedAt: now } });
+      await tx.donorAuthCode.create({
         data: {
           email,
           codeHash: hashLoginCode(this.hmacSecret, email, code),
           expiresAt: new Date(now.getTime() + LOGIN_CODE_TTL_MS),
         },
-      }),
-    ]);
+      });
+
+      return true;
+    });
+
+    if (!issued) {
+      this.logger.warn('Лимит кодов на адрес исчерпан — письмо не отправлено');
+
+      return;
+    }
 
     try {
       await this.mail.send(loginCodeMail(email, code, LOGIN_CODE_TTL_MINUTES));
@@ -81,21 +92,21 @@ export class DonorAuthService {
     const stored = await this.prisma.donorAuthCode.findFirst({
       where: { email, usedAt: null, expiresAt: { gt: now } },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, codeHash: true, attempts: true },
+      select: { id: true, codeHash: true },
     });
 
-    if (stored === null || stored.attempts >= MAX_CODE_ATTEMPTS) {
+    if (stored === null) {
       throw new UnauthorizedException(WRONG_CODE);
     }
 
-    if (!loginCodeMatches(this.hmacSecret, email, code, stored.codeHash)) {
-      // Условие на attempts — в самом UPDATE: параллельные неверные вводы
-      // не проскочат лимит, прочитав одно и то же значение.
-      await this.prisma.donorAuthCode.updateMany({
-        where: { id: stored.id, usedAt: null, attempts: { lt: MAX_CODE_ATTEMPTS } },
-        data: { attempts: { increment: 1 } },
-      });
+    // Попытка списывается ДО сравнения и условным UPDATE: N параллельных
+    // запросов на последней попытке дадут одно сравнение, а не N.
+    const reserved = await this.prisma.donorAuthCode.updateMany({
+      where: { id: stored.id, usedAt: null, attempts: { lt: MAX_CODE_ATTEMPTS } },
+      data: { attempts: { increment: 1 } },
+    });
 
+    if (reserved.count === 0 || !loginCodeMatches(this.hmacSecret, email, code, stored.codeHash)) {
       throw new UnauthorizedException(WRONG_CODE);
     }
 
@@ -178,19 +189,20 @@ export class DonorAuthService {
       isNew,
     };
   }
+}
 
-  private async isRateLimited(email: string, now: Date): Promise<boolean> {
-    const recent = await this.prisma.donorAuthCode.findMany({
-      where: { email, createdAt: { gt: new Date(now.getTime() - CODE_WINDOW_MS) } },
-      orderBy: { createdAt: 'desc' },
-      select: { createdAt: true },
-      take: CODE_HOURLY_LIMIT,
-    });
-    const latest = recent[0];
+/** Не чаще раза в минуту и не больше пяти за час на адрес. Вызывать под блокировкой адреса. */
+async function isRateLimited(tx: Prisma.TransactionClient, email: string, now: Date): Promise<boolean> {
+  const recent = await tx.donorAuthCode.findMany({
+    where: { email, createdAt: { gt: new Date(now.getTime() - CODE_WINDOW_MS) } },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true },
+    take: CODE_HOURLY_LIMIT,
+  });
+  const latest = recent[0];
 
-    return (
-      recent.length >= CODE_HOURLY_LIMIT ||
-      (latest !== undefined && now.getTime() - latest.createdAt.getTime() < CODE_RESEND_INTERVAL_MS)
-    );
-  }
+  return (
+    recent.length >= CODE_HOURLY_LIMIT ||
+    (latest !== undefined && now.getTime() - latest.createdAt.getTime() < CODE_RESEND_INTERVAL_MS)
+  );
 }

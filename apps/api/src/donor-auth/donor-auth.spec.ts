@@ -9,10 +9,12 @@ import type { AppConfig, DonorConfig } from '../config/configuration';
 import type { PrismaService } from '../database/prisma.service';
 import { createTestPrismaService, describeDatabase, resetDatabase } from '../database/testing/test-database';
 import { LogMailSender } from '../mail/log-mail.sender';
-import { MAX_CODE_ATTEMPTS } from './donor-auth.constants';
+import { CODE_HOURLY_LIMIT, MAX_CODE_ATTEMPTS } from './donor-auth.constants';
+import { DonorAuthController } from './donor-auth.controller';
 import { DonorAuthService } from './donor-auth.service';
 import { DonorJwtGuard } from './donor-jwt.guard';
 import { DonorTokenService } from './donor-token.service';
+import * as loginCode from './login-code';
 import { hashLoginCode } from './login-code';
 
 const DONOR: DonorConfig = {
@@ -23,6 +25,7 @@ const DONOR: DonorConfig = {
 };
 const ADMIN_SECRET = 'admin-jwt-secret-'.padEnd(48, 'a');
 const EMAIL = 'donor@example.test';
+const MINUTE_MS = 60_000;
 
 function contextFor(token: string): ExecutionContext {
   const request = { headers: { authorization: `Bearer ${token}` } };
@@ -194,5 +197,108 @@ describeDatabase('вход жертвователя по коду', () => {
 
     // Act & Assert
     await expect(adminGuard.canActivate(contextFor(session.accessToken))).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+  test('ответ на запрос кода одинаков для нового и уже известного адреса', async () => {
+    // Arrange
+    const known = 'known@example.test';
+    await prisma.donorUser.create({ data: { email: known } });
+    const controller = new DonorAuthController(service, new ConfigService<AppConfig, true>({ donor: DONOR }));
+
+    // Act
+    const forKnown = await controller.requestCode({ email: known });
+    const forNew = await controller.requestCode({ email: EMAIL });
+
+    // Assert: тело одно и то же, аккаунт по запросу кода не создаётся
+    expect(forNew).toEqual(forKnown);
+    expect(await prisma.donorUser.count({ where: { email: EMAIL } })).toBe(0);
+    expect(mail.outbox()).toHaveLength(2);
+  });
+
+  test('шестая попытка отклоняется и счётчик не растёт выше лимита', async () => {
+    // Arrange
+    await service.requestCode(EMAIL);
+    const code = lastCode(mail);
+    const wrong = code === '000000' ? '111111' : '000000';
+
+    for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt += 1) {
+      await expect(service.verify(EMAIL, wrong)).rejects.toBeInstanceOf(UnauthorizedException);
+    }
+
+    // Act & Assert
+    await expect(service.verify(EMAIL, wrong)).rejects.toBeInstanceOf(UnauthorizedException);
+    const stored = await prisma.donorAuthCode.findFirstOrThrow({ where: { email: EMAIL } });
+    expect(stored.attempts).toBe(MAX_CODE_ATTEMPTS);
+  });
+
+  test('параллельные вводы на последней попытке дают ровно одно сравнение кода', async () => {
+    // Arrange
+    await service.requestCode(EMAIL);
+    const wrong = lastCode(mail) === '000000' ? '111111' : '000000';
+    await prisma.donorAuthCode.updateMany({ where: { email: EMAIL }, data: { attempts: MAX_CODE_ATTEMPTS - 1 } });
+    const compare = jest.spyOn(loginCode, 'loginCodeMatches');
+
+    try {
+      // Act
+      const results = await Promise.allSettled(Array.from({ length: 5 }, () => service.verify(EMAIL, wrong)));
+
+      // Assert
+      expect(results.every((result) => result.status === 'rejected')).toBe(true);
+      expect(compare).toHaveBeenCalledTimes(1);
+    } finally {
+      compare.mockRestore();
+    }
+  });
+
+  test('новый код гасит предыдущий', async () => {
+    // Arrange
+    await service.requestCode(EMAIL);
+    const first = lastCode(mail);
+    await service.requestCode(EMAIL, new Date(Date.now() + MINUTE_MS + 1_000));
+    const second = lastCode(mail);
+
+    // Act & Assert
+    if (first !== second) {
+      await expect(service.verify(EMAIL, first)).rejects.toBeInstanceOf(UnauthorizedException);
+    }
+    expect(await prisma.donorAuthCode.count({ where: { email: EMAIL, usedAt: null } })).toBe(1);
+  });
+
+  test('не больше пяти кодов на адрес за час', async () => {
+    // Arrange: пять запросов с интервалом чуть больше минуты
+    const start = Date.now();
+
+    for (let index = 0; index < CODE_HOURLY_LIMIT; index += 1) {
+      await service.requestCode(EMAIL, new Date(start + index * (MINUTE_MS + 1_000)));
+    }
+
+    // Act: шестой — внутри того же часа, но уже не раньше чем через минуту
+    await service.requestCode(EMAIL, new Date(start + CODE_HOURLY_LIMIT * (MINUTE_MS + 1_000)));
+
+    // Assert
+    expect(mail.outbox()).toHaveLength(CODE_HOURLY_LIMIT);
+
+    // Act: окно в час прошло
+    await service.requestCode(EMAIL, new Date(start + 61 * MINUTE_MS + CODE_HOURLY_LIMIT * 1_000));
+
+    // Assert
+    expect(mail.outbox()).toHaveLength(CODE_HOURLY_LIMIT + 1);
+  });
+
+  test('параллельные запросы кода — одно письмо и одна строка', async () => {
+    // Act
+    await Promise.all(Array.from({ length: 5 }, () => service.requestCode(EMAIL)));
+
+    // Assert
+    expect(mail.outbox()).toHaveLength(1);
+    expect(await prisma.donorAuthCode.count({ where: { email: EMAIL } })).toBe(1);
+  });
+
+  test('гард кабинета не пускает токен админки', async () => {
+    // Arrange
+    const adminToken = await new AccessTokenService(new JwtService({ secret: ADMIN_SECRET })).sign({ sub: 'admin-id', ver: 0 });
+    const guard = new DonorJwtGuard(tokens, prisma);
+
+    // Act & Assert
+    await expect(guard.canActivate(contextFor(adminToken))).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });
