@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  GoneException,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -106,8 +107,10 @@ class CancelledResponse {
 
 /**
  * Отмена по ссылке из письма — без входа: отказаться от автосписаний должно
- * быть так же просто, как оформить их. Защита — HMAC в токене; ответ на чужой
- * или битый токен — 404, как у несуществующей подписки.
+ * быть так же просто, как оформить их. Защита — HMAC и срок в токене; ответ
+ * на чужой или битый токен — 404, как у несуществующей подписки; на истёкший
+ * настоящий — 410, чтобы фронт предложил отменить в кабинете.
+ * Повторное нажатие — тот же 200: отмена идемпотентна.
  */
 @ApiTags('donor')
 @Controller('donor/subscriptions')
@@ -122,13 +125,17 @@ export class CancelByLinkController {
   @Throttle({ default: REQUEST_CODE_THROTTLE })
   @ApiOkResponse({ type: CancelledResponse })
   async cancelByLink(@Body() dto: CancelByLinkDto): Promise<CancelledResponse> {
-    const id = this.links.verifyCancelToken(dto.token);
+    const check = this.links.checkCancelToken(dto.token);
 
-    if (id === null) {
+    if (check.kind === 'invalid') {
       throw new NotFoundException('Ссылка недействительна');
     }
 
-    await this.subscriptions.cancel(id, 'link');
+    if (check.kind === 'expired') {
+      throw new GoneException('Срок ссылки истёк — отменить пожертвование можно в личном кабинете');
+    }
+
+    await this.subscriptions.cancel(check.subscriptionId, 'link');
 
     return { cancelled: true };
   }

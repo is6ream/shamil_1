@@ -22,6 +22,14 @@ export const CANCEL_LINK_HMAC_DOMAIN = 'donor-cancel-link';
 /** Hex-символов подписи в ссылке: 128 бит — подобрать нельзя, ссылка остаётся короткой. */
 export const CANCEL_LINK_SIGNATURE_LENGTH = 32;
 
+/**
+ * Срок ссылки отмены: 60 суток с письма. Письма о списании приходят раз
+ * в месяц, у каждого своя ссылка — значит, действует ссылка и из прошлого,
+ * и из позапрошлого письма. Позже — отмена в кабинете.
+ */
+export const CANCEL_LINK_TTL_DAYS = 60;
+export const CANCEL_LINK_TTL_MS = CANCEL_LINK_TTL_DAYS * 24 * 60 * 60_000;
+
 /** Текст, когда автосписания в этой конфигурации невозможны. */
 export const RECURRING_UNAVAILABLE_MESSAGE =
   'Ежемесячные пожертвования сейчас недоступны — можно пожертвовать разово';

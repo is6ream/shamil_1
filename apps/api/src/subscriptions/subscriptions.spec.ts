@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, GoneException, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 
@@ -14,7 +14,9 @@ import {
 import { DonationStatus, DonationType, SubscriptionStatus } from '../generated/prisma/enums';
 import { PaymentProviderResolver } from '../payments/payment-provider.resolver';
 import { ManualProvider } from '../payments/providers/manual.provider';
+import { CancelByLinkController } from '../donor-cabinet/donor-cabinet.controller';
 import { CreateSubscriptionDto } from './dto/subscription.dto';
+import { CANCEL_LINK_TTL_MS } from './subscriptions.constants';
 import { SubscriptionsService } from './subscriptions.service';
 import { HARNESS_SITE_URL, createSubscriptionHarness } from './testing/subscription-harness';
 import type { SubscriptionHarness } from './testing/subscription-harness';
@@ -163,14 +165,58 @@ describeDatabase('подписки: оформление и первый пла�
     expect(harness.mail.outbox().filter((mail) => mail.kind === 'subscription_cancelled')).toHaveLength(1);
   });
 
-  test('ссылка отмены подписана: чужая подпись и мусор не проходят', async () => {
+  test('ссылка отмены подписана: чужая подпись, подделанный срок и мусор не проходят', async () => {
     // Arrange
     const created = await subscribe();
     const token = harness.links.cancelToken(created.subscriptionId);
+    const [id, expiresAt] = token.split('.');
 
     // Act & Assert
-    expect(harness.links.verifyCancelToken(token)).toBe(created.subscriptionId);
-    expect(harness.links.verifyCancelToken(`${created.subscriptionId}.${'0'.repeat(32)}`)).toBeNull();
-    expect(harness.links.verifyCancelToken('мусор')).toBeNull();
+    expect(harness.links.checkCancelToken(token)).toEqual({ kind: 'valid', subscriptionId: created.subscriptionId });
+    expect(harness.links.checkCancelToken(`${id}.${expiresAt}.${'0'.repeat(32)}`)).toEqual({ kind: 'invalid' });
+    expect(harness.links.checkCancelToken(token.replace(`.${expiresAt}.`, `.${Number(expiresAt) + 86_400}.`))).toEqual({
+      kind: 'invalid',
+    });
+    expect(harness.links.checkCancelToken(`${id}.${token.split('.')[2]}`)).toEqual({ kind: 'invalid' });
+    expect(harness.links.checkCancelToken('мусор')).toEqual({ kind: 'invalid' });
+  });
+
+  test('ссылка отмены живёт CANCEL_LINK_TTL_DAYS суток', async () => {
+    // Arrange
+    const created = await subscribe();
+    const issuedAt = new Date('2026-11-01T09:00:00.000Z');
+    const token = harness.links.cancelToken(created.subscriptionId, issuedAt);
+
+    // Act & Assert
+    expect(harness.links.checkCancelToken(token, new Date(issuedAt.getTime() + CANCEL_LINK_TTL_MS - 1_000)).kind).toBe('valid');
+    expect(harness.links.checkCancelToken(token, new Date(issuedAt.getTime() + CANCEL_LINK_TTL_MS))).toEqual({ kind: 'expired' });
+  });
+
+  test('отмена по ссылке: источник link, повтор — тот же ответ, истёкшая — 410, чужая — 404', async () => {
+    // Arrange
+    const created = await subscribe();
+    await harness.payments.confirmManual(created.orderId);
+    const controller = new CancelByLinkController(harness.subscriptions, harness.links);
+    const token = harness.links.cancelToken(created.subscriptionId);
+    const expired = harness.links.cancelToken(created.subscriptionId, new Date(Date.now() - CANCEL_LINK_TTL_MS - 1_000));
+
+    // Act & Assert: истёкшая и подделанная ссылки ничего не меняют
+    await expect(controller.cancelByLink({ token: expired })).rejects.toBeInstanceOf(GoneException);
+    const forged = `${token.slice(0, -1)}${token.endsWith('0') ? '1' : '0'}`;
+    await expect(controller.cancelByLink({ token: forged })).rejects.toBeInstanceOf(NotFoundException);
+    expect((await prisma.subscription.findUniqueOrThrow({ where: { id: created.subscriptionId } })).status).toBe(
+      SubscriptionStatus.ACTIVE,
+    );
+
+    // Act: два нажатия подряд
+    const first = await controller.cancelByLink({ token });
+    const second = await controller.cancelByLink({ token });
+
+    // Assert
+    expect(first).toEqual({ cancelled: true });
+    expect(second).toEqual({ cancelled: true });
+    const subscription = await prisma.subscription.findUniqueOrThrow({ where: { id: created.subscriptionId } });
+    expect(subscription).toMatchObject({ status: SubscriptionStatus.CANCELLED, cancelSource: 'link' });
+    expect(harness.mail.outbox().filter((mail) => mail.kind === 'subscription_cancelled')).toHaveLength(1);
   });
 });
