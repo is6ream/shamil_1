@@ -1,0 +1,18 @@
+/* Public typography: Montserrat Medium for text, Bold for headings.
+   The server-rendered admin marker preserves the original admin fonts. */
+:root:not(:has([data-admin-theme])) {
+  --font-display: var(--font-montserrat, "Montserrat"), "Segoe UI", sans-serif;
+  --font-text: var(--font-montserrat, "Montserrat"), "Segoe UI", sans-serif;
+  --font-quote: var(--font-display);
+}
+:root:not(:has([data-admin-theme])) body {
+  font-weight: 500;
+}
+:root:not(:has([data-admin-theme])) :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+:root:not(:has([data-admin-theme])) :is(button, input, select, textarea, .meter .val small) {
+  font-family: var(--font-text);
+  font-weight: 500;
+}

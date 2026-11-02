@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Amiri, Golos_Text, Philosopher } from "next/font/google";
+import { Amiri, Golos_Text, Montserrat, Philosopher } from "next/font/google";
 
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, SLOGAN } from "@/lib/site";
 
 import "./globals.css";
 
+/** Публичный сайт: Medium для текста, Bold для заголовков. */
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "700"],
+  display: "swap",
+});
+
 /**
- * Заголовки и логотип — Philosopher (макет v2). У него только 400 и 700,
+ * Админка сохраняет Philosopher из макета v2. У него только 400 и 700,
  * заголовки идут жирным.
  */
 const philosopher = Philosopher({
@@ -62,7 +70,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${philosopher.variable} ${golos.variable} ${amiri.variable}`}>
+    <html lang="ru" className={`${montserrat.variable} ${philosopher.variable} ${golos.variable} ${amiri.variable}`}>
       <body>
         {children}
       </body>
