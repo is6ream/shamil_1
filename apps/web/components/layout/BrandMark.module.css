@@ -12,7 +12,7 @@
   height: 52px;
   border: 2px solid var(--surface-sunken);
   border-radius: 50%;
-  background: var(--blue);
+  background: var(--panel-bg);
 }
 
 .text {

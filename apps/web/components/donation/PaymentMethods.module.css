@@ -20,7 +20,7 @@
   gap: var(--sp-3);
   min-height: var(--control-h);
   padding: 6px var(--sp-3);
-  border: var(--stroke) solid var(--border);
+  border: var(--stroke) solid var(--control-border);
   border-radius: var(--r-md);
   background: var(--surface);
   cursor: pointer;
@@ -41,6 +41,8 @@
   outline-offset: var(--focus-offset);
 }
 
+.tile:has(:disabled) { background: var(--surface-sunken); cursor: not-allowed; }
+
 .wide {
   grid-column: 1 / -1;
 }
@@ -51,7 +53,7 @@
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--r-field);
   background: var(--surface-sunken);
   color: var(--accent);
 }
@@ -65,7 +67,7 @@
 
 .label {
   overflow: hidden;
-  font-size: 15px;
+  font-size: var(--fs-button);
   font-weight: 600;
   line-height: 1.25;
   color: var(--text-strong);
@@ -84,8 +86,8 @@
   flex: none;
   width: 22px;
   height: 22px;
-  border: 1.5px solid var(--border);
-  border-radius: 6px;
+  border: 1.5px solid var(--control-border);
+  border-radius: var(--r-check);
   background: var(--surface);
   transition: background var(--dur-fast), border-color var(--dur-fast);
 }
@@ -122,7 +124,7 @@
   }
 
   .label {
-    font-size: 14px;
+    font-size: var(--fs-small);
   }
 }
 

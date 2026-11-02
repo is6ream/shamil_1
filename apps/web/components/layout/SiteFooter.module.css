@@ -2,14 +2,27 @@
 
 .footer {
   margin-top: 0;
-  padding: var(--sp-20) 0 calc(var(--sp-16) + var(--mobile-bar-space, 0px));
+  padding: 140px 0 calc(140px + var(--mobile-bar-space, 0px));
+  position: relative;
+  overflow: hidden;
   background: var(--panel-bg);
   color: var(--text-soft);
   font-size: 15px;
 }
 
+/* Nine-slice keeps the original corner ornaments proportional at every width. */
+.footer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 170px solid transparent;
+  border-image: url("/footer/gold-frame.png") 355 360 fill / 170px / 0 stretch;
+  pointer-events: none;
+}
+
 .inner {
-  width: min(100% - 2 * var(--gutter), var(--container));
+  position: relative;
+  width: min(100% - 160px, var(--container));
   margin: 0 auto;
 }
 
@@ -31,6 +44,7 @@
   font-weight: 700;
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
+  color: var(--gold);   /* 9.54:1 на --ink — AA для мелкого текста */
 }
 
 .phone {
@@ -73,7 +87,7 @@
 .copyright {
   margin: var(--sp-12) 0 0;
   padding-top: var(--sp-6);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid var(--ornament-border);   /* --gold, как рамка полосы с хадисом */
   font-size: 13.5px;
 }
 
@@ -89,7 +103,16 @@
 
 @media (max-width: 767px) {
   .footer {
-    padding-top: var(--sp-12);
+    padding: 110px 0 calc(110px + var(--mobile-bar-space, 0px));
+  }
+
+  .footer::before {
+    border-width: 95px;
+    border-image-width: 95px;
+  }
+
+  .inner {
+    width: calc(100% - 88px);
   }
 
   .columns {
@@ -115,7 +138,7 @@
     order: 3;
     margin: 0;
     padding-top: var(--sp-5);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid var(--dark-divider);
     font-size: 14px;
   }
 
@@ -139,7 +162,7 @@
 
   .links a {
     font-size: 14px;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
   .desktopOnly {

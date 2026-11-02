@@ -5,12 +5,30 @@
 
 .primary {
   width: 100%;
-  background: var(--white);
-  color: var(--ink);
+  background: var(--cta-bg);
+  color: var(--cta-text);
+  box-shadow: inset 0 0 0 1px var(--gold-text);
 }
 
 .primary:hover {
-  background: var(--accent-hover);
+  background: var(--cta-hover);
+}
+
+.primary:active {
+  background: var(--cta-active);
+}
+
+.primary,
+.secondary {
+  min-height: var(--control-h);
+  height: auto;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-field);
+  font-size: var(--fs-button);
+  line-height: 1.4;
+  white-space: normal;
+  text-align: center;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
 
 .row {
@@ -20,13 +38,14 @@
 }
 
 .secondary {
-  border: var(--stroke) solid var(--border);
-  background: transparent;
+  border: var(--stroke) solid var(--control-border);
+  background: var(--surface);
   color: var(--text-strong);
 }
 
 .secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .links {
@@ -41,11 +60,12 @@
   padding: var(--sp-1) 0;
   border: 0;
   background: none;
-  color: var(--text-soft);
+  color: var(--accent);
   font: inherit;
-  font-size: 15px;
+  font-size: var(--fs-button);
   text-decoration: underline;
   text-underline-offset: 4px;
+  text-decoration-color: currentColor;
   cursor: pointer;
 }
 

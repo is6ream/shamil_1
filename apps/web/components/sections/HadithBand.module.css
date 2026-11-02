@@ -1,6 +1,8 @@
 .band {
+  position: relative;
+  overflow: hidden;
   padding: var(--sp-24) var(--gutter);
-  background: var(--band-bg);
+  background: var(--hadith-shade), url("/hadith/steppe-gold.png") left center / cover no-repeat;
   text-align: center;
 }
 
@@ -14,14 +16,14 @@
   align-items: center;
   justify-content: center;
   gap: var(--sp-5);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--gold);
   font-size: 26px;
 }
 
 .line {
   width: 72px;
   height: 1px;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--ornament-border);
 }
 
 .quote {
@@ -54,6 +56,8 @@
 
 @media (max-width: 767px) {
   .band {
+  position: relative;
+  overflow: hidden;
     padding-block: var(--sp-16);
   }
 
@@ -61,3 +65,5 @@
     display: none;
   }
 }
+
+.band::before { content: ""; position: absolute; inset: 12px; border: 1px solid var(--ornament-border); pointer-events: none; }
