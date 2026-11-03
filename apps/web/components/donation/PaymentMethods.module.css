@@ -34,6 +34,7 @@
 .tile:has(:checked) {
   border-color: var(--accent);
   background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 .tile:has(:focus-visible) {
@@ -58,6 +59,30 @@
   color: var(--accent);
 }
 
+/* Полный исходный холст: внутренние охранные поля не обрезаем. */
+.icon:has(.logo) {
+  width: 56px;
+  height: 56px;
+  background: transparent;
+}
+
+.logo {
+  display: block;
+  object-fit: contain;
+  flex: none;
+}
+
+.logoSbp {
+  width: 28px;
+  height: auto;
+}
+
+.logoSberPay,
+.logoTPay {
+  width: 56px;
+  height: auto;
+}
+
 .text {
   display: grid;
   flex: 1;
@@ -66,13 +91,11 @@
 }
 
 .label {
-  overflow: hidden;
   font-size: var(--fs-button);
   font-weight: 600;
   line-height: 1.25;
   color: var(--text-strong);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .hint {
@@ -111,26 +134,37 @@
   opacity: 1;
 }
 
-/* Узкий телефон (320–360): плитка ужимается, а не переносит подпись. */
-@container (max-width: 360px) {
+/* В узкой форме, включая sticky-колонку, знак и индикатор сверху. */
+@container (max-width: 480px) {
   .tile {
     gap: var(--sp-2);
     padding-inline: var(--sp-2);
   }
 
-  .icon {
-    width: 32px;
-    height: 32px;
+  .tile:not(.wide) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 56px auto;
+    align-content: start;
+    min-height: 92px;
+  }
+
+  .tile:not(.wide) .icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .tile:not(.wide) .check {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .tile:not(.wide) .text {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .label {
     font-size: var(--fs-small);
-  }
-}
-
-/* Совсем узкая карточка (телефон 320–340): иконка уступает место подписи. */
-@container (max-width: 320px) {
-  .icon {
-    display: none;
   }
 }
