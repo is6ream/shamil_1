@@ -35,7 +35,7 @@
   font-family: var(--font-arabic);
   font-size: var(--fs-arabic);
   line-height: 1.8;
-  color: var(--gold-light);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .translation {
