@@ -181,6 +181,11 @@ export class EnvVars {
   @IsEnum(PaymentProviderCode)
   PAYMENT_PROVIDER: PaymentProviderCode = PaymentProviderCode.Manual;
 
+  /** Отключает только новые онлайн-заказы, сохраняя ResultURL старых. */
+  @envBoolean(true)
+  @IsBoolean()
+  PAYMENT_ONLINE_ORDERS_ENABLED: boolean = true;
+
   /**
    * Режим провайдера. Значения по умолчанию намеренно нет: выбор между боевыми
    * и тестовыми деньгами не должен доставаться молча. При `manual` не проверяется.
@@ -427,7 +432,8 @@ function crossFieldErrors(env: EnvVars): readonly string[] {
   // Демо-стенд — единственное исключение из запретов production: эмулятор
   // там и есть способ оплаты. Любая другая стадия при NODE_ENV=production
   // проверяется ровно как боевой сайт.
-  const isProduction = env.NODE_ENV === NodeEnv.Production && env.DEPLOY_STAGE !== DeployStage.Demo;
+  const isProduction = env.DEPLOY_STAGE === DeployStage.Production ||
+    (env.NODE_ENV === NodeEnv.Production && env.DEPLOY_STAGE !== DeployStage.Demo);
 
   if (isProduction && env.PAYMENT_EMULATOR_ENABLED) {
     errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор оплаты в production запрещён');

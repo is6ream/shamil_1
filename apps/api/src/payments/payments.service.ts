@@ -228,6 +228,9 @@ export class PaymentsService {
   private async applyEvent(input: ApplyEventInput): Promise<PaymentEventOutcome> {
     try {
       return await this.prisma.$transaction(async (tx) => {
+        // Сериализуем события одного заказа, включая разные event id:
+        // повторный paid не должен переписывать фактическую сумму/время.
+        await tx.$queryRaw`SELECT id FROM donation WHERE id = ${input.donationId}::uuid FOR UPDATE`;
         // Статус перечитывается внутри транзакции: между поиском доната
         // и записью события могла пройти параллельная доставка.
         const current = await tx.donation.findUniqueOrThrow({

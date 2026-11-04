@@ -172,6 +172,12 @@ export class RobokassaProvider implements PaymentProvider {
       return false;
     }
 
+    // Нельзя пропускать массив Shp_* мимо подписи как отсутствующий ключ.
+    if (Object.entries(body).some(([name, value]) =>
+      name.toLowerCase().startsWith('shp_') && typeof value !== 'string')) {
+      return false;
+    }
+
     const expected = hashSignature(
       buildResultSignatureSource({
         outSum,

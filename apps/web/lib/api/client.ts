@@ -188,5 +188,6 @@ export function createDonation(body: CreateDonationBody): Promise<CreatedDonatio
 export function getDonationStatus(orderId: string): Promise<DonationStatusResponse> {
   return request<DonationStatusResponse>(
     `/donations/${encodeURIComponent(orderId)}/status`,
+    { signal: AbortSignal.timeout(10_000) },
   );
 }

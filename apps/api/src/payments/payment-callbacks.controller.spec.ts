@@ -42,6 +42,11 @@ function controller(online: PaymentProvider | null) {
 }
 
 describe('колбэк Robokassa', () => {
+  test('сбой надёжного сохранения не возвращает OK провайдеру', async () => {
+    const { instance, applyWebhook } = controller(stub(ROBOKASSA_PROVIDER_CODE, true));
+    applyWebhook.mockRejectedValueOnce(new Error('database unavailable'));
+    await expect(instance.handleRobokassaResult({ InvId: '42' })).rejects.toThrow('database unavailable');
+  });
   test('Robokassa выключена (PAYMENT_PROVIDER=manual) — 401, даже если ручной провайдер «согласен»', async () => {
     // Arrange
     const { instance, applyWebhook } = controller(null);

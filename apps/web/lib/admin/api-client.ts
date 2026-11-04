@@ -44,7 +44,7 @@ const REFRESH_LOCK_NAME = "shamil-admin-refresh";
  * уже с cookie, которую обновила первая. Без Web Locks (старый браузер) —
  * без блокировки, как раньше.
  */
-const webLocksRefresh: RefreshLock = (task) => {
+const webLocksRefresh: RefreshLock = async (task) => {
   if (typeof navigator === "undefined" || navigator.locks === undefined) {
     return task();
   }

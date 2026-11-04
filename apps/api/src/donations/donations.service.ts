@@ -82,13 +82,13 @@ export class DonationsService {
         howDidYouHear: dto.howDidYouHear ?? null,
         ...(contact === null ? {} : { contact: { create: contact } }),
       },
-      select: { id: true, invoiceNo: true },
+      select: { id: true, invoiceNo: true, amountKopecks: true },
     });
 
     const payment = await provider.createPayment({
       invoiceNo: donation.invoiceNo,
       donationId: donation.id,
-      amountKopecks,
+      amountKopecks: donation.amountKopecks,
       description: `Пожертвование: ${campaign.title}`,
     });
 

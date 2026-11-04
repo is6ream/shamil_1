@@ -19,6 +19,7 @@ const CALLBACK_SIGNATURE = '26f30947013e19685eda7f3ea6e94c99';
 const CALLBACK_WITH_ORDER_SIGNATURE = 'b356070bc6f20a2ed542feca24e2f87e';
 
 const BASE_PAYMENT: PaymentConfig = {
+  onlineOrdersEnabled: true,
   provider: PaymentProviderCode.Robokassa,
   isTest: true,
   hashAlgorithm: PaymentHashAlgorithm.Md5,
@@ -176,6 +177,9 @@ describe('RobokassaProvider: проверка подписи колбэка', ()
 });
 
 describe('RobokassaProvider: разбор колбэка', () => {
+  test('массив Shp_* нельзя исключить из проверки подписи', () => {
+    expect(createProvider().verifySignature({ ...CALLBACK, Shp_order_id: [ORDER_ID, 'other'] })).toBe(false);
+  });
   test('успешный колбэк разбирается в оплаченный донат', () => {
     // Act
     const parsed = createProvider().parseWebhook(CALLBACK);

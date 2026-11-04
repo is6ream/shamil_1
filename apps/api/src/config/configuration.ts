@@ -25,6 +25,7 @@ export interface ReceiptConfig {
 }
 
 export interface PaymentConfig {
+  readonly onlineOrdersEnabled: boolean;
   readonly provider: PaymentProviderCode;
   readonly isTest: boolean;
   readonly hashAlgorithm: PaymentHashAlgorithm;
@@ -194,6 +195,7 @@ function buildPaymentConfig(env: EnvVars): PaymentConfig {
 
   return {
     provider: env.PAYMENT_PROVIDER,
+    onlineOrdersEnabled: env.PAYMENT_ONLINE_ORDERS_ENABLED,
     isTest,
     hashAlgorithm: env.PAYMENT_HASH_ALGORITHM,
     merchantId: env.PAYMENT_MERCHANT_ID ?? '',

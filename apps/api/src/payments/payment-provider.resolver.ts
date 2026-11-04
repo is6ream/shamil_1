@@ -12,6 +12,7 @@ export const ONLINE_UNAVAILABLE_MESSAGE =
  * тесты подставляют стабы напрямую.
  */
 export interface PaymentProviderRegistry {
+  readonly onlineOrdersEnabled?: boolean;
   /** Перевод по реквизитам есть всегда — это постоянный путь, не заглушка. */
   readonly manual: PaymentProvider;
   /** Онлайн-агрегатор; `null`, если он выключен (`PAYMENT_PROVIDER=manual`). */
@@ -43,7 +44,7 @@ export class PaymentProviderResolver {
         return this.registry.manual;
 
       case 'online':
-        if (this.registry.online === null) {
+        if (this.registry.online === null || this.registry.onlineOrdersEnabled === false) {
           throw new BadRequestException(ONLINE_UNAVAILABLE_MESSAGE);
         }
 

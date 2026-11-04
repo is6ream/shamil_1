@@ -16,9 +16,9 @@ import { RobokassaProvider } from './providers/robokassa.provider';
  * Онлайн-провайдер приложения, если он включён.
  *
  * `PAYMENT_PROVIDER` теперь значит «какой онлайн-агрегатор подключён»:
- * `manual` — онлайн выключен целиком, и таб «Онлайн» получает 400 с просьбой
- * перевести по реквизитам. Это же и рубильник: выключить приём картой
- * в день проблем у агрегатора — одна переменная, пароли стирать не нужно.
+ * `manual` — провайдер отключён целиком, включая ResultURL.
+ * Для остановки новых заказов используйте PAYMENT_ONLINE_ORDERS_ENABLED=false:
+ * провайдер и проверка уведомлений ранее созданных заказов сохраняются.
  *
  * Классы создаются здесь вручную, а не регистрируются провайдерами модуля,
  * намеренно: Nest поднимает всех провайдеров модуля сразу, а конструктор
@@ -53,6 +53,7 @@ export function createPaymentProviderResolver(config: ConfigService<AppConfig, t
   return new PaymentProviderResolver({
     manual: new ManualProvider(config),
     online,
+    onlineOrdersEnabled: config.get('payment', { infer: true }).onlineOrdersEnabled,
     // Без `channel` в запросе — прежнее поведение: провайдер из PAYMENT_PROVIDER.
     defaultChannel: online === null ? 'transfer' : 'online',
   });
