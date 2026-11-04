@@ -1,5 +1,6 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import { ROBOKASSA_PROVIDER_CODE } from '../config/constants';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import { PrismaService } from '../database/prisma.service';
 import type { DonorPrincipal } from '../donor-auth/donor-auth.types';
@@ -47,10 +48,21 @@ export class SubscriptionsService {
   async create(donor: DonorPrincipal, dto: CreateSubscriptionDto, consentIp?: string): Promise<CreatedSubscriptionResponse> {
     // Без шлюза автосписаний (production с manual) оформлять нечего:
     // первый платёж прошёл бы, а второго не случилось бы никогда.
-    const provider = this.gateway === null ? null : this.providers.byCode(this.gateway.providerCode);
+    const providerCode = this.gateway?.providerCode;
+    const provider = providerCode === undefined
+      ? null
+      : providerCode === ROBOKASSA_PROVIDER_CODE
+        ? this.providers.forChannel('online')
+        : this.providers.byCode(providerCode);
 
     if (provider === null) {
       throw new BadRequestException(RECURRING_UNAVAILABLE_MESSAGE);
+    }
+
+    // Каждое письмо о подписке несёт ссылку отмены. Без почты человек узнал
+    // бы о списании только из банка — так не оформляем.
+    if (donor.email === null) {
+      throw new ConflictException('Добавьте почту в настройках кабинета: туда придут письма о списаниях');
     }
 
     const campaign = await this.prisma.campaign.findFirst({
@@ -85,6 +97,7 @@ export class SubscriptionsService {
           campaignId: campaign.id,
           regionId,
           amountKopecks,
+          period: dto.period,
           consentAcceptedAt: now,
           consentIp: consentIp ?? null,
         },
@@ -116,7 +129,7 @@ export class SubscriptionsService {
       invoiceNo: created.parent.invoiceNo,
       donationId: created.parent.id,
       amountKopecks,
-      description: `Ежемесячное пожертвование: ${campaign.title}`,
+      description: `Регулярное пожертвование: ${campaign.title}`,
       recurring: true,
     });
 

@@ -5,6 +5,7 @@ import { validateSync } from 'class-validator';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import type { PrismaService } from '../database/prisma.service';
 import {
+  TEST_SESSION_ID,
   createTestDonor,
   createTestPrismaService,
   describeDatabase,
@@ -44,7 +45,7 @@ describe('CreateSubscriptionDto', () => {
 describeDatabase('подписки: оформление и первый платёж', () => {
   let prisma: PrismaService;
   let harness: SubscriptionHarness;
-  let donor: { id: string; email: string };
+  let donor: { id: string; sessionId: string; email: string };
 
   beforeAll(() => {
     prisma = createTestPrismaService();
@@ -57,7 +58,7 @@ describeDatabase('подписки: оформление и первый пла�
   beforeEach(async () => {
     await resetDatabase(prisma);
     await seedFixtures(prisma, { campaignSlug: CAMPAIGN_SLUG });
-    donor = { id: (await createTestDonor(prisma, EMAIL)).id, email: EMAIL };
+    donor = { id: (await createTestDonor(prisma, EMAIL)).id, sessionId: TEST_SESSION_ID, email: EMAIL };
     harness = createSubscriptionHarness(prisma);
   });
 
@@ -97,7 +98,7 @@ describeDatabase('подписки: оформление и первый пла�
 
     const mail = harness.mail.outbox().at(-1);
     expect(mail?.kind).toBe('subscription_started');
-    expect(mail?.text).toContain(`${HARNESS_SITE_URL}/cabinet/cancel?token=`);
+    expect(mail?.text).toContain(`${HARNESS_SITE_URL}/subscription/cancel?token=`);
   });
 
   test('повторное подтверждение первого платежа ничего не меняет и писем не шлёт', async () => {

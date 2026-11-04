@@ -21,6 +21,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     super({
       adapter: new PrismaPg({
         connectionString: config.get('database', { infer: true }).url,
+        // Prisma передаёт параметры даты без смещения и читает их как UTC.
+        options: '-c timezone=UTC',
       }),
       // Логирование запросов выключено намеренно: в параметрах ездят телефоны
       // донатеров, а 152-ФЗ не допускает ПДн в логах (CONTEXT.md §7).

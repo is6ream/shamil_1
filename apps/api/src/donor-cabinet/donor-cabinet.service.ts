@@ -1,23 +1,16 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { pageArgs } from '../common/pagination';
-import type { Page } from '../common/pagination';
 import { PrismaService } from '../database/prisma.service';
 import type { Prisma } from '../generated/prisma/client';
 import { SubscriptionStatus } from '../generated/prisma/enums';
 import { chargeMoment, nextCycleAfter } from '../subscriptions/billing-calendar';
 import type { SubscriptionResponse, UpdateSubscriptionDto } from '../subscriptions/dto/subscription.dto';
 import { lockSubscription } from '../subscriptions/subscription-lifecycle.service';
-import type {
-  DonorDonationResponse,
-  DonorDonationsQueryDto,
-  DonorProfileResponse,
-  UpdateDonorProfileDto,
-} from './dto/donor-cabinet.dto';
 
 const SUBSCRIPTION_VIEW_SELECT = {
   id: true,
   status: true,
+  period: true,
   amountKopecks: true,
   nextChargeAt: true,
   failCount: true,
@@ -36,6 +29,7 @@ export function toSubscriptionResponse(row: SubscriptionView): SubscriptionRespo
   return {
     id: row.id,
     status: row.status,
+    period: row.period,
     amountKopecks: row.amountKopecks.toString(),
     regionSlug: row.region?.slug ?? null,
     regionName: row.region?.name ?? null,
@@ -56,74 +50,6 @@ export function toSubscriptionResponse(row: SubscriptionView): SubscriptionRespo
 @Injectable()
 export class DonorCabinetService {
   constructor(private readonly prisma: PrismaService) {}
-
-  async profile(userId: string): Promise<DonorProfileResponse> {
-    const donor = await this.prisma.donorUser.findUniqueOrThrow({
-      where: { id: userId },
-      select: { id: true, email: true, name: true, phoneE164: true, marketingConsent: true, createdAt: true },
-    });
-
-    return {
-      id: donor.id,
-      email: donor.email,
-      name: donor.name,
-      phone: donor.phoneE164,
-      marketingConsent: donor.marketingConsent,
-      createdAt: donor.createdAt.toISOString(),
-    };
-  }
-
-  async updateProfile(userId: string, dto: UpdateDonorProfileDto): Promise<DonorProfileResponse> {
-    await this.prisma.donorUser.update({
-      where: { id: userId },
-      data: {
-        ...(dto.name === undefined ? {} : { name: dto.name }),
-        ...(dto.phone === undefined ? {} : { phoneE164: dto.phone }),
-        ...(dto.marketingConsent === undefined ? {} : { marketingConsent: dto.marketingConsent }),
-      },
-    });
-
-    return this.profile(userId);
-  }
-
-  /** История пожертвований через кабинет: первые платежи и автосписания. */
-  async donations(userId: string, query: DonorDonationsQueryDto): Promise<Page<DonorDonationResponse>> {
-    const where = { userId };
-    const [rows, total] = await this.prisma.$transaction([
-      this.prisma.donation.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        ...pageArgs(query),
-        select: {
-          id: true,
-          type: true,
-          status: true,
-          amountKopecks: true,
-          paidAmountKopecks: true,
-          paidAt: true,
-          createdAt: true,
-          subscriptionId: true,
-        },
-      }),
-      this.prisma.donation.count({ where }),
-    ]);
-
-    return {
-      items: rows.map((row) => ({
-        id: row.id,
-        type: row.type,
-        status: row.status,
-        amountKopecks: row.amountKopecks.toString(),
-        paidAmountKopecks: row.paidAmountKopecks?.toString() ?? null,
-        paidAt: row.paidAt?.toISOString() ?? null,
-        createdAt: row.createdAt.toISOString(),
-        subscriptionId: row.subscriptionId,
-      })),
-      total,
-      page: query.page,
-      pageSize: query.pageSize,
-    };
-  }
 
   async subscriptions(userId: string): Promise<SubscriptionResponse[]> {
     const rows = await this.prisma.subscription.findMany({
@@ -169,6 +95,7 @@ export class DonorCabinetService {
         const schedule = {
           anchorDate: current.billingAnchorDate,
           chargeTime: current.chargeTime,
+          period: current.period,
           timeZone: current.user.timezone,
         };
         const cycleNo = nextCycleAfter({ ...schedule, fromCycle: current.cycleNo }, new Date());

@@ -574,3 +574,22 @@ export interface ShortLinkBody {
   readonly utmTerm: string | null;
   readonly isActive: boolean;
 }
+
+/** Заявка на справку для налогового вычета (`GET /admin/tax-certificates`). */
+export type TaxCertificateStatus = "NEW" | "IN_PROGRESS" | "DONE";
+
+export interface AdminTaxCertificate {
+  readonly id: string;
+  readonly year: number;
+  readonly status: TaxCertificateStatus;
+  readonly adminComment: string | null;
+  /** ФИО из профиля жертвователя. */
+  readonly donorName: string | null;
+  readonly donorEmail: string | null;
+  readonly donorPhone: string | null;
+  /** Успешные пожертвования из кабинета за год, копейки строкой. */
+  readonly paidTotalKopecks: string;
+  readonly paidCount: number;
+  readonly createdAt: string;
+  readonly doneAt: string | null;
+}

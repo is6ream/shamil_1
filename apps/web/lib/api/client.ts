@@ -174,10 +174,19 @@ export function apiGet<T>(path: string, options: ApiGetOptions): Promise<T> {
  * Тело собирается только через `buildCreateDonationBody`: лишний ключ
  * в объекте — 400 от `forbidNonWhitelisted`.
  */
-export function createDonation(body: CreateDonationBody): Promise<CreatedDonationResponse> {
+export function createDonation(
+  body: CreateDonationBody,
+  /**
+   * Access-токен кабинета жертвователя: с ним донат попадёт в «Мою помощь».
+   * Не вошёл — `null`, донат как раньше. Битый или истёкший токен бэкенд
+   * молча игнорирует: платёж важнее статистики.
+   */
+  donorAccessToken: string | null = null,
+): Promise<CreatedDonationResponse> {
   return request<CreatedDonationResponse>("/donations", {
     method: "POST",
     body: JSON.stringify(body),
+    ...(donorAccessToken === null ? {} : { headers: { Authorization: `Bearer ${donorAccessToken}` } }),
   });
 }
 
@@ -188,5 +197,6 @@ export function createDonation(body: CreateDonationBody): Promise<CreatedDonatio
 export function getDonationStatus(orderId: string): Promise<DonationStatusResponse> {
   return request<DonationStatusResponse>(
     `/donations/${encodeURIComponent(orderId)}/status`,
+    { signal: AbortSignal.timeout(10_000) },
   );
 }

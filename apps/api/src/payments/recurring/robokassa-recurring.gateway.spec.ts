@@ -6,6 +6,7 @@ import { RobokassaRecurringGateway, parseOpState } from './robokassa-recurring.g
 
 const PAYMENT: PaymentConfig = {
   provider: PaymentProviderCode.Robokassa,
+  onlineOrdersEnabled: true,
   isTest: false,
   hashAlgorithm: PaymentHashAlgorithm.Md5,
   merchantId: 'shamil',
@@ -54,6 +55,20 @@ describe('рекурренты Robokassa', () => {
     // Параметры, которых в рекурренте быть не должно (документация)
     expect(body.has('Recurring')).toBe(false);
     expect(body.has('IncCurrLabel')).toBe(false);
+  });
+
+  test.each([false, true])('тестовый режим не отправляет запрос на боевой URL (эмулятор: %s)', async (emulatorEnabled) => {
+    fetchSpy = jest.spyOn(global, 'fetch');
+    const gateway = new RobokassaRecurringGateway({ ...PAYMENT, isTest: true, emulatorEnabled });
+
+    await expect(gateway.submit({
+      invoiceNo: 2,
+      previousInvoiceNo: 1,
+      amountKopecks: 10_000n,
+      description: 'Тестовое пожертвование',
+    })).rejects.toThrow('Тестовое автосписание доступно только через эмулятор');
+
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   test('ответ не OK — отказ с текстом провайдера', async () => {

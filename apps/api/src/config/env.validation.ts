@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   Max,
   Min,
   MinLength,
@@ -198,6 +199,11 @@ export class EnvVars {
 
   @IsEnum(PaymentProviderCode)
   PAYMENT_PROVIDER: PaymentProviderCode = PaymentProviderCode.Manual;
+
+  /** Отключает только новые онлайн-заказы, сохраняя ResultURL старых. */
+  @envBoolean(true)
+  @IsBoolean()
+  PAYMENT_ONLINE_ORDERS_ENABLED: boolean = true;
 
   /**
    * Режим провайдера. Значения по умолчанию намеренно нет: выбор между боевыми
@@ -461,6 +467,21 @@ export class EnvVars {
   @IsBoolean()
   DONOR_COOKIE_SECURE?: boolean;
 
+  /**
+   * Вход через VK ID: ID приложения из кабинета VK ID. Вход через VK включён,
+   * только когда заданы и он, и сервисный ключ; иначе кнопки VK нет.
+   */
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9]{1,20}$/, { message: 'VK_ID_CLIENT_ID — числовой ID приложения VK ID' })
+  VK_ID_CLIENT_ID?: string;
+
+  /** Сервисный ключ доступа приложения VK ID (конфиденциальное приложение). Секрет. */
+  @IsOptional()
+  @IsString()
+  @MinLength(16)
+  VK_ID_SERVICE_TOKEN?: string;
+
   @IsEnum(MailTransport)
   MAIL_TRANSPORT: MailTransport = MailTransport.Log;
 
@@ -502,6 +523,10 @@ export class EnvVars {
   @envBoolean(false)
   @IsBoolean()
   BILLING_SCHEDULER_ENABLED: boolean = false;
+
+  @envBoolean(false)
+  @IsBoolean()
+  RECURRING_ENABLED: boolean = false;
 
   @IsString()
   @MinLength(9)
@@ -549,7 +574,8 @@ function crossFieldErrors(env: EnvVars): readonly string[] {
   // Демо-стенд — единственное исключение из запретов production: эмулятор
   // там и есть способ оплаты. Любая другая стадия при NODE_ENV=production
   // проверяется ровно как боевой сайт.
-  const isProduction = env.NODE_ENV === NodeEnv.Production && env.DEPLOY_STAGE !== DeployStage.Demo;
+  const isProduction = env.DEPLOY_STAGE === DeployStage.Production ||
+    (env.NODE_ENV === NodeEnv.Production && env.DEPLOY_STAGE !== DeployStage.Demo);
 
   if (isProduction && env.PAYMENT_EMULATOR_ENABLED) {
     errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор оплаты в production запрещён');
@@ -604,6 +630,11 @@ function donorCabinetErrors(env: EnvVars, isProduction: boolean): readonly strin
 
   if (env.BILLING_SCHEDULER_ENABLED && !env.DONOR_CABINET_ENABLED) {
     errors.push('BILLING_SCHEDULER_ENABLED: планировщик работает только при DONOR_CABINET_ENABLED=true');
+  }
+
+  // Половина настройки VK ID — это кнопка, которая ведёт на ошибку VK.
+  if ((env.VK_ID_CLIENT_ID === undefined) !== (env.VK_ID_SERVICE_TOKEN === undefined)) {
+    errors.push('VK_ID_CLIENT_ID и VK_ID_SERVICE_TOKEN задаются только вместе');
   }
 
   for (const [name, url] of [

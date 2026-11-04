@@ -31,7 +31,7 @@ export class DonationsService {
    * и сам формирует подписанную ссылку. Сумма, пришедшая от клиента, для
    * списания не используется никогда — только для проверки диапазона.
    */
-  async create(dto: CreateDonationDto, consentIp?: string): Promise<CreatedDonationResponse> {
+  async create(dto: CreateDonationDto, consentIp?: string, donorId: string | null = null): Promise<CreatedDonationResponse> {
     const campaign = await this.prisma.campaign.findFirst({
       where: { slug: CAMPAIGN_SLUG, isActive: true },
       select: { id: true, title: true, minDonationKopecks: true },
@@ -80,15 +80,17 @@ export class DonationsService {
         donorName: isAnonymous ? null : (dto.donorName ?? null),
         ...attribution,
         howDidYouHear: dto.howDidYouHear ?? null,
+        // Вошедший жертвователь: донат появится в его кабинете.
+        userId: donorId,
         ...(contact === null ? {} : { contact: { create: contact } }),
       },
-      select: { id: true, invoiceNo: true },
+      select: { id: true, invoiceNo: true, amountKopecks: true },
     });
 
     const payment = await provider.createPayment({
       invoiceNo: donation.invoiceNo,
       donationId: donation.id,
-      amountKopecks,
+      amountKopecks: donation.amountKopecks,
       description: `Пожертвование: ${campaign.title}`,
     });
 

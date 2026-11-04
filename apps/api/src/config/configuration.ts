@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { resolve as resolvePath } from 'node:path';
+import { API_GLOBAL_PREFIX } from './constants';
 import type { TaxationSystem, VatRate } from './constants';
 import { NodeEnv, StorageDriver, validateEnv } from './env.validation';
 import type {
@@ -32,6 +33,7 @@ export interface ReceiptConfig {
 }
 
 export interface PaymentConfig {
+  readonly onlineOrdersEnabled: boolean;
   readonly provider: PaymentProviderCode;
   readonly isTest: boolean;
   readonly hashAlgorithm: PaymentHashAlgorithm;
@@ -68,6 +70,15 @@ export interface DonorConfig {
   readonly jwtSecret: string;
   readonly hmacSecret: string;
   readonly cookieSecure: boolean;
+  /** Вход через VK ID. `null` — не настроен, кнопки VK нет. */
+  readonly vk: VkIdConfig | null;
+}
+
+export interface VkIdConfig {
+  readonly clientId: string;
+  readonly serviceToken: string;
+  /** Доверенный redirect URL из настроек приложения VK ID: эндпоинт API, не страница сайта. */
+  readonly redirectUri: string;
 }
 
 export interface MailConfig {
@@ -83,6 +94,7 @@ export interface MailConfig {
 }
 
 export interface BillingConfig {
+  readonly recurringEnabled: boolean;
   readonly schedulerEnabled: boolean;
   readonly cron: string;
 }
@@ -271,6 +283,7 @@ function buildPaymentConfig(env: EnvVars): PaymentConfig {
 
   return {
     provider: env.PAYMENT_PROVIDER,
+    onlineOrdersEnabled: env.PAYMENT_ONLINE_ORDERS_ENABLED,
     isTest,
     hashAlgorithm: env.PAYMENT_HASH_ALGORITHM,
     merchantId: env.PAYMENT_MERCHANT_ID ?? '',
@@ -341,9 +354,18 @@ export function configuration(): AppConfig {
       jwtSecret: env.DONOR_JWT_SECRET ?? ephemeralDonorSecret('jwt'),
       hmacSecret: env.DONOR_HMAC_SECRET ?? ephemeralDonorSecret('hmac'),
       cookieSecure: env.DONOR_COOKIE_SECURE ?? isProduction,
+      vk:
+        env.VK_ID_CLIENT_ID === undefined || env.VK_ID_SERVICE_TOKEN === undefined
+          ? null
+          : {
+              clientId: env.VK_ID_CLIENT_ID,
+              serviceToken: env.VK_ID_SERVICE_TOKEN,
+              redirectUri: `${apiUrl}/${API_GLOBAL_PREFIX}/donor/auth/vk/callback`,
+            },
     },
     mail: buildMailConfig(env),
     billing: {
+      recurringEnabled: env.RECURRING_ENABLED,
       schedulerEnabled: env.BILLING_SCHEDULER_ENABLED,
       cron: env.BILLING_CRON,
     },

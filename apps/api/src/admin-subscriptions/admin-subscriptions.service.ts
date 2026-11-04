@@ -72,7 +72,7 @@ export class AdminSubscriptionsService {
           id: row.id,
           status: row.status,
           amountKopecks: row.amountKopecks.toString(),
-          donorEmail: seesEmail ? row.user.email : maskEmail(row.user.email),
+          donorEmail: row.user.email === null || seesEmail ? row.user.email : maskEmail(row.user.email),
           regionName: row.region?.name ?? null,
           nextChargeAt: row.status === SubscriptionStatus.ACTIVE ? (row.nextChargeAt?.toISOString() ?? null) : null,
           failCount: row.failCount,

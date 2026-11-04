@@ -10,13 +10,11 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
-import type { Page } from '../common/pagination';
 import { DONOR_THROTTLE, REQUEST_CODE_THROTTLE } from '../donor-auth/donor-auth.constants';
 import type { DonorPrincipal } from '../donor-auth/donor-auth.types';
 import { CurrentDonor, DonorJwtGuard } from '../donor-auth/donor-jwt.guard';
@@ -24,15 +22,8 @@ import { CancelByLinkDto, SubscriptionResponse, UpdateSubscriptionDto } from '..
 import { SubscriptionLinksService } from '../subscriptions/subscription-links.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { DonorCabinetService } from './donor-cabinet.service';
-import {
-  DonorDonationResponse,
-  DonorDonationsPage,
-  DonorDonationsQueryDto,
-  DonorProfileResponse,
-  UpdateDonorProfileDto,
-} from './dto/donor-cabinet.dto';
 
-/** Личный кабинет: всё под `DonorJwtGuard`, всё — только своё. */
+/** Подписки в кабинете: всё под `DonorJwtGuard`, всё — только своё. Профиль — `DonorProfileModule`. */
 @ApiTags('donor')
 @ApiBearerAuth()
 @Controller('donor')
@@ -43,27 +34,6 @@ export class DonorCabinetController {
     private readonly cabinet: DonorCabinetService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
-
-  @Get('me')
-  @ApiOkResponse({ type: DonorProfileResponse })
-  me(@CurrentDonor() donor: DonorPrincipal): Promise<DonorProfileResponse> {
-    return this.cabinet.profile(donor.id);
-  }
-
-  @Patch('me')
-  @ApiOkResponse({ type: DonorProfileResponse })
-  updateMe(@CurrentDonor() donor: DonorPrincipal, @Body() dto: UpdateDonorProfileDto): Promise<DonorProfileResponse> {
-    return this.cabinet.updateProfile(donor.id, dto);
-  }
-
-  @Get('donations')
-  @ApiOkResponse({ type: DonorDonationsPage })
-  donations(
-    @CurrentDonor() donor: DonorPrincipal,
-    @Query() query: DonorDonationsQueryDto,
-  ): Promise<Page<DonorDonationResponse>> {
-    return this.cabinet.donations(donor.id, query);
-  }
 
   @Get('subscriptions')
   @ApiOkResponse({ type: [SubscriptionResponse] })

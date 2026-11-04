@@ -1,0 +1,70 @@
+.form {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.lead {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.notice {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-field);
+  background: var(--danger-soft);
+  font-size: var(--fs-small);
+  color: var(--danger);
+}
+
+.code {
+  font-size: 24px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.consent {
+  margin: var(--sp-2) 0;
+  font-size: var(--fs-small);
+}
+
+.or {
+  margin: 0;
+  font-size: var(--fs-small);
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.secondary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.link {
+  padding: var(--sp-1) 0;
+  border: 0;
+  background: none;
+  color: var(--accent-quiet);
+  font: inherit;
+  font-size: var(--fs-small);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link:disabled {
+  color: var(--text-soft);
+  text-decoration: none;
+  cursor: default;
+}
+
+.staff {
+  justify-self: center;
+  margin-top: var(--sp-2);
+  color: var(--text-soft);
+}

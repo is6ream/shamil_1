@@ -13,6 +13,7 @@ const SUBSCRIPTION_SELECT = {
   status: true,
   amountKopecks: true,
   chargeTime: true,
+  period: true,
   billingAnchorDate: true,
   cycleNo: true,
   failCount: true,
@@ -91,6 +92,7 @@ export class SubscriptionLifecycleService implements PaymentEventListener, OnMod
       anchorDate,
       cycleNo: 1,
       chargeTime: subscription.chargeTime,
+      period: subscription.period,
       timeZone: subscription.user.timezone,
     });
 
@@ -120,6 +122,7 @@ export class SubscriptionLifecycleService implements PaymentEventListener, OnMod
     const schedule = {
       anchorDate: subscription.billingAnchorDate,
       chargeTime: subscription.chargeTime,
+      period: subscription.period,
       timeZone: subscription.user.timezone,
     };
     // Обычно это просто следующий цикл; если оплата пришла с большим

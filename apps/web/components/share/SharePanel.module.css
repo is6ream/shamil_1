@@ -3,11 +3,12 @@
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   align-items: center;
-  gap: var(--sp-12);
+  gap: clamp(32px, 5vw, 80px);
   overflow: hidden;
-  padding: var(--panel-pad);
+  padding: clamp(36px, 5vw, 72px);
+  border: 1px solid var(--ornament-border);
   border-radius: var(--r-panel);
-  background: var(--panel-bg);
+  background: var(--panel-glow), var(--grad-panel);
 }
 
 .panel > :not(.ornament) {
@@ -34,14 +35,16 @@
   font-family: var(--font-display);
   font-size: var(--fs-share-quote);
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.25;
   color: var(--text-strong);
   text-wrap: balance;
 }
 
 .lede {
   margin: var(--sp-6) 0 0;
-  font-size: 16px;
+  font-size: var(--fs-body);
+  max-width: 36em;
+  line-height: 1.7;
   color: var(--text-soft);
 }
 
@@ -54,7 +57,7 @@
 
 @media (max-width: 767px) {
   .panel {
-    padding: var(--sp-8) var(--sp-5);
+    padding: 36px 24px;
     border-radius: var(--r-card);
   }
 
@@ -63,3 +66,5 @@
     height: 180px;
   }
 }
+
+.panel::after { content: ""; position: absolute; inset: 8px; border: 1px solid var(--ornament-border); border-radius: calc(var(--r-panel) - 8px); opacity: .5; pointer-events: none; }

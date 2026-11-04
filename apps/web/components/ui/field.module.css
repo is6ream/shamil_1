@@ -17,7 +17,7 @@
   width: 100%;
   height: var(--field-h);
   padding: 0 var(--sp-4);
-  border: var(--stroke) solid var(--border);
+  border: var(--stroke) solid var(--control-border, var(--border));
   border-radius: var(--r-field);
   background: var(--surface);
   color: var(--text-strong);
@@ -28,7 +28,7 @@
 
 .input::placeholder {
   color: var(--text-soft);
-  opacity: 0.8;
+  opacity: 1;
 }
 
 .input:hover:not(:disabled) {

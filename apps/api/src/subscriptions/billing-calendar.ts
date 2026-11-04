@@ -107,8 +107,9 @@ function zonedToInstant(date: LocalDate, hours: number, minutes: number, timeZon
 export interface ChargeScheduleInput {
   /** Локальная дата первого платежа (`billing_anchor_date`). */
   readonly anchorDate: Date;
-  /** Номер цикла: 1 — через месяц после первого платежа. */
+  /** Номер цикла: 1 — первое автосписание после первичной оплаты. */
   readonly cycleNo: number;
+  readonly period?: 'MONTHLY' | 'FRIDAY';
   readonly chargeTime: string;
   readonly timeZone: string;
 }
@@ -116,8 +117,15 @@ export interface ChargeScheduleInput {
 /** Плановый момент списания цикла `cycleNo`. */
 export function chargeMoment(input: ChargeScheduleInput): Date {
   const { hours, minutes } = parseChargeTime(input.chargeTime);
-  const date = addMonthsClamped(fromDbDate(input.anchorDate), input.cycleNo);
+  if (input.period === 'FRIDAY') {
+    // Если первый платёж уже в пятницу, следующее списание — через неделю.
+    const daysToFriday = (5 - input.anchorDate.getUTCDay() + 7) % 7 || 7;
+    const daysToCharge = daysToFriday + 7 * (input.cycleNo - 1);
+    const date = fromDbDate(new Date(input.anchorDate.getTime() + daysToCharge * MS_IN_DAY));
+    return zonedToInstant(date, hours, minutes, input.timeZone);
+  }
 
+  const date = addMonthsClamped(fromDbDate(input.anchorDate), input.cycleNo);
   return zonedToInstant(date, hours, minutes, input.timeZone);
 }
 
@@ -147,4 +155,15 @@ export function retryAt(failCount: number, now: Date): Date | null {
   const delay = RETRY_DELAYS_MS[failCount - 1];
 
   return delay === undefined ? null : new Date(now.getTime() + delay);
+}
+
+/**
+ * Календарный год в зоне человека: [1 января 00:00, 1 января следующего года).
+ * «Помощь за 2026» у жертвователя из Уфы не должна терять вечер 31 декабря.
+ */
+export function yearBounds(year: number, timeZone: string): { readonly from: Date; readonly to: Date } {
+  return {
+    from: zonedToInstant({ year, month: 0, day: 1 }, 0, 0, timeZone),
+    to: zonedToInstant({ year: year + 1, month: 0, day: 1 }, 0, 0, timeZone),
+  };
 }

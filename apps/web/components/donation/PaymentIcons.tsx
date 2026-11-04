@@ -3,18 +3,17 @@ import type { ReactElement } from "react";
 
 import type { PaymentOptionId } from "./donation-form.model";
 
-/**
- * Официальные знаки платёжных систем.
- *
- * Пусто, пока файлы не положены в `public/payments/` из брендбуков (НСПК —
- * СБП, Сбер — SberPay, Т-Банк — T-Pay) или из кабинета Robokassa: чужие
- * логотипы не перерисовываются руками, у каждого свои правила размещения.
- * Пока пути нет — плитка показывает нейтральную иконку ниже.
- */
-const OFFICIAL_LOGOS: Partial<Record<PaymentOptionId, string>> = {
-  // sbp: "/payments/sbp.svg",
-  // sberpay: "/payments/sberpay.svg",
-  // tpay: "/payments/tpay.svg",
+import styles from "./PaymentMethods.module.css";
+
+/** Оригиналы и результаты проверки — в public/payments/README.md. */
+const OFFICIAL_LOGOS: Partial<Record<PaymentOptionId, {
+  readonly src: string;
+  readonly width: number;
+  readonly height: number;
+}>> = {
+  sbp: { src: "/payments/sbp.svg", width: 42, height: 49 },
+  sberpay: { src: "/payments/sberpay.svg", width: 32, height: 32 },
+  tpay: { src: "/payments/tpay.svg", width: 50, height: 22 },
 };
 
 const GLYPHS: Record<PaymentOptionId, ReactElement> = {
@@ -61,7 +60,14 @@ export function PaymentIcon({ option }: Props) {
   const logo = OFFICIAL_LOGOS[option];
 
   if (logo !== undefined) {
-    return <Image src={logo} alt="" width={24} height={24} unoptimized />;
+    return (
+      <Image
+        {...logo}
+        alt=""
+        className={`${styles.logo} ${option === "sbp" ? styles.logoSbp : option === "sberpay" ? styles.logoSberPay : styles.logoTPay}`}
+        unoptimized
+      />
+    );
   }
 
   return (

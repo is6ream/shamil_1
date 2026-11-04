@@ -16,8 +16,11 @@ import { SubscriptionLinksService } from './subscription-links.service';
 export interface NotifiableSubscription {
   readonly id: string;
   readonly amountKopecks: bigint;
-  readonly user: { readonly email: string; readonly timezone: string };
+  /** Пусто у обезличенного аккаунта: писать некому, письмо не уходит. */
+  readonly user: { readonly email: string | null; readonly timezone: string };
 }
+
+const NOTHING_TO_SEND: AfterCommit = () => Promise.resolve();
 
 /**
  * Письма о подписке. Возвращает действия «после коммита», а не шлёт сразу:
@@ -31,22 +34,36 @@ export class SubscriptionNotifier {
   ) {}
 
   started(subscription: NotifiableSubscription, nextChargeAt: Date): AfterCommit {
-    return () => this.mail.send(subscriptionStartedMail({ ...this.base(subscription), nextChargeAt }));
+    const base = this.base(subscription);
+
+    return base === null ? NOTHING_TO_SEND : () => this.mail.send(subscriptionStartedMail({ ...base, nextChargeAt }));
   }
 
   chargeSucceeded(subscription: NotifiableSubscription, paidAt: Date, nextChargeAt: Date): AfterCommit {
-    return () => this.mail.send(chargeSucceededMail({ ...this.base(subscription), paidAt, nextChargeAt }));
+    const base = this.base(subscription);
+
+    return base === null
+      ? NOTHING_TO_SEND
+      : () => this.mail.send(chargeSucceededMail({ ...base, paidAt, nextChargeAt }));
   }
 
   chargeFailed(subscription: NotifiableSubscription, retryAt: Date, reason: string | null): AfterCommit {
-    return () => this.mail.send(chargeFailedMail({ ...this.base(subscription), retryAt, reason }));
+    const base = this.base(subscription);
+
+    return base === null ? NOTHING_TO_SEND : () => this.mail.send(chargeFailedMail({ ...base, retryAt, reason }));
   }
 
   stopped(subscription: NotifiableSubscription, reason: StopReason): AfterCommit {
+    const to = subscription.user.email;
+
+    if (to === null) {
+      return NOTHING_TO_SEND;
+    }
+
     return () =>
       this.mail.send(
         subscriptionStoppedMail({
-          to: subscription.user.email,
+          to,
           amountKopecks: subscription.amountKopecks,
           timeZone: subscription.user.timezone,
           reason,
@@ -60,7 +77,11 @@ export class SubscriptionNotifier {
     amountKopecks: bigint;
     timeZone: string;
     cancelUrl: string;
-  } {
+  } | null {
+    if (subscription.user.email === null) {
+      return null;
+    }
+
     return {
       to: subscription.user.email,
       amountKopecks: subscription.amountKopecks,

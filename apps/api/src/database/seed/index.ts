@@ -135,7 +135,7 @@ async function main(): Promise<void> {
   }
 
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaPg({ connectionString, options: '-c timezone=UTC' }),
     log: ['warn', 'error'],
   });
 

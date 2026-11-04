@@ -20,9 +20,9 @@
   text-transform: uppercase;
 }
 
-/* «Идёт сбор» — живой индикатор: зелёная точка с расходящимся кольцом. */
+/* «Идёт сбор» — индикатор в акцентном цвете текущей поверхности. */
 .dot {
-  --live: #22c55e;
+  --live: var(--accent-quiet);
 
   position: relative;
   flex: none;

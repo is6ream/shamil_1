@@ -23,6 +23,13 @@ export interface AdminClientOptions {
   readonly onSessionExpired?: () => void;
   /** Взаимоисключение refresh между вкладками; по умолчанию Web Locks API. */
   readonly withRefreshLock?: RefreshLock;
+  /**
+   * Маршрут refresh. Клиент общий с кабинетом жертвователя: у того свой
+   * `/donor/auth/refresh` и своя cookie, логика ротации та же.
+   */
+  readonly refreshPath?: string;
+  /** Имя Web Lock: у админки и кабинета разные cookie — и очереди разные. */
+  readonly refreshLockName?: string;
   /** Подменяется в тестах загрузки. */
   readonly xhrFactory?: () => XMLHttpRequest;
 }
@@ -44,13 +51,17 @@ const REFRESH_LOCK_NAME = "shamil-admin-refresh";
  * уже с cookie, которую обновила первая. Без Web Locks (старый браузер) —
  * без блокировки, как раньше.
  */
-const webLocksRefresh: RefreshLock = (task) => {
-  if (typeof navigator === "undefined" || navigator.locks === undefined) {
-    return task();
-  }
+export function webLocksRefresh(lockName: string): RefreshLock {
+  const lock: RefreshLock = async (task) => {
+    if (typeof navigator === "undefined" || navigator.locks === undefined) {
+      return task();
+    }
 
-  return navigator.locks.request(REFRESH_LOCK_NAME, task);
-};
+    return await navigator.locks.request(lockName, task);
+  };
+
+  return lock;
+}
 
 export interface RequestOptions {
   readonly method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -81,6 +92,8 @@ export interface AdminClient {
   refresh(): Promise<boolean>;
   setAccessToken(token: string | null): void;
   hasAccessToken(): boolean;
+  /** Текущий access — для запросов мимо клиента (форма доната кабинета). */
+  getAccessToken(): string | null;
 }
 
 const UNAUTHORIZED = 401;
@@ -130,7 +143,9 @@ export function createAdminClient({
   baseUrl,
   fetchImpl = (input, init) => fetch(input, init),
   onSessionExpired,
-  withRefreshLock = webLocksRefresh,
+  refreshPath = AUTH_PATHS.refresh,
+  refreshLockName = REFRESH_LOCK_NAME,
+  withRefreshLock = webLocksRefresh(refreshLockName),
   xhrFactory = () => new XMLHttpRequest(),
 }: AdminClientOptions): AdminClient {
   let accessToken: string | null = null;
@@ -150,7 +165,7 @@ export function createAdminClient({
 
   async function doRefresh(): Promise<boolean> {
     // Сетевой сбой пробрасывается как есть (`send` уже превратил его в AdminApiError).
-    const response = await send(AUTH_PATHS.refresh, { method: "POST" }, null);
+    const response = await send(refreshPath, { method: "POST" }, null);
 
     if (SESSION_GONE_STATUSES.has(response.status)) {
       accessToken = null;
@@ -307,6 +322,9 @@ export function createAdminClient({
     },
     hasAccessToken() {
       return accessToken !== null;
+    },
+    getAccessToken() {
+      return accessToken;
     },
   };
 }

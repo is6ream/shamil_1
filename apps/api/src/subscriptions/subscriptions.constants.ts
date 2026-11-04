@@ -13,8 +13,8 @@ export const CANCEL_SOURCES = ['donor', 'link', 'admin'] as const;
 export type CancelSource = (typeof CANCEL_SOURCES)[number];
 
 /** Страницы кабинета на фронтенде (их ещё нет — REPORT.md, «что нужно фронту»). */
-export const CABINET_PATH = '/cabinet';
-export const CANCEL_LINK_PATH = '/cabinet/cancel';
+export const CABINET_PATH = '/profile/subscriptions';
+export const CANCEL_LINK_PATH = '/subscription/cancel';
 
 /** Домен HMAC ссылки отмены — отдельно от кода входа, ключ у них общий. */
 export const CANCEL_LINK_HMAC_DOMAIN = 'donor-cancel-link';

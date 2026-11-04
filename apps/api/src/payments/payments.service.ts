@@ -265,6 +265,7 @@ export class PaymentsService {
   private async applyInTransaction(input: ApplyEventInput, afterCommit: AfterCommit[]): Promise<PaymentEventOutcome> {
     try {
       return await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM donation WHERE id = ${input.donationId}::uuid FOR UPDATE`;
         // Статус перечитывается внутри транзакции: между поиском доната
         // и записью события могла пройти параллельная доставка.
         const current = await tx.donation.findUniqueOrThrow({

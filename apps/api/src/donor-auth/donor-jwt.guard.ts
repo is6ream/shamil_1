@@ -2,25 +2,23 @@ import { Injectable, UnauthorizedException, createParamDecorator } from '@nestjs
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 
 import { readBearer } from '../auth/guards/jwt-auth.guard';
-import { PrismaService } from '../database/prisma.service';
 import type { DonorPrincipal, DonorRequest } from './donor-auth.types';
+import { DonorSessionService } from './donor-session.service';
 import { DonorTokenService } from './donor-token.service';
-
-const INVALID_SESSION = 'Сессия истекла или недействительна';
 
 /**
  * Проверка access-JWT жертвователя. Админский токен сюда не проходит
  * (другой ключ и `aud`), токен жертвователя не проходит `JwtAuthGuard`
  * админки — оба случая закреплены тестом.
  *
- * Жертвователь перечитывается из БД на каждый запрос: выход на одном
- * устройстве (рост `token_version`) гасит токены сразу, а не через 15 минут.
+ * Сессия перечитывается из БД на каждый запрос: выход или удаление
+ * аккаунта гасят токены сразу, а не через 15 минут.
  */
 @Injectable()
 export class DonorJwtGuard implements CanActivate {
   constructor(
     private readonly tokens: DonorTokenService,
-    private readonly prisma: PrismaService,
+    private readonly sessions: DonorSessionService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -37,17 +35,10 @@ export class DonorJwtGuard implements CanActivate {
   }
 
   async authenticate(token: string): Promise<DonorPrincipal> {
-    const payload = await this.tokens.verify('access', token);
-    const donor = await this.prisma.donorUser.findUnique({
-      where: { id: payload.sub },
-      select: { id: true, email: true, tokenVersion: true },
-    });
+    const payload = await this.tokens.verify(token);
+    const session = await this.sessions.findActive(payload.sub, payload.sid);
 
-    if (donor === null || donor.tokenVersion !== payload.ver) {
-      throw new UnauthorizedException(INVALID_SESSION);
-    }
-
-    return { id: donor.id, email: donor.email };
+    return { id: session.donorId, sessionId: session.sessionId, email: session.email };
   }
 }
 

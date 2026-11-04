@@ -148,7 +148,7 @@ export class BillingService {
         invoiceNo: charge.invoiceNo,
         previousInvoiceNo: charge.previousInvoiceNo,
         amountKopecks: charge.amountKopecks,
-        description: 'Ежемесячное пожертвование на строительство мечети «Шамиль»',
+        description: 'Регулярное пожертвование на строительство мечети «Шамиль»',
       });
 
       await this.prisma.donation.update({

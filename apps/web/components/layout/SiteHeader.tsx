@@ -2,11 +2,14 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { MenuIcon, UserIcon } from "@/components/icons/Icons";
 import { HERO, NAV_ITEMS, SECTION_IDS } from "@/lib/content";
+import { DONOR_CABINET_ENABLED, PROFILE_PATHS } from "@/lib/donor/endpoints";
+import { hasDonorHint } from "@/lib/donor/hint";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import { ORGANIZATION, toTelHref } from "@/lib/organization";
 import { scrollToSection, sectionHref } from "@/lib/scroll-to-section";
@@ -27,18 +30,50 @@ const LoginDialog = dynamic(
   { ssr: false },
 );
 
+/** Окно кабинета жертвователя — тоже лениво, по первому клику. */
+const DonorLoginDialog = dynamic(
+  () => import("@/components/donor/DonorLoginDialog").then((module) => module.DonorLoginDialog),
+  { ssr: false },
+);
+
+const LOGIN_LABEL = DONOR_CABINET_ENABLED ? "Личный кабинет" : "Вход для сотрудников";
+
+/** Метка входа в кабинет: на сервере её нет, в браузере читается из localStorage. */
+function subscribeStorage(listener: () => void): () => void {
+  window.addEventListener("storage", listener);
+
+  return () => window.removeEventListener("storage", listener);
+}
+
+function useDonorHint(): boolean {
+  return useSyncExternalStore(subscribeStorage, () => DONOR_CABINET_ENABLED && hasDonorHint(), () => false);
+}
+
 /**
- * Иконка входа для сотрудников. Тихая: она для нескольких человек, а сайт —
- * для жертвователей. В шапке их две — на десктопе и на телефоне стоят
- * в разных местах, а переставлять одну через CSS `order` нельзя: порядок
- * Tab разошёлся бы с видимым. Скрытая через `display: none` из Tab выпадает.
+ * Иконка входа. При включённом кабинете — «Личный кабинет» жертвователя
+ * (вход для сотрудников — ссылкой внутри окна), иначе — только для сотрудников.
+ * Если в этом браузере уже входили, иконка сразу ведёт в кабинет.
+ *
+ * В шапке их две — на десктопе и на телефоне стоят в разных местах,
+ * а переставлять одну через CSS `order` нельзя: порядок Tab разошёлся бы
+ * с видимым. Скрытая через `display: none` из Tab выпадает.
  */
 function LoginButton({ className, onOpen }: { readonly className: string; readonly onOpen: () => void }) {
+  const isSignedIn = useDonorHint();
+
+  if (isSignedIn) {
+    return (
+      <Link className={`${styles.login} ${className}`} href={PROFILE_PATHS.home} aria-label={LOGIN_LABEL}>
+        <UserIcon />
+      </Link>
+    );
+  }
+
   return (
     <button
       className={`${styles.login} ${className}`}
       type="button"
-      aria-label="Вход для сотрудников"
+      aria-label={LOGIN_LABEL}
       aria-haspopup="dialog"
       onClick={onOpen}
     >
@@ -68,6 +103,9 @@ export function SiteHeader({ phone = ORGANIZATION.phone, helpButton = HERO.helpB
   // Окно смонтировано с первого открытия: так чанк не грузится заранее,
   // а повторные открытия мгновенные.
   const [hasLoginOpened, setLoginOpened] = useState(false);
+  const [isDonorOpen, setDonorOpen] = useState(false);
+  const [hasDonorOpened, setDonorOpened] = useState(false);
+  const router = useRouter();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const activeId = useActiveSection(NAV_IDS);
 
@@ -76,9 +114,23 @@ export function SiteHeader({ phone = ORGANIZATION.phone, helpButton = HERO.helpB
     menuButtonRef.current?.focus();
   }, []);
 
-  const openLogin = useCallback(() => {
+  const openStaffLogin = useCallback(() => {
     setLoginOpened(true);
     setLoginOpen(true);
+  }, []);
+
+  const openLogin = useCallback(() => {
+    if (!DONOR_CABINET_ENABLED) {
+      openStaffLogin();
+      return;
+    }
+
+    setDonorOpened(true);
+    setDonorOpen(true);
+  }, [openStaffLogin]);
+
+  const closeDonor = useCallback(() => {
+    setDonorOpen(false);
   }, []);
 
   const closeLogin = useCallback(() => {
@@ -172,6 +224,21 @@ export function SiteHeader({ phone = ORGANIZATION.phone, helpButton = HERO.helpB
       />
 
       {hasLoginOpened ? <LoginDialog isOpen={isLoginOpen} onClose={closeLogin} /> : null}
+      {hasDonorOpened ? (
+        <DonorLoginDialog
+          isOpen={isDonorOpen}
+          onClose={closeDonor}
+          returnTo={PROFILE_PATHS.home}
+          onSignedIn={() => {
+            setDonorOpen(false);
+            router.push(PROFILE_PATHS.home);
+          }}
+          onStaffLogin={() => {
+            setDonorOpen(false);
+            openStaffLogin();
+          }}
+        />
+      ) : null}
     </header>
   );
 }

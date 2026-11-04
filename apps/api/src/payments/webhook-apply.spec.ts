@@ -107,6 +107,51 @@ describeDatabase('применение колбэка', () => {
     expect(campaignStats.paidCount).toBe(1);
   });
 
+  test('параллельная доставка одного события зачисляет один раз', async () => {
+    const donation = await createPendingDonation(prisma, fixtures, { provider: ROBOKASSA_PROVIDER_CODE });
+    await Promise.all(Array.from({ length: 5 }, () =>
+      payments.applyWebhook(webhook({ invoiceNo: donation.invoiceNo }), body(donation.invoiceNo))));
+    const stats = await prisma.campaignStats.findUniqueOrThrow({ where: { campaignId: fixtures.campaignId } });
+    expect(stats.paidTotalKopecks).toBe(TEST_DONATION_KOPECKS);
+    expect(stats.paidCount).toBe(1);
+    expect(await prisma.paymentEvent.count({ where: { donationId: donation.id } })).toBe(1);
+  });
+
+  test('разные параллельные paid-события не переписывают первый paid', async () => {
+    const donation = await createPendingDonation(prisma, fixtures, { provider: ROBOKASSA_PROVIDER_CODE });
+    await Promise.all([1n, 2n].map((factor) => payments.applyWebhook(webhook({
+      invoiceNo: donation.invoiceNo, providerEventId: `parallel-${factor}`,
+      amountKopecks: TEST_DONATION_KOPECKS * factor,
+    }), body(donation.invoiceNo))));
+    const stored = await prisma.donation.findUniqueOrThrow({ where: { id: donation.id } });
+    const stats = await prisma.campaignStats.findUniqueOrThrow({ where: { campaignId: fixtures.campaignId } });
+    expect(stats.paidCount).toBe(1);
+    expect(stats.paidTotalKopecks).toBe(stored.paidAmountKopecks);
+    expect(await prisma.paymentEvent.count({ where: { donationId: donation.id, appliedAt: { not: null } } })).toBe(1);
+  });
+
+  test('поздний callback после failed зачисляется по факту', async () => {
+    const donation = await createPendingDonation(prisma, fixtures, { provider: ROBOKASSA_PROVIDER_CODE });
+    await prisma.donation.update({ where: { id: donation.id }, data: { status: DonationStatus.failed } });
+    await payments.applyWebhook(webhook({ invoiceNo: donation.invoiceNo }), body(donation.invoiceNo));
+    const stored = await prisma.donation.findUniqueOrThrow({ where: { id: donation.id } });
+    expect(stored.status).toBe(DonationStatus.paid);
+    expect(stored.paidAmountKopecks).toBe(TEST_DONATION_KOPECKS);
+  });
+
+  test('сбой записи события откатывает деньги и допускает повтор', async () => {
+    const donation = await createPendingDonation(prisma, fixtures, { provider: ROBOKASSA_PROVIDER_CODE });
+    // CHECK payment_event_amount_positive прерывает транзакцию до зачисления.
+    await expect(payments.applyWebhook(webhook({ invoiceNo: donation.invoiceNo, amountKopecks: 0n }),
+      body(donation.invoiceNo))).rejects.toThrow();
+    expect(await prisma.paymentEvent.count()).toBe(0);
+    const before = await prisma.donation.findUniqueOrThrow({ where: { id: donation.id } });
+    expect(before.status).toBe(DonationStatus.pending);
+    await payments.applyWebhook(webhook({ invoiceNo: donation.invoiceNo }), body(donation.invoiceNo));
+    const after = await prisma.donation.findUniqueOrThrow({ where: { id: donation.id } });
+    expect(after.status).toBe(DonationStatus.paid);
+  });
+
   test('повторная доставка не задваивает сумму сбора и рейтинг региона', async () => {
     // Arrange: агрегаторы ретраят колбэк, пока не получат 200
     const donation = await createPendingDonation(prisma, fixtures, {

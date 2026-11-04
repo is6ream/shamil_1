@@ -8,6 +8,9 @@ import { buildCreateDonationBody } from "@/lib/api/donation-body";
 import { readStoredAttribution } from "@/lib/attribution";
 import type { Region } from "@/lib/api/types";
 import { DONATION_FORM } from "@/lib/content";
+import { donationDefaults } from "@/lib/donor/donation-defaults";
+import { DONOR_CABINET_ENABLED } from "@/lib/donor/endpoints";
+import { hasDonorHint } from "@/lib/donor/hint";
 import { useRegionFromUrl } from "@/lib/hooks/useRegionFromUrl";
 
 import {
@@ -15,6 +18,7 @@ import {
   INITIAL_FORM_STATE,
   applyPhoneEdit,
   formatAmountInput,
+  formatPhoneInput,
   hasErrors,
   normalizePhone,
   resolveRegion,
@@ -32,6 +36,8 @@ import type { DonationField, DonationFormState, FieldErrors } from "./donation-f
 const REDIRECT_DELAY_MS = 800;
 
 export type SubmitStatus = "idle" | "submitting" | "redirecting";
+
+type DonorSessionModule = typeof import("@/lib/donor/session");
 
 function presetFor(amountInput: string): number | null {
   const amount = selectAmountRubles({ ...INITIAL_FORM_STATE, amountInput });
@@ -54,6 +60,8 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
   const [formError, setFormError] = useState<string | null>(null);
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Модуль сессии кабинета — только если в этом браузере уже входили (D-F11).
+  const donorSession = useRef<DonorSessionModule | null>(null);
 
   useEffect(
     () => () => {
@@ -68,6 +76,55 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
 
   const linkSlug = initialRegionSlug ?? linkSlugFromUrl;
   const isKnownLinkSlug = linkSlug !== null && regions.some((region) => region.slug === linkSlug);
+
+  /**
+   * Вошедший жертвователь: имя, телефон, регион и галочка «анонимно» — из
+   * профиля. Только поверх нетронутых полей: подстановка приходит после
+   * сетевого запроса, и стирать то, что человек уже успел ввести, нельзя.
+   */
+  useEffect(() => {
+    if (!DONOR_CABINET_ENABLED || !hasDonorHint()) {
+      return;
+    }
+
+    let isActive = true;
+
+    void import("@/lib/donor/session").then(async (module) => {
+      donorSession.current = module;
+      await module.restoreDonorSession(false);
+
+      const session = module.currentDonorSession();
+
+      if (!isActive || session.status !== "authenticated") {
+        return;
+      }
+
+      const defaults = donationDefaults(session.profile, isKnownLinkSlug);
+
+      setState((current) => {
+        const isUntouched =
+          current.isAnonymous === INITIAL_FORM_STATE.isAnonymous &&
+          current.donorName === "" &&
+          current.phone === "";
+
+        return {
+          ...current,
+          ...(isUntouched
+            ? {
+                isAnonymous: defaults.isAnonymous,
+                donorName: defaults.donorName,
+                phone: defaults.phone === "" ? "" : formatPhoneInput(defaults.phone),
+              }
+            : {}),
+          regionChoice: current.regionChoice ?? defaults.regionSlug,
+        };
+      });
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isKnownLinkSlug]);
   const region = resolveRegion(state, isKnownLinkSlug ? linkSlug : null);
 
   const clearError = (field: DonationField) => {
@@ -132,6 +189,7 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
     setStatus("submitting");
 
     try {
+      const donorToken = donorSession.current === null ? null : await donorSession.current.donationAccessToken();
       const { redirectUrl } = await createDonation(
         buildCreateDonationBody({
           amountRubles,
@@ -149,6 +207,7 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
           // не уходит: в DTO его нет. Пожертвование всегда разовое.
           channel: state.channel,
         }, readStoredAttribution()),
+        donorToken,
       );
 
       // Куда идти, решает сервер по каналу: онлайн — страница оплаты

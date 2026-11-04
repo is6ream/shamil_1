@@ -23,7 +23,7 @@ export class AdminSubscriptionResponse {
   @ApiProperty({ enum: SubscriptionStatus }) readonly status!: SubscriptionStatus;
   @ApiProperty() readonly amountKopecks!: string;
   @ApiProperty({ description: 'Полный адрес — только SUPER_ADMIN и ACCOUNTANT, остальным маска' })
-  readonly donorEmail!: string;
+  readonly donorEmail!: string | null;
   @ApiPropertyOptional({ nullable: true }) readonly regionName!: string | null;
   @ApiPropertyOptional({ nullable: true }) readonly nextChargeAt!: string | null;
   @ApiProperty() readonly failCount!: number;

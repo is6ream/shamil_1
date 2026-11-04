@@ -1,208 +1,65 @@
-import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 
-import type { AppConfig } from '../config/configuration';
-import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../database/prisma.service';
-import { loginCodeMail } from '../mail/mail-templates';
-import { MAIL_SENDER } from '../mail/mail.types';
-import type { MailSender } from '../mail/mail.types';
-import {
-  CODE_HOURLY_LIMIT,
-  CODE_RESEND_INTERVAL_MS,
-  CODE_WINDOW_MS,
-  LOGIN_CODE_HMAC_DOMAIN,
-  LOGIN_CODE_TTL_MINUTES,
-  LOGIN_CODE_TTL_MS,
-  MAX_CODE_ATTEMPTS,
-} from './donor-auth.constants';
-import type { DonorSession } from './donor-auth.types';
-import { DonorTokenService } from './donor-token.service';
-import { generateLoginCode, hashLoginCode, loginCodeMatches } from './login-code';
-
-/** Один текст на все неудачи ввода кода: что именно не так — подсказка подбирающему. */
-const WRONG_CODE = 'Код неверный или устарел — запросите новый';
+import { PD_CONSENT_VERSION } from './donor-auth.constants';
+import type { DonorRequestMeta, DonorSession } from './donor-auth.types';
+import { DonorCodeService } from './donor-code.service';
+import { DonorSessionService } from './donor-session.service';
 
 /**
  * Вход в кабинет по коду на e-mail. Паролей нет: жертвователь заходит раз
  * в месяц, и забытый пароль стоил бы больше, чем письмо с кодом.
+ * Вход через VK ID — `VkAuthService`; сессии у обоих путей общие.
  */
 @Injectable()
 export class DonorAuthService {
-  private readonly logger = new Logger(DonorAuthService.name);
-  private readonly hmacSecret: string;
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly tokens: DonorTokenService,
-    @Inject(MAIL_SENDER) private readonly mail: MailSender,
-    config: ConfigService<AppConfig, true>,
-  ) {
-    this.hmacSecret = config.get('donor', { infer: true }).hmacSecret;
+    private readonly codes: DonorCodeService,
+    private readonly sessions: DonorSessionService,
+  ) {}
+
+  /** Ответ контроллера одинаков при любом исходе: см. `DonorCodeService.issue`. */
+  requestCode(email: string, meta: DonorRequestMeta, now: Date = new Date()): Promise<void> {
+    return this.codes.issue({ purpose: 'login', email, donorId: null }, meta.ip, now);
   }
 
   /**
-   * Выдаёт код. Ответ контроллера одинаков при любом исходе — есть ли такой
-   * аккаунт, сработал ли лимит, — иначе форма входа стала бы способом
-   * проверить, жертвует ли человек мечети.
+   * Верный код — сессия. Первый вход создаёт аккаунт: регистрации отдельно
+   * нет. Согласие на обработку ПДн (галочка в окне входа, без неё кнопка
+   * неактивна) пишется с версией текста; при смене версии — перезаписывается.
    */
-  async requestCode(email: string, now: Date = new Date()): Promise<void> {
-    const code = generateLoginCode();
-    const issued = await this.prisma.$transaction(async (tx) => {
-      // Лимит и вставка — под одной блокировкой на адрес: иначе параллельные
-      // запросы прочитают «кодов ещё не было» и разошлют по письму каждый.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`${LOGIN_CODE_HMAC_DOMAIN}:${email}`}, 0))`;
+  async verify(email: string, code: string, meta: DonorRequestMeta, now: Date = new Date()): Promise<DonorSession> {
+    await this.codes.consume({ purpose: 'login', email, donorId: null }, code, now);
 
-      if (await isRateLimited(tx, email, now)) {
-        return false;
-      }
-
-      // Новый код вытесняет старые: в почте действует только последнее письмо.
-      await tx.donorAuthCode.updateMany({ where: { email, usedAt: null }, data: { usedAt: now } });
-      await tx.donorAuthCode.create({
-        data: {
-          email,
-          codeHash: hashLoginCode(this.hmacSecret, email, code),
-          expiresAt: new Date(now.getTime() + LOGIN_CODE_TTL_MS),
-        },
-      });
-
-      return true;
-    });
-
-    if (!issued) {
-      this.logger.warn('Лимит кодов на адрес исчерпан — письмо не отправлено');
-
-      return;
-    }
-
-    try {
-      await this.mail.send(loginCodeMail(email, code, LOGIN_CODE_TTL_MINUTES));
-    } catch (error: unknown) {
-      // Ответ всё равно одинаковый; человек запросит код повторно.
-      this.logger.error('Письмо с кодом не отправлено', error instanceof Error ? error.stack : String(error));
-    }
-  }
-
-  /**
-   * Проверка кода: не больше пяти попыток, код одноразовый. Первый вход
-   * создаёт аккаунт — регистрации отдельно нет.
-   */
-  async verify(email: string, code: string, now: Date = new Date()): Promise<DonorSession> {
-    const stored = await this.prisma.donorAuthCode.findFirst({
-      where: { email, usedAt: null, expiresAt: { gt: now } },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, codeHash: true },
-    });
-
-    if (stored === null) {
-      throw new UnauthorizedException(WRONG_CODE);
-    }
-
-    // Попытка списывается ДО сравнения и условным UPDATE: N параллельных
-    // запросов на последней попытке дадут одно сравнение, а не N.
-    const reserved = await this.prisma.donorAuthCode.updateMany({
-      where: { id: stored.id, usedAt: null, attempts: { lt: MAX_CODE_ATTEMPTS } },
-      data: { attempts: { increment: 1 } },
-    });
-
-    if (reserved.count === 0 || !loginCodeMatches(this.hmacSecret, email, code, stored.codeHash)) {
-      throw new UnauthorizedException(WRONG_CODE);
-    }
-
-    // Гасим код условным UPDATE: из двух одновременных верных вводов
-    // сессию получит ровно один.
-    const consumed = await this.prisma.donorAuthCode.updateMany({
-      where: { id: stored.id, usedAt: null },
-      data: { usedAt: now },
-    });
-
-    if (consumed.count === 0) {
-      throw new UnauthorizedException(WRONG_CODE);
-    }
-
-    const existing = await this.prisma.donorUser.findUnique({ where: { email }, select: { id: true } });
-    const donor = await this.prisma.donorUser.upsert({
+    const existing = await this.prisma.donorUser.findUnique({
       where: { email },
-      create: { email, lastLoginAt: now },
-      update: { lastLoginAt: now },
-      select: { id: true, email: true, tokenVersion: true },
+      select: { id: true, pdConsentVersion: true },
     });
+    const consent = { pdConsentAt: now, pdConsentVersion: PD_CONSENT_VERSION };
+    const donor =
+      existing === null
+        ? await this.prisma.donorUser.create({
+            data: { email, lastLoginAt: now, ...consent },
+            select: { id: true, email: true },
+          })
+        : await this.prisma.donorUser.update({
+            where: { id: existing.id },
+            data: { lastLoginAt: now, ...(existing.pdConsentVersion === PD_CONSENT_VERSION ? {} : consent) },
+            select: { id: true, email: true },
+          });
 
-    return this.issue(donor, existing === null);
+    return this.sessions.open(donor, meta, existing === null, now);
   }
 
-  /** Новая пара токенов по refresh-cookie. Отозванная версия — 401. */
-  async refresh(refreshToken: string): Promise<DonorSession> {
-    const payload = await this.tokens.verify('refresh', refreshToken);
-    const donor = await this.prisma.donorUser.findUnique({
-      where: { id: payload.sub },
-      select: { id: true, email: true, tokenVersion: true },
-    });
-
-    if (donor === null || donor.tokenVersion !== payload.ver) {
-      throw new UnauthorizedException('Сессия истекла или недействительна');
-    }
-
-    return this.issue(donor, false);
+  refresh(refreshToken: string, meta: DonorRequestMeta): Promise<DonorSession> {
+    return this.sessions.rotate(refreshToken, meta);
   }
 
-  /**
-   * Выход: версия сессий растёт, и все токены этого человека гаснут.
-   * Битая или чужая cookie — просто ничего не делаем: выйти и так вышли.
-   */
+  /** Выход только с этого устройства: гаснет его сессия, остальные живут. */
   async logout(refreshToken: string | null): Promise<void> {
-    if (refreshToken === null) {
-      return;
-    }
-
-    try {
-      const payload = await this.tokens.verify('refresh', refreshToken);
-
-      await this.prisma.donorUser.updateMany({
-        where: { id: payload.sub, tokenVersion: payload.ver },
-        data: { tokenVersion: { increment: 1 } },
-      });
-    } catch (error: unknown) {
-      if (!(error instanceof UnauthorizedException)) {
-        throw error;
-      }
+    if (refreshToken !== null) {
+      await this.sessions.revokeByToken(refreshToken);
     }
   }
-
-  private async issue(
-    donor: { id: string; email: string; tokenVersion: number },
-    isNew: boolean,
-  ): Promise<DonorSession> {
-    const payload = { sub: donor.id, ver: donor.tokenVersion };
-    const [accessToken, refreshToken] = await Promise.all([
-      this.tokens.sign('access', payload),
-      this.tokens.sign('refresh', payload),
-    ]);
-
-    return {
-      accessToken,
-      expiresIn: this.tokens.ttlSeconds('access'),
-      refreshToken,
-      refreshExpiresAt: new Date(Date.now() + this.tokens.ttlSeconds('refresh') * 1000),
-      donor: { id: donor.id, email: donor.email },
-      isNew,
-    };
-  }
-}
-
-/** Не чаще раза в минуту и не больше пяти за час на адрес. Вызывать под блокировкой адреса. */
-async function isRateLimited(tx: Prisma.TransactionClient, email: string, now: Date): Promise<boolean> {
-  const recent = await tx.donorAuthCode.findMany({
-    where: { email, createdAt: { gt: new Date(now.getTime() - CODE_WINDOW_MS) } },
-    orderBy: { createdAt: 'desc' },
-    select: { createdAt: true },
-    take: CODE_HOURLY_LIMIT,
-  });
-  const latest = recent[0];
-
-  return (
-    recent.length >= CODE_HOURLY_LIMIT ||
-    (latest !== undefined && now.getTime() - latest.createdAt.getTime() < CODE_RESEND_INTERVAL_MS)
-  );
 }

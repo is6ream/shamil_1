@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import heroBackground from "@/public/hero/hero-bg.jpg";
+import heroBackground from "@/public/hero/hero-bg-gold.png";
 
 import styles from "./HeroBackdrop.module.css";
 
@@ -9,7 +9,7 @@ interface Props {
 }
 
 /**
- * Фон первого экрана во всю ширину окна: рендер мечети в синей тонировке.
+ * Фон первого экрана во всю ширину окна: сине-золотое изображение заказчика.
  *
  * Картинка декоративная (`alt=""`): смысл экрана несут заголовок и цифры.
  * Статический импорт даёт размеры и blur-плейсхолдер без ручных чисел;

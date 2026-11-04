@@ -8,6 +8,7 @@ import { ONLINE_UNAVAILABLE_MESSAGE } from './payment-provider.resolver';
 import { createPaymentProviderResolver } from './payments.module';
 
 const ROBOKASSA_PAYMENT: PaymentConfig = {
+  onlineOrdersEnabled: true,
   provider: PaymentProviderCode.Robokassa,
   isTest: true,
   hashAlgorithm: PaymentHashAlgorithm.Md5,
@@ -41,6 +42,13 @@ function resolverFor(payment: PaymentConfig) {
 }
 
 describe('выбор провайдера по каналу', () => {
+  test('остановка заказов сохраняет провайдера для поздних ResultURL', () => {
+    const resolver = resolverFor({ ...ROBOKASSA_PAYMENT, onlineOrdersEnabled: false });
+    expect(() => resolver.forChannel('online')).toThrow(ONLINE_UNAVAILABLE_MESSAGE);
+    expect(() => resolver.forChannel()).toThrow(ONLINE_UNAVAILABLE_MESSAGE);
+    expect(resolver.forChannel('transfer').code).toBe(MANUAL_PROVIDER_CODE);
+    expect(resolver.byCode(ROBOKASSA_PROVIDER_CODE)?.code).toBe(ROBOKASSA_PROVIDER_CODE);
+  });
   describe('PAYMENT_PROVIDER=robokassa', () => {
     const resolver = resolverFor(ROBOKASSA_PAYMENT);
 

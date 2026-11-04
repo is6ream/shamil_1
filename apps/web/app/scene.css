@@ -49,7 +49,7 @@
   width: 74%;
   aspect-ratio: 1;
   translate: -50% -50%;
-  background: radial-gradient(circle, rgba(150, 205, 245, 0.5) 0%, rgba(2, 106, 169, 0.18) 38%, transparent 68%);
+  background: var(--art-glow, radial-gradient(circle, rgba(150, 205, 245, 0.5) 0%, rgba(2, 106, 169, 0.18) 38%, transparent 68%));
   animation: breathe 7s ease-in-out infinite;
 }
 @keyframes breathe { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
@@ -167,7 +167,7 @@
   background: var(--surface-sunken);
 
   --art-stroke: var(--ink);
-  --art-sand: rgba(10, 51, 103, 0.13);
+  --art-sand: var(--art-sand-light, rgba(10, 51, 103, 0.13));
 }
 
 /* Свет собран внизу, под мечетью: взгляд идёт туда же, куда и песок.
@@ -179,7 +179,7 @@
   width: 52%;
   aspect-ratio: 1;
   translate: -50% -50%;
-  background: radial-gradient(circle, rgba(2, 106, 169, 0.11) 0%, transparent 68%);
+  background: var(--art-glow-light, radial-gradient(circle, rgba(2, 106, 169, 0.11) 0%, transparent 68%));
 }
 
 .art-time .stream { opacity: 0.3; }

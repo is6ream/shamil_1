@@ -26,7 +26,7 @@
   border-radius: var(--r-pill);
   background: var(--surface-soft);
   color: var(--text-strong);
-  font-size: 15px;
+  font-size: var(--fs-small);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -40,14 +40,17 @@
 
 .chip:has(:checked) {
   background: var(--grad-cta);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-cta);
+  color: var(--cta-text);
+  box-shadow: inset 0 0 0 1px var(--gold-text), var(--shadow-cta);
 }
 
 .chip:has(:focus-visible) {
   outline: var(--focus-width) solid var(--focus);
   outline-offset: var(--focus-offset);
 }
+
+.chip:has(:checked):hover { background: var(--cta-hover); }
+.chip:has(:disabled) { background: var(--cta-disabled); color: var(--cta-disabled-text); box-shadow: none; cursor: not-allowed; }
 
 /* Узкая карточка: пилюли уходят под сумму и делят ширину поровну. */
 @container (max-width: 400px) {

@@ -5,6 +5,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { CloseIcon, UserIcon } from "@/components/icons/Icons";
 import { NAV_ITEMS } from "@/lib/content";
+import { DONOR_CABINET_ENABLED } from "@/lib/donor/endpoints";
 import { ORGANIZATION, toTelHref } from "@/lib/organization";
 
 import styles from "./MobileMenu.module.css";
@@ -14,7 +15,10 @@ interface Props {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onNavigate: (event: ReactMouseEvent<HTMLAnchorElement>, id: string) => void;
-  /** Вход для сотрудников — пункт виден только там, где иконке нет места в шапке. */
+  /**
+   * Вход (кабинет жертвователя, а при выключенном кабинете — для сотрудников).
+   * Пункт виден только там, где иконке нет места в шапке.
+   */
   readonly onLoginOpen: () => void;
   readonly phone?: string | null;
 }
@@ -126,7 +130,7 @@ export function MobileMenu({ id, isOpen, onClose, onNavigate, onLoginOpen, phone
 
         <button className={styles.login} type="button" aria-haspopup="dialog" onClick={onLoginOpen}>
           <UserIcon />
-          Вход для сотрудников
+          {DONOR_CABINET_ENABLED ? "Личный кабинет" : "Вход для сотрудников"}
         </button>
       </div>
     </div>

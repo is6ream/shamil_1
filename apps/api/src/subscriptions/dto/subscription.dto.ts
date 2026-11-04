@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Equals, IsBoolean, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { Equals, IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 
-import { SubscriptionStatus } from '../../generated/prisma/enums';
+import { SubscriptionPeriod, SubscriptionStatus } from '../../generated/prisma/enums';
 import { SUBSCRIPTION_MAX_KOPECKS, SUBSCRIPTION_MIN_KOPECKS } from '../subscriptions.constants';
 
 const REGION_SLUG_PATTERN = /^[a-z0-9-]+$/;
@@ -11,11 +11,16 @@ const REGION_SLUG_PATTERN = /^[a-z0-9-]+$/;
  * 10 ₽ – 10 000 000 ₽ укладываются в безопасный диапазон number.
  */
 export class CreateSubscriptionDto {
-  @ApiProperty({ example: 50_000, description: 'Копейки в месяц: 10 ₽ – 10 000 000 ₽' })
+  @ApiProperty({ example: 50_000, description: 'Копейки за списание: 10 ₽ – 10 000 000 ₽' })
   @IsInt()
   @Min(Number(SUBSCRIPTION_MIN_KOPECKS))
   @Max(Number(SUBSCRIPTION_MAX_KOPECKS))
   amountKopecks!: number;
+
+  @ApiPropertyOptional({ enum: SubscriptionPeriod })
+  @IsOptional()
+  @IsEnum(SubscriptionPeriod)
+  period?: SubscriptionPeriod;
 
   @ApiPropertyOptional({ example: '02', description: 'Регион «Откуда вы?» — автосписания идут в его рейтинг' })
   @IsOptional()
@@ -29,7 +34,7 @@ export class CreateSubscriptionDto {
    * или её отсутствие — не согласие. Время и IP сохраняются в подписке.
    */
   @ApiProperty({ example: true })
-  @Equals(true, { message: 'recurringConsent — нужно явное согласие на ежемесячные списания' })
+  @Equals(true, { message: 'recurringConsent — нужно явное согласие на регулярные списания' })
   recurringConsent!: boolean;
 }
 
@@ -63,6 +68,7 @@ export class CancelByLinkDto {
 
 export class SubscriptionResponse {
   @ApiProperty() readonly id!: string;
+  @ApiProperty({ enum: SubscriptionPeriod }) readonly period!: SubscriptionPeriod;
   @ApiProperty({ enum: SubscriptionStatus }) readonly status!: SubscriptionStatus;
   @ApiProperty({ description: 'Копейки строкой' }) readonly amountKopecks!: string;
   @ApiPropertyOptional({ nullable: true }) readonly regionSlug!: string | null;

@@ -42,7 +42,7 @@ export function createTestClient(): PrismaClient {
   }
 
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaPg({ connectionString, options: '-c timezone=UTC' }),
     log: ['warn', 'error'],
   });
 }
@@ -77,6 +77,10 @@ const TRUNCATED_TABLES = [
   'donation',
   'subscription',
   'donor_auth_code',
+  'donor_refresh_token',
+  'donor_session',
+  'donor_oauth_state',
+  'tax_certificate_request',
   'donor_user',
   'gallery_item',
   'campaign_monthly_goal',
@@ -224,6 +228,12 @@ export async function markPaid(
     data: { status: DonationStatus.paid, paidAmountKopecks, paidAt },
   });
 }
+
+/**
+ * Сессия-заглушка для сервисов, которым нужен `DonorPrincipal`, но не сам
+ * вход (подписки, планировщик): проверку сессии делает гард, а не они.
+ */
+export const TEST_SESSION_ID = '00000000-0000-4000-8000-000000000001';
 
 export async function createTestDonor(prisma: PrismaClient, email = 'donor@example.test'): Promise<{ id: string }> {
   return prisma.donorUser.create({ data: { email }, select: { id: true } });

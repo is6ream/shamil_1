@@ -12,8 +12,8 @@
   gap: var(--sp-3);
   height: var(--control-h);
   padding: 0 var(--sp-4) 0 var(--sp-5);
-  border: var(--stroke) solid transparent;
-  border-radius: 20px;
+  border: var(--stroke) solid var(--control-border);
+  border-radius: var(--r-md);
   background: var(--surface-soft);
   transition: border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast);
 }
@@ -44,11 +44,12 @@
 
 .input::placeholder {
   color: var(--text-soft);
-  opacity: 0.75;
+  opacity: 1;
 }
 
 .input:disabled {
-  cursor: default;
+  color: var(--text-soft);
+  cursor: not-allowed;
 }
 
 .anonymous {
@@ -56,7 +57,7 @@
   flex: none;
   align-items: center;
   gap: var(--sp-2);
-  font-size: 15px;
+  font-size: var(--fs-small);
   color: var(--text-soft);
   cursor: pointer;
   user-select: none;
@@ -75,7 +76,7 @@
   height: 100%;
   margin: 0;
   border: 1.5px solid var(--text-soft);
-  border-radius: 6px;
+  border-radius: var(--r-check);
   background: var(--surface);
   appearance: none;
   cursor: pointer;

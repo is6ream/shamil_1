@@ -5,6 +5,7 @@ import type { AdminPrincipal } from '../auth/auth.types';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import type { PrismaService } from '../database/prisma.service';
 import {
+  TEST_SESSION_ID,
   createTestDonor,
   createTestPrismaService,
   describeDatabase,
@@ -45,7 +46,7 @@ describeDatabase('подписки в админке', () => {
 
     const donor = await createTestDonor(prisma, 'ivan@example.test');
     const created = await harness.subscriptions.create(
-      { id: donor.id, email: 'ivan@example.test' },
+      { id: donor.id, sessionId: TEST_SESSION_ID, email: 'ivan@example.test' },
       { amountKopecks: 50_000, recurringConsent: true },
     );
     await harness.payments.confirmManual(created.orderId);

@@ -1,5 +1,6 @@
 import { ROBOKASSA_PROVIDER_CODE } from '../../config/constants';
 import type { PaymentConfig } from '../../config/configuration';
+import { EMULATOR_RECURRING_ROUTE, EMULATOR_ROUTE_PREFIX } from '../emulator/emulator.constants';
 import { MAX_DESCRIPTION_LENGTH } from '../robokassa/robokassa.constants';
 import { buildInitSignatureSource, formatOutSum, hashSignature, parseOutSumToKopecks } from '../robokassa/signature';
 import { RecurringGatewayError } from './recurring-gateway';
@@ -46,9 +47,6 @@ function readXmlValue(xml: string, tag: string): string | null {
  * Подпись запроса списания — та же, что у ссылки оплаты, с новым номером
  * счёта: `MerchantLogin:OutSum:InvoiceID:Пароль#1`; `PreviousInvoiceID`
  * в подпись не входит (документация, раздел «Повторные платежи»).
- * TODO(robokassa): документация не приводит формулу целиком — подтвердить
- * на первом тестовом автосписании после подключения услуги.
- *
  * Подпись OpStateExt — `MerchantLogin:InvoiceID:Пароль#2`.
  */
 export class RobokassaRecurringGateway implements RecurringGateway {
@@ -63,6 +61,11 @@ export class RobokassaRecurringGateway implements RecurringGateway {
   }
 
   async submit(input: RecurringChargeInput): Promise<RecurringSubmitResult> {
+    if (this.payment.isTest && (!this.payment.emulatorEnabled ||
+      new URL(this.payment.recurringUrl).pathname !== `/api/${EMULATOR_ROUTE_PREFIX}/${EMULATOR_RECURRING_ROUTE}`)) {
+      throw new RecurringGatewayError('Тестовое автосписание доступно только через эмулятор');
+    }
+
     const outSum = formatOutSum(input.amountKopecks);
     const invoiceId = String(input.invoiceNo);
     const signature = hashSignature(
@@ -83,13 +86,10 @@ export class RobokassaRecurringGateway implements RecurringGateway {
       SignatureValue: signature,
     });
 
-    if (this.payment.isTest) {
-      // TODO(robokassa): в списке параметров рекуррента IsTest не упомянут —
-      // уточнить у поддержки, как автосписания работают в тестовом режиме.
-      body.set('IsTest', '1');
+    const response = await this.request(this.payment.recurringUrl, { method: 'POST', body, redirect: 'error' });
+    if (response.status >= 500 || response.status === 429) {
+      throw new RecurringGatewayError(`Robokassa: неизвестный результат списания (HTTP ${response.status})`);
     }
-
-    const response = await this.request(this.payment.recurringUrl, { method: 'POST', body });
     const answer = (await response.text()).trim();
 
     if (response.ok && answer.startsWith('OK')) {

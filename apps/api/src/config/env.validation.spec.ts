@@ -28,6 +28,16 @@ const ROBOKASSA_TEST_ENV: Readonly<Record<string, string>> = {
 };
 
 describe('валидация окружения', () => {
+  test('переключатель новых онлайн-заказов разбирается строго', () => {
+    expect(validateEnv(BASE_ENV).PAYMENT_ONLINE_ORDERS_ENABLED).toBe(true);
+    expect(validateEnv({ ...BASE_ENV, PAYMENT_ONLINE_ORDERS_ENABLED: 'false' }).PAYMENT_ONLINE_ORDERS_ENABLED).toBe(false);
+    expect(() => validateEnv({ ...BASE_ENV, PAYMENT_ONLINE_ORDERS_ENABLED: 'typo' })).toThrow(/PAYMENT_ONLINE_ORDERS_ENABLED/);
+  });
+
+  test('production stage запрещает эмулятор даже при ошибочном NODE_ENV=test', () => {
+    expect(() => validateEnv({ ...ROBOKASSA_TEST_ENV, DEPLOY_STAGE: DeployStage.Production,
+      PAYMENT_EMULATOR_ENABLED: 'true' })).toThrow(/PAYMENT_EMULATOR_ENABLED/);
+  });
   test('без DATABASE_URL приложение не поднимается', () => {
     // Act
     const act = (): unknown => validateEnv({ NODE_ENV: NodeEnv.Test });

@@ -620,7 +620,28 @@ FundraisingGoalAdmin = {
 `AdminShortLink`: `{ id, slug, title, targetPath, utm: { source, medium, campaign, content, term }, clicks,
 isActive, shortUrl, targetUrl, createdAt, updatedAt }`. Все изменения — в журнале (`short_link.*`).
 
+## 15в. Справки для налогового вычета (кабинет жертвователя)
+
+Раздел есть только при `DONOR_CABINET_ENABLED=true` (иначе 404). Заявки создают жертвователи
+в «Моей помощи»: одна на календарный год, год без оплат — 400. PDF сайт не формирует.
+
+- `GET /admin/tax-certificates?status&page&pageSize` — `SUPER_ADMIN`, `ACCOUNTANT` (`TAX_CERTIFICATE_ROLES`;
+  ФИО, почта и телефон без маски). Ответ `Page<AdminTaxCertificate>`, сортировка: статус, затем старые сверху.
+- `PATCH /admin/tax-certificates/:id` — те же роли: `{ status?: "NEW"|"IN_PROGRESS"|"DONE", adminComment?: string|null }`
+  (≤500, `""`/`null` стирает). `DONE` ставит `doneAt`. Комментарий виден жертвователю. Журнал — `tax_certificate.update`.
+
+`AdminTaxCertificate`: `{ id, year, status, adminComment, donorName, donorEmail, donorPhone,
+paidTotalKopecks, paidCount, createdAt, doneAt }`. `paidTotalKopecks` — успешные пожертвования **из кабинета**
+за год по часовому поясу жертвователя (донаты до регистрации к кабинету не привязаны).
+
+Маршруты самого кабинета (`/donor/*`) здесь не описаны: их контракт — Swagger `GET /api/docs`
+(только вне production), вход через VK — `docs/donor-cabinet/vk-id.md`.
+
 ## 16. Публичные чтения (сайт)
+
+`POST /donations` принимает необязательный `Authorization: Bearer <access кабинета>`: с живым токеном донат
+получает `user_id` и попадает в «Мою помощь». Нет токена, он истёк или чужой — донат проходит как раньше,
+без привязки (платёж важнее статистики).
 
 Без авторизации и троттлинга. Существующие `GET /campaign`, `/regions`, `/regions/top`, `/donors/top`,
 `/donations/feed` не менялись.

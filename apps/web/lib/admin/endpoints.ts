@@ -77,6 +77,10 @@ export const ADMIN_PATHS = {
   /** Отчёт по источникам: оплаченные донаты по UTM-меткам за период. */
   donationsBySource: "/admin/analytics/donations-by-source",
 
+  /** Заявки на справку для налогового вычета из кабинета жертвователя. */
+  taxCertificates: "/admin/tax-certificates",
+  taxCertificate: (requestId: string) => `/admin/tax-certificates/${id(requestId)}`,
+
   shortLinks: "/admin/short-links",
   shortLink: (linkId: string) => `/admin/short-links/${id(linkId)}`,
 

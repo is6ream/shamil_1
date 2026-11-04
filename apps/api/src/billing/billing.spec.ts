@@ -3,6 +3,7 @@ import { RecurringEmulatorOutcome } from '../config/env.validation';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
 import type { PrismaService } from '../database/prisma.service';
 import {
+  TEST_SESSION_ID,
   createTestDonor,
   createTestPrismaService,
   describeDatabase,
@@ -38,7 +39,7 @@ describeDatabase('планировщик автосписаний', () => {
     const donor = await createTestDonor(prisma);
     harness = createSubscriptionHarness(prisma, outcome);
     const created = await harness.subscriptions.create(
-      { id: donor.id, email: 'donor@example.test' },
+      { id: donor.id, sessionId: TEST_SESSION_ID, email: 'donor@example.test' },
       { amountKopecks: 50_000, recurringConsent: true },
     );
     await harness.payments.confirmManual(created.orderId);

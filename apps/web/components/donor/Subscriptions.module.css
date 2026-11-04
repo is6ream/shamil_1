@@ -1,0 +1,62 @@
+.stack,
+.panel,
+.fields {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.heading,
+.panel p {
+  margin: 0;
+}
+
+.panel {
+  padding: var(--sp-5);
+  justify-items: start;
+}
+
+.fields {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+  justify-items: start;
+}
+
+.fields label,
+.actions label {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.fields .consent {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sp-2);
+}
+
+.fields input:not([type="checkbox"]),
+.fields select,
+.actions input {
+  max-inline-size: 100%;
+  min-block-size: 44px;
+  padding-inline: var(--sp-3);
+  border: var(--stroke) solid var(--border);
+  border-radius: var(--r-field);
+  background: var(--surface);
+  color: var(--text-strong);
+  font: inherit;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--sp-3);
+}
+
+.cancelPage {
+  max-inline-size: 40rem;
+  margin-inline: auto;
+  padding: var(--sp-5);
+}

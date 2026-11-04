@@ -16,7 +16,11 @@ export const metadata: Metadata = {
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
     <AdminSessionProvider>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        {/* Keep public color tokens off admin pages, including client navigation. */}
+        <span hidden data-admin-theme />
+        {children}
+      </ToastProvider>
     </AdminSessionProvider>
   );
 }

@@ -299,8 +299,8 @@ section { padding: var(--section-pad) 0; }
 .input:hover { border-color: var(--accent-quiet); }
 .input:disabled { background: var(--surface-sunken); color: var(--text-soft); cursor: not-allowed; }
 .input.big { font-family: var(--font-display); font-size: 24px; font-weight: 600; }
-.input[aria-invalid="true"] { border-color: #B3261E; }
-.field-error { margin: 8px 0 0; font-size: var(--fs-small); color: #B3261E; }
+.input[aria-invalid="true"] { border-color: var(--danger); }
+.field-error { margin: 8px 0 0; font-size: var(--fs-small); color: var(--danger); }
 
 select.input { appearance: none; cursor: pointer; padding-right: 42px;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
@@ -354,7 +354,7 @@ select.input { appearance: none; cursor: pointer; padding-right: 42px;
 }
 .pay:hover { border-color: var(--accent-quiet); }
 .pay .dot { flex: none; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 50%; transition: var(--dur-fast); }
-.pay:has(:checked) { border-color: var(--accent-quiet); box-shadow: 0 0 0 3px rgba(2, 106, 169, 0.12); }
+.pay:has(:checked) { border-color: var(--accent-quiet); box-shadow: 0 0 0 3px var(--accent-ring, rgba(2, 106, 169, 0.12)); }
 .pay:has(:checked) .dot { border-color: var(--accent-quiet); background: radial-gradient(circle, var(--accent-quiet) 0 5px, transparent 5px); }
 .pay:has(:focus-visible) { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
 .pay .tag { margin-left: auto; font-size: var(--fs-eyebrow); font-weight: 600; color: var(--accent-quiet); }
@@ -482,13 +482,13 @@ details.more .grid { display: grid; grid-template-columns: repeat(auto-fill, min
 .gal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 26px; }
 @media (max-width: 900px) { .gal { grid-template-columns: repeat(2, 1fr); } }
 /* Прямые углы на тёплом фоне выглядят как вставка из другого макета. */
-.shot { position: relative; display: grid; place-items: center; aspect-ratio: 4/3; border-radius: var(--r-photo); overflow: hidden; background: linear-gradient(160deg, #DCE6EF, #A9C2D8); color: #43607E; font-size: var(--fs-eyebrow); }
+.shot { position: relative; display: grid; place-items: center; aspect-ratio: 4/3; border-radius: var(--r-photo); overflow: hidden; background: var(--photo-placeholder, linear-gradient(160deg, #DCE6EF, #A9C2D8)); color: var(--text-soft, #43607E); font-size: var(--fs-eyebrow); }
 /* Дата — часть доказательства, а не подпись. */
-.shot span { position: absolute; left: 12px; bottom: 10px; padding: 4px 10px; border-radius: var(--r-pill); background: rgba(10, 51, 103, 0.72); color: #fff; font-size: 12px; }
+.shot span { position: absolute; left: 12px; bottom: 10px; padding: 4px 10px; border-radius: var(--r-pill); background: var(--caption-bg, rgba(10, 51, 103, 0.72)); color: #fff; font-size: 12px; }
 
 /* ══ Шапка и футер ══════════════════════════════════════════════════════ */
 
-.top { position: sticky; top: 0; z-index: var(--z-header); background: rgba(250, 246, 240, 0.86); backdrop-filter: blur(12px); border-bottom: 1px solid transparent; transition: border-color var(--dur); }
+.top { position: sticky; top: 0; z-index: var(--z-header); background: var(--header-glass, rgba(250, 246, 240, 0.86)); backdrop-filter: blur(12px); border-bottom: 1px solid transparent; transition: border-color var(--dur); }
 .top.stuck { border-bottom-color: var(--line); }
 /* Высота берётся из --header-h: от неё же считается --sticky-top у виджета
    формы, и второе число здесь увело бы форму под шапку. На ≤640px

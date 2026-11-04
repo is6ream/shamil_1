@@ -86,8 +86,11 @@ describeDatabase('сквозная тестовая оплата через эм
     return new URL(pay.headers.get('location') ?? '');
   }
 
-  const status = async (orderId: string): Promise<StatusBody> =>
-    (await api<StatusBody>(`/donations/${orderId}/status`)).body;
+  const status = async (orderId: string): Promise<StatusBody> => {
+    const response = await api<StatusBody>(`/donations/${orderId}/status`);
+    expect(response.status).toBe(200);
+    return response.body;
+  };
   const campaign = async (): Promise<CampaignBody> => (await api<CampaignBody>('/campaign')).body;
 
   test('online: форма → эмулятор «Оплатить» → paid → витрина выросла ровно на сумму', async () => {
@@ -195,6 +198,18 @@ describeDatabase('сквозная тестовая оплата через эм
     expect(response.status).toBe(400);
     expect((await status(orderId)).status).toBe('pending');
   });
+
+  test('45 секунд: заказ остаётся pending после окна UI и затем становится paid', async () => {
+    const { orderId, redirectUrl } = await createDonation('online');
+    await payThroughEmulator(redirectUrl, 'Колбэк через 45 с');
+    await new Promise((resolve) => setTimeout(resolve, 30_000));
+    expect((await status(orderId)).status).toBe('pending');
+    // Как браузер: частый опрос 4 раза/сек исчерпывал HTTP rate limit
+    // и проверял ответ 429 вместо состояния заказа.
+    const late = await waitFor(() => status(orderId), (body) => body.status === 'paid', 25_000, 3_000);
+    expect(late.status).toBe('paid');
+    expect((await campaign()).collectedKopecks).toBe('10000');
+  }, 65_000);
 
   test('ссылка на оплату с подменённой суммой — эмулятор отвечает 400', async () => {
     // Arrange

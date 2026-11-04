@@ -4,6 +4,8 @@ import { AdminSubscriptionsModule } from '../admin-subscriptions/admin-subscript
 import { BillingModule } from '../billing/billing.module';
 import { validateEnv } from '../config/env.validation';
 import { DonorAuthModule } from '../donor-auth/donor-auth.module';
+import { DonorDonationsModule } from '../donor-donations/donor-donations.module';
+import { DonorProfileModule } from '../donor-profile/donor-profile.module';
 import { DonorCabinetModule } from './donor-cabinet.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
@@ -13,7 +15,15 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
  * это 404 на `/donor/*`, а не полуработающие маршруты без почты и ключей.
  */
 @Module({
-  imports: [DonorAuthModule, SubscriptionsModule, DonorCabinetModule, BillingModule, AdminSubscriptionsModule],
+  imports: [
+    DonorAuthModule,
+    DonorProfileModule,
+    DonorDonationsModule,
+    SubscriptionsModule,
+    DonorCabinetModule,
+    BillingModule,
+    AdminSubscriptionsModule,
+  ],
 })
 export class DonorFeatureModule {}
 

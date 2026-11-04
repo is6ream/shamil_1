@@ -77,7 +77,7 @@ model Campaign {
   donations        Donation[]
   galleryItems     GalleryItem[]
   fundraisingGoals FundraisingGoal[]
-  subscriptions Subscription[]
+  subscriptions    Subscription[]
 
   @@map("campaign")
 }
@@ -144,11 +144,12 @@ model Region {
   createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  parent    Region?      @relation("RegionHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
-  children  Region[]     @relation("RegionHierarchy")
+  parent        Region?        @relation("RegionHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children      Region[]       @relation("RegionHierarchy")
   stats         RegionStats?
   donations     Donation[]
   subscriptions Subscription[]
+  donors        DonorUser[]
 
   @@unique([countryCode, code])
   @@index([type, sortOrder, name])
@@ -300,7 +301,7 @@ model DonationContact {
   fullName              String?  @map("full_name") @db.VarChar(120)
   /// E-mail для привязки разовых донатов к личному кабинету. Всегда в нижнем
   /// регистре — CHECK `donation_contact_email_lowercase`.
-  email      String? @db.VarChar(254)
+  email                 String?  @db.VarChar(254)
   /// Отметка согласия на обработку ПДн — обязательна: без неё строки быть не должно.
   personalDataConsentAt DateTime @map("personal_data_consent_at") @db.Timestamptz(3)
   consentIp             String?  @map("consent_ip") @db.Inet
@@ -693,51 +694,183 @@ model FundraisingGoal {
 
 // ─── Личный кабинет жертвователя ────────────────────────────────────────────
 
-/// Жертвователь с личным кабинетом. Вход — только по коду на e-mail, паролей нет.
-/// Отдельно от admin_user: у кабинета нет ролей, а утечка одной таблицы
-/// не должна давать доступ к другой.
+/// Жертвователь с личным кабинетом. Паролей нет: вход по коду на e-mail или
+/// через VK ID. Отдельно от admin_user: у кабинета нет ролей, а утечка одной
+/// таблицы не должна давать доступ к другой.
+///
+/// Удаление аккаунта — обезличивание, а не DELETE: донаты остаются для
+/// бухгалтерии, но без ПДн и без привязки к человеку (`deleted_at`,
+/// CHECK `donor_user_deleted_is_anonymous`).
 model DonorUser {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  /// Всегда в нижнем регистре — CHECK `donor_user_email_lowercase`.
-  email            String    @unique @db.VarChar(254)
-  name             String?   @db.VarChar(120)
+  /// Подтверждённый адрес: вход по коду и письма. Всегда в нижнем регистре —
+  /// CHECK `donor_user_email_lowercase`. Пуст у того, кто вошёл через VK
+  /// и почту не добавил.
+  email            String?   @unique @db.VarChar(254)
+  /// `user_id` из VK ID. E-mail из VK логином не становится: владение
+  /// адресом VK нам не подтверждает.
+  vkUserId         String?   @unique @map("vk_user_id") @db.VarChar(32)
+  firstName        String?   @map("first_name") @db.VarChar(60)
+  lastName         String?   @map("last_name") @db.VarChar(60)
+  middleName       String?   @map("middle_name") @db.VarChar(60)
   /// E.164, как в donation_contact.
   phoneE164        String?   @map("phone_e164") @db.VarChar(16)
+  /// Страна или субъект из справочника `region` — та же строка, что
+  /// «Откуда вы?» в форме доната. Страна субъекта — его parent.
+  regionId         String?   @map("region_id") @db.Uuid
+  city             String?   @db.VarChar(120)
+  /// Отдельное согласие на распространение ПДн (ст. 10.1 152-ФЗ): имя и регион
+  /// в публичной ленте. По умолчанию выключено.
+  showInFeed       Boolean   @default(false) @map("show_in_feed")
+  /// Согласие на обработку ПДн при входе и версия текста политики.
+  pdConsentAt      DateTime? @map("pd_consent_at") @db.Timestamptz(3)
+  pdConsentVersion String?   @map("pd_consent_version") @db.VarChar(32)
   /// IANA-зона: в ней считается время автосписаний. Уфа — UTC+5.
   timezone         String    @default("Asia/Yekaterinburg") @db.VarChar(64)
   marketingConsent Boolean   @default(false) @map("marketing_consent")
-  /// Версия сессий: входит в JWT и растёт при выходе — старые cookie
-  /// перестают приниматься сразу на всех устройствах.
-  tokenVersion     Int       @default(0) @map("token_version")
   lastLoginAt      DateTime? @map("last_login_at") @db.Timestamptz(3)
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
 
-  donations     Donation[]
-  subscriptions Subscription[]
+  region          Region?                 @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  donations       Donation[]
+  subscriptions   Subscription[]
+  sessions        DonorSession[]
+  authCodes       DonorAuthCode[]
+  oauthStates     DonorOauthState[]
+  taxCertificates TaxCertificateRequest[]
 
   @@map("donor_user")
 }
 
-/// Одноразовый код входа. Сам код не хранится — только HMAC-SHA256 от него.
+/// Одноразовый код. Сам код не хранится — только HMAC-SHA256 от него.
+/// `purpose` входит в HMAC: код подтверждения адреса не годится для входа.
 model DonorAuthCode {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Куда ушло письмо: при входе — логин, при смене адреса — новый адрес.
   email     String    @db.VarChar(254)
+  /// 'login' | 'change_email' | 'delete_account' — CHECK `donor_auth_code_purpose`.
+  purpose   String    @default("login") @db.VarChar(16)
+  /// Чей код. Пуст только у входа: аккаунта может ещё не быть.
+  donorId   String?   @map("donor_id") @db.Uuid
   codeHash  String    @map("code_hash") @db.Char(64)
   expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
   /// Неверные попытки ввода. После пятой код недействителен.
   attempts  Int       @default(0)
   /// Заполнен — код использован или вытеснен более новым.
   usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  /// IP запроса — для лимита писем с одного адреса.
+  ip        String?   @db.Inet
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
+  donor DonorUser? @relation(fields: [donorId], references: [id], onDelete: Cascade)
+
   @@index([email, createdAt(sort: Desc)])
+  @@index([ip, createdAt(sort: Desc)])
   @@map("donor_auth_code")
+}
+
+/// Сессия кабинета — одно устройство. Access-JWT несёт её id, и отзыв
+/// сессии гасит его сразу, а не через 15 минут.
+model DonorSession {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  donorId    String    @map("donor_id") @db.Uuid
+  userAgent  String?   @map("user_agent") @db.VarChar(256)
+  ip         String?   @db.Inet
+  /// Скользящий срок: каждое обновление продлевает его на 30 дней.
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  lastUsedAt DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  donor         DonorUser           @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  refreshTokens DonorRefreshToken[]
+
+  @@index([donorId])
+  @@map("donor_session")
+}
+
+/// Цепочка refresh-токенов сессии: каждое обновление гасит предъявленный
+/// и выдаёт следующий. Погашенный предъявлен снова — копия у кого-то ещё,
+/// и сессия отзывается целиком (как у админки, D-05).
+model DonorRefreshToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId String    @map("session_id") @db.Uuid
+  /// SHA-256 в hex: в базе только отпечаток.
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  session DonorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("donor_refresh_token")
+}
+
+/// Начатый вход через VK ID: state и PKCE code_verifier до возврата из VK.
+/// Живёт 10 минут — столько же, сколько код VK. Используется один раз.
+model DonorOauthState {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// SHA-256 от state: сам state есть только в URL и в cookie браузера.
+  stateHash    String    @unique @map("state_hash") @db.Char(64)
+  codeVerifier String    @map("code_verifier") @db.VarChar(128)
+  /// 'login' | 'link' — CHECK `donor_oauth_state_purpose`.
+  purpose      String    @db.VarChar(8)
+  /// Кому привязываем VK. Только у 'link'.
+  donorId      String?   @map("donor_id") @db.Uuid
+  /// Путь сайта, куда вернуть после входа. Только относительный — CHECK.
+  returnTo     String    @default("/profile") @map("return_to") @db.VarChar(512)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt       DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  donor DonorUser? @relation(fields: [donorId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("donor_oauth_state")
+}
+
+/// NEW — заявка принята; IN_PROGRESS — бухгалтер готовит; DONE — справка выдана.
+enum TaxCertificateStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+
+  @@map("tax_certificate_status")
+}
+
+/// Заявка на справку для налогового вычета за год. PDF не генерируем:
+/// справку готовит бухгалтер МРО, кабинет показывает только статус.
+model TaxCertificateRequest {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  donorId      String               @map("donor_id") @db.Uuid
+  year         Int                  @db.SmallInt
+  status       TaxCertificateStatus @default(NEW)
+  /// Комментарий бухгалтера жертвователю: «отправили на почту 12.02».
+  adminComment String?              @map("admin_comment") @db.VarChar(500)
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  doneAt       DateTime?            @map("done_at") @db.Timestamptz(3)
+
+  donor DonorUser @relation(fields: [donorId], references: [id], onDelete: Restrict)
+
+  /// Одна заявка на год: повторная возвращает ту же строку.
+  @@unique([donorId, year])
+  @@index([status, createdAt])
+  @@map("tax_certificate_request")
 }
 
 /// PENDING — ждём первый (PARENT) платёж; ACTIVE — списываем по расписанию;
 /// PAUSED — пользователь приостановил; CANCELLED — финально;
 /// FAILED — три неудачных автосписания подряд. Переходы — subscriptions/subscription-status.ts.
+enum SubscriptionPeriod {
+  MONTHLY
+  FRIDAY
+
+  @@map("subscription_period")
+}
+
 enum SubscriptionStatus {
   PENDING
   ACTIVE
@@ -760,6 +893,7 @@ model Subscription {
   regionId          String?            @map("region_id") @db.Uuid
   amountKopecks     BigInt             @map("amount_kopecks")
   /// Время списания `HH:mm` в часовом поясе пользователя.
+  period           SubscriptionPeriod @default(MONTHLY)
   chargeTime        String             @default("12:00") @map("charge_time") @db.VarChar(5)
   status            SubscriptionStatus @default(PENDING)
   /// InvId первого платежа — `PreviousInvoiceID` автосписаний.

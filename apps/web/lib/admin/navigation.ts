@@ -1,3 +1,5 @@
+import { DONOR_CABINET_ENABLED } from "@/lib/donor/endpoints";
+
 import type { AdminPermission } from "./roles";
 
 /**
@@ -26,6 +28,10 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { href: "/admin/video", label: "Видео", permission: "content", isReady: true },
   { href: "/admin/goals", label: "Цели сбора", permission: "campaign", isReady: true },
   { href: "/admin/sources", label: "Источники", permission: "donations", isReady: true },
+  // Заявки приходят из кабинета жертвователя: без кабинета API раздела нет (404).
+  ...(DONOR_CABINET_ENABLED
+    ? [{ href: "/admin/tax-certificates", label: "Справки", permission: "taxCertificates", isReady: true } as const]
+    : []),
   { href: "/admin/short-links", label: "Короткие ссылки", permission: "content", isReady: true },
   { href: "/admin/users", label: "Пользователи", permission: "users", isReady: true },
   { href: "/admin/audit", label: "Журнал действий", permission: "audit", isReady: true },

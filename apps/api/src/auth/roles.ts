@@ -50,6 +50,12 @@ export const AUDIT_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN, AdminRo
  */
 export const SUBSCRIPTION_WRITE_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN, AdminRole.ACCOUNTANT];
 
+/**
+ * Заявки на справку для налогового вычета: ФИО, почта и суммы человека без
+ * маски — работа бухгалтера, редактору контента они не нужны.
+ */
+export const TAX_CERTIFICATE_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN, AdminRole.ACCOUNTANT];
+
 export const USERS_ROLES: readonly AdminRole[] = [AdminRole.SUPER_ADMIN];
 
 export function canSeePersonalData(role: AdminRole): boolean {

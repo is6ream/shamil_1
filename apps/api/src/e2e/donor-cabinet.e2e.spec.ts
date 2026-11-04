@@ -21,10 +21,19 @@ import type { E2eApp } from './testing/e2e-app';
 
 /**
  * Кабинет жертвователя целиком, как его пройдёт человек: код на почту →
- * вход → ежемесячное пожертвование через эмулятор Robokassa → автосписание
- * планировщиком (рекуррент + колбэк на Result URL) → история → отмена по
- * ссылке из письма. Плюс границы: чужая подписка, чужие токены.
+ * вход → профиль → разовое и ежемесячное пожертвование через эмулятор
+ * Robokassa → автосписание планировщиком (рекуррент + колбэк на Result URL) →
+ * «Моя помощь» → отмена по ссылке из письма. Плюс границы: чужие данные,
+ * чужие токены, запросы без токена.
  */
+
+interface HistoryBody {
+  readonly year: number;
+  readonly yearTotalKopecks: string;
+  readonly years: number[];
+  readonly items: { id: string; kind: string; status: string; amountKopecks: string }[];
+  readonly nextCursor: string | null;
+}
 
 interface Response<T> {
   readonly status: number;
@@ -47,6 +56,7 @@ describeDatabase('кабинет жертвователя: сквозной сц
       PAYMENT_ROBOKASSA_OPSTATE_URL: `http://127.0.0.1:${port}/api/dev/robokassa/opstate`,
       RECURRING_EMULATOR_OUTCOME: 'paid',
       DONOR_CABINET_ENABLED: 'true',
+      RECURRING_ENABLED: 'true',
       MAIL_TRANSPORT: 'log',
       // Планировщик в тестах не крутится сам — тик вызывается руками.
       BILLING_SCHEDULER_ENABLED: 'false',
@@ -62,7 +72,7 @@ describeDatabase('кабинет жертвователя: сквозной сц
     await prisma.$disconnect();
 
     // Окружение процесса общее для файлов e2e: кабинет не должен остаться включённым у соседей.
-    for (const name of ['DONOR_CABINET_ENABLED', 'PAYMENT_ROBOKASSA_RECURRING_URL', 'PAYMENT_ROBOKASSA_OPSTATE_URL', 'RECURRING_EMULATOR_OUTCOME']) {
+    for (const name of ['DONOR_CABINET_ENABLED', 'RECURRING_ENABLED', 'PAYMENT_ROBOKASSA_RECURRING_URL', 'PAYMENT_ROBOKASSA_OPSTATE_URL', 'RECURRING_EMULATOR_OUTCOME']) {
       delete process.env[name];
     }
   });
@@ -89,21 +99,72 @@ describeDatabase('кабинет жертвователя: сквозной сц
     return { status: response.status, body: (text.length > 0 ? JSON.parse(text) : null) as T, headers: response.headers };
   }
 
-  async function login(email: string): Promise<string> {
-    const requested = await api('/donor/auth/request-code', { method: 'POST', body: JSON.stringify({ email }) });
+  /**
+   * Каждый вход — со своего адреса: лимит «5 кодов в минуту на IP» работает
+   * и в e2e. Адрес из X-Forwarded-For — как за балансировщиком Timeweb.
+   */
+  let clientNo = 0;
+
+  function clientIp(): string {
+    clientNo += 1;
+
+    return `10.7.${Math.floor(clientNo / 250)}.${clientNo % 250}`;
+  }
+
+  async function requestLoginCode(email: string, ip: string): Promise<string> {
+    const requested = await api('/donor/auth/request-code', {
+      method: 'POST',
+      headers: { 'X-Forwarded-For': ip },
+      body: JSON.stringify({ email }),
+    });
     expect(requested.status).toBe(202);
 
     const letter = [...mail.outbox()].reverse().find((m) => m.to === email && m.kind === 'login_code');
-    const code = /(\d{6})/.exec(letter?.subject ?? '')?.[1] ?? '';
+
+    return /(\d{6})/.exec(letter?.subject ?? '')?.[1] ?? '';
+  }
+
+  async function loginSession(email: string): Promise<{ accessToken: string; cookie: string }> {
+    const ip = clientIp();
+    const code = await requestLoginCode(email, ip);
     const verified = await api<{ accessToken: string }>('/donor/auth/verify', {
       method: 'POST',
-      body: JSON.stringify({ email, code }),
+      headers: { 'X-Forwarded-For': ip },
+      body: JSON.stringify({ email, code, pdConsent: true }),
     });
 
     expect(verified.status).toBe(200);
     expect(verified.headers.get('set-cookie')).toMatch(/shamil_donor_rt=.*HttpOnly/i);
 
-    return verified.body.accessToken;
+    return { accessToken: verified.body.accessToken, cookie: (verified.headers.get('set-cookie') ?? '').split(';')[0] ?? '' };
+  }
+
+  async function login(email: string): Promise<string> {
+    return (await loginSession(email)).accessToken;
+  }
+
+  /** Разовый донат с формы сайта; с токеном — от имени вошедшего. */
+  async function donateOnce(token?: string): Promise<string> {
+    const created = await api<{ orderId: string; redirectUrl: string }>(
+      '/donations',
+      {
+        method: 'POST',
+        body: JSON.stringify({ amountKopecks: 10_000, regionSlug: '02', regionSource: 'form', channel: 'online' }),
+      },
+      token,
+    );
+
+    expect(created.status).toBe(201);
+
+    const checkout = await fetch(created.body.redirectUrl);
+    await fetch(findLink(await checkout.text(), 'Оплатить: СБП'), { redirect: 'manual' });
+    await waitFor(
+      () => prisma.donation.findUniqueOrThrow({ where: { id: created.body.orderId } }),
+      (donation) => donation.status === DonationStatus.paid,
+      10_000,
+    );
+
+    return created.body.orderId;
   }
 
   async function subscribeAndPay(token: string): Promise<string> {
@@ -143,7 +204,7 @@ describeDatabase('кабинет жертвователя: сквозной сц
     // Arrange
     const token = await login('donor@example.test');
     const subscriptionId = await subscribeAndPay(token);
-    await prisma.subscription.update({ where: { id: subscriptionId }, data: { nextChargeAt: new Date(Date.now() - 1000) } });
+    await prisma.$executeRaw`UPDATE subscription SET next_charge_at = now() - interval '1 second' WHERE id = ${subscriptionId}::uuid`;
 
     // Act: тик планировщика → рекуррент в эмулятор → колбэк на Result URL
     await e2e.app.get(BillingService).runTick();
@@ -154,14 +215,14 @@ describeDatabase('кабинет жертвователя: сквозной сц
     );
 
     // Assert: история в кабинете
-    const history = await api<{ items: { type: string; status: string }[]; total: number }>('/donor/donations', {}, token);
+    const history = await api<HistoryBody>('/donor/donations', {}, token);
     expect(history.status).toBe(200);
-    expect(history.body.total).toBe(2);
-    expect(history.body.items.map((item) => `${item.type}:${item.status}`).sort()).toEqual(['CHILD:paid', 'PARENT:paid']);
+    expect(history.body.items.map((item) => `${item.kind}:${item.status}`)).toEqual(['RECURRING:paid', 'RECURRING:paid']);
+    expect(history.body.yearTotalKopecks).toBe('100000');
 
     // Act: отмена по ссылке из последнего письма — без входа
     const letter = [...mail.outbox()].reverse().find((m) => m.kind === 'charge_succeeded');
-    const cancelUrl = new URL(/https?:\/\/\S+\/cabinet\/cancel\?token=\S+/.exec(letter?.text ?? '')?.[0] ?? 'http://x');
+    const cancelUrl = new URL(/https?:\/\/\S+\/subscription\/cancel\?token=\S+/.exec(letter?.text ?? '')?.[0] ?? 'http://x');
     const cancelled = await api('/donor/subscriptions/cancel-by-link', {
       method: 'POST',
       body: JSON.stringify({ token: cancelUrl.searchParams.get('token') }),
@@ -171,6 +232,125 @@ describeDatabase('кабинет жертвователя: сквозной сц
     expect(cancelled.status).toBe(200);
     const list = await api<{ status: string }[]>('/donor/subscriptions', {}, token);
     expect(list.body[0]?.status).toBe(SubscriptionStatus.CANCELLED);
+  });
+
+  test('вход → профиль и карточка: новый кабинет пустой, согласие записано', async () => {
+    // Act
+    const token = await login('fresh@example.test');
+    const [me, summary, history] = await Promise.all([
+      api<{ email: string; showInFeed: boolean; firstName: string | null }>('/donor/me', {}, token),
+      api<{ yearTotalKopecks: string; donationsCount: number; hasActiveSubscription: boolean }>('/donor/me/summary', {}, token),
+      api<HistoryBody>('/donor/donations', {}, token),
+    ]);
+
+    // Assert
+    expect(me.status).toBe(200);
+    expect(me.body).toMatchObject({ email: 'fresh@example.test', showInFeed: false, firstName: null });
+    expect(summary.body).toMatchObject({ yearTotalKopecks: '0', donationsCount: 0, hasActiveSubscription: false });
+    expect(history.body.items).toEqual([]);
+    const row = await prisma.donorUser.findFirstOrThrow({ where: { email: 'fresh@example.test' } });
+    expect(row.pdConsentAt).not.toBeNull();
+  });
+
+  test('вход без согласия на обработку ПДн — 400, кабинет не создаётся', async () => {
+    // Arrange
+    const ip = clientIp();
+    const code = await requestLoginCode('noconsent@example.test', ip);
+
+    // Act
+    const response = await api('/donor/auth/verify', {
+      method: 'POST',
+      headers: { 'X-Forwarded-For': ip },
+      body: JSON.stringify({ email: 'noconsent@example.test', code }),
+    });
+
+    // Assert
+    expect(response.status).toBe(400);
+    expect(await prisma.donorUser.count({ where: { email: 'noconsent@example.test' } })).toBe(0);
+  });
+
+  test('донат с Bearer попадает в «Мою помощь», без токена — нет', async () => {
+    // Arrange
+    const token = await login('donor@example.test');
+
+    // Act
+    const mine = await donateOnce(token);
+    const anonymous = await donateOnce();
+    const history = await api<HistoryBody>('/donor/donations', {}, token);
+    const summary = await api<{ yearTotalKopecks: string; donationsCount: number }>('/donor/me/summary', {}, token);
+
+    // Assert
+    expect(history.body.items.map((item) => item.id)).toEqual([mine]);
+    expect(history.body.items[0]).toMatchObject({ kind: 'ONE_TIME', status: 'paid', amountKopecks: '10000' });
+    expect(summary.body).toMatchObject({ yearTotalKopecks: '10000', donationsCount: 1 });
+    const orphan = await prisma.donation.findUniqueOrThrow({ where: { id: anonymous } });
+    expect(orphan.userId).toBeNull();
+  });
+
+  test('битый Bearer на форме доната не мешает платежу: донат без привязки', async () => {
+    // Act
+    const orderId = await donateOnce('not-a-jwt');
+
+    // Assert
+    const donation = await prisma.donation.findUniqueOrThrow({ where: { id: orderId } });
+    expect(donation.userId).toBeNull();
+  });
+
+  test('чужие данные недоступны: история, справки и профиль — только свои', async () => {
+    // Arrange
+    const owner = await login('owner@example.test');
+    const stranger = await login('stranger@example.test');
+    await donateOnce(owner);
+    const year = new Date().getFullYear();
+    const ownerCertificate = await api('/donor/tax-certificates', { method: 'POST', body: JSON.stringify({ year }) }, owner);
+
+    // Act
+    const [history, certificates, strangerCertificate, me] = await Promise.all([
+      api<HistoryBody>('/donor/donations', {}, stranger),
+      api<unknown[]>('/donor/tax-certificates', {}, stranger),
+      api('/donor/tax-certificates', { method: 'POST', body: JSON.stringify({ year }) }, stranger),
+      api<{ email: string }>('/donor/me', {}, stranger),
+    ]);
+
+    // Assert
+    expect(ownerCertificate.status).toBe(200);
+    expect(history.body.items).toEqual([]);
+    expect(certificates.body).toEqual([]);
+    // У чужого кабинета оплат за этот год нет — заявку не принять.
+    expect(strangerCertificate.status).toBe(400);
+    expect(me.body.email).toBe('stranger@example.test');
+  });
+
+  test('без токена весь кабинет — 401', async () => {
+    // Act
+    const statuses = await Promise.all([
+      api('/donor/me'),
+      api('/donor/me/summary'),
+      api('/donor/me', { method: 'PATCH', body: JSON.stringify({ firstName: 'Ильдар' }) }),
+      api('/donor/donations'),
+      api('/donor/tax-certificates'),
+      api('/donor/tax-certificates', { method: 'POST', body: JSON.stringify({ year: 2026 }) }),
+      api('/donor/me/delete/request', { method: 'POST' }),
+      api('/donor/subscriptions'),
+    ]);
+
+    // Assert
+    expect(statuses.map((response) => response.status)).toEqual(statuses.map(() => 401));
+  });
+
+  test('выход отзывает сессию: ни access-, ни refresh-токен больше не пускают', async () => {
+    // Arrange
+    const { accessToken, cookie } = await loginSession('bye@example.test');
+
+    // Act
+    const logout = await api('/donor/auth/logout', { method: 'POST', headers: { Cookie: cookie } });
+    const after = await api('/donor/me', {}, accessToken);
+    const refresh = await api('/donor/auth/refresh', { method: 'POST', headers: { Cookie: cookie } });
+
+    // Assert
+    expect(logout.status).toBe(204);
+    expect(after.status).toBe(401);
+    expect(refresh.status).toBe(401);
   });
 
   test('чужая подписка — 404 на чтение, правку и отмену', async () => {

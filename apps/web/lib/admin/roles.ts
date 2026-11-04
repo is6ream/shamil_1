@@ -21,6 +21,8 @@ export type AdminPermission =
   | "donorPersonalData"
   | "exportCsv"
   | "audit"
+  /** Заявки на справку для вычета: ФИО и суммы без маски — `TAX_CERTIFICATE_ROLES` API. */
+  | "taxCertificates"
   | "users";
 
 const PERMISSIONS: Readonly<Record<AdminRole, ReadonlySet<AdminPermission>>> = {
@@ -34,6 +36,7 @@ const PERMISSIONS: Readonly<Record<AdminRole, ReadonlySet<AdminPermission>>> = {
     "donorPersonalData",
     "exportCsv",
     "audit",
+    "taxCertificates",
     "users",
   ]),
   EDITOR: new Set<AdminPermission>(["content", "campaign", "goals", "manualDonations", "donations"]),
@@ -44,6 +47,7 @@ const PERMISSIONS: Readonly<Record<AdminRole, ReadonlySet<AdminPermission>>> = {
     "donorPersonalData",
     "exportCsv",
     "audit",
+    "taxCertificates",
   ]),
 };
 
