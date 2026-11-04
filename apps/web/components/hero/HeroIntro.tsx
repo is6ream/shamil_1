@@ -5,6 +5,7 @@ import type { ActiveGoal } from "@/lib/goal-progress";
 import { HERO } from "@/lib/content";
 
 import { CollectedSummary } from "./CollectedSummary";
+import { HeroArtwork } from "./HeroBackdrop";
 import styles from "./HeroIntro.module.css";
 
 interface Props {
@@ -18,7 +19,6 @@ interface Props {
 
 /**
  * Первый экран макета v2: бейдж, H1, лид, «Собрано».
- * Рендер мечети теперь не карточка, а фон экрана — см. `HeroBackdrop`.
  *
  * Активный этап сбора стоит сразу под «Собрано»: на десктопе форма справа
  * его не касается, на телефоне он последним перед формой и компактен.
@@ -38,6 +38,7 @@ export function HeroIntro({ campaign, hero = HERO, goal = null }: Props) {
         <span className={styles.mobileOnly}>{hero.ledeShort}</span>
       </p>
 
+      <HeroArtwork />
       <CollectedSummary campaign={campaign} className={styles.collected} />
 
       {goal === null ? null : <StageCard goal={goal} className={styles.goal} />}

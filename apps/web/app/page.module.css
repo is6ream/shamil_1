@@ -33,6 +33,7 @@
 .backdrop {
   grid-column: full;
   grid-row: 1;
+  background: var(--hero-bg-fill);
 }
 
 .head {
@@ -77,6 +78,7 @@
       [aside-start] var(--col-aside)
       [aside-end content-end] minmax(var(--gutter), 1fr)
       [full-end];
+    overflow-x: clip;
   }
 
   .head,

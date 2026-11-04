@@ -1,36 +1,19 @@
 import Image from "next/image";
 
-import heroBackground from "@/public/hero/hero-bg-gold.png";
+import heroArtwork from "@/public/hero/hero-bg-gold.png";
 
 import styles from "./HeroBackdrop.module.css";
 
-interface Props {
-  readonly className?: string;
-}
-
-/**
- * Фон первого экрана во всю ширину окна: сине-золотое изображение заказчика.
- *
- * Картинка декоративная (`alt=""`): смысл экрана несут заголовок и цифры.
- * Статический импорт даёт размеры и blur-плейсхолдер без ручных чисел;
- * `preload` — это самая крупная картинка первого экрана (LCP).
- * Кадрирование под разные экраны — в CSS через `object-position`.
- */
-export function HeroBackdrop({ className }: Props) {
+export function HeroArtwork() {
   return (
-    <div className={`${styles.backdrop} ${className ?? ""}`} aria-hidden="true">
-      <div className={styles.frame}>
-        <Image
-          className={styles.image}
-          src={heroBackground}
-          alt=""
-          fill
-          preload
-          placeholder="blur"
-          sizes="100vw"
-        />
-        <span className={styles.shade} />
-      </div>
+    <div className={styles.artwork}>
+      <Image
+        className={styles.image}
+        src={heroArtwork}
+        alt="Эскиз мечети «Шамиль» с минаретом и золотым орнаментом"
+        preload
+        sizes="100vw"
+      />
     </div>
   );
 }
