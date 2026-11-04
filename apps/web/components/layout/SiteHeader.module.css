@@ -42,7 +42,7 @@
 
 .navLink:hover,
 .navLink[aria-current] {
-  color: var(--accent);
+  color: var(--accent-hover);
 }
 
 .navLink[aria-current]::after {
@@ -90,7 +90,7 @@
 }
 
 .login:hover {
-  color: var(--accent);
+  color: var(--accent-hover);
 }
 
 /* Телефон стоит вплотную к иконке, кнопка «Помочь» уже со своим отступом. */

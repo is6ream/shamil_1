@@ -1,32 +1,23 @@
-/* Public night/gold theme. Admin keeps the original tokens in tokens.css.
-   Separate action fills from text accents: pale gold is never small text on cream. */
+/* Public brand palette. The admin theme continues to use tokens.css. */
 :root:not(:has([data-admin-theme])) {
-  --art-glow: radial-gradient(circle, rgb(240 209 155 / 50%) 0%, rgb(215 170 100 / 18%) 38%, transparent 68%);
-  --art-sand-light: rgb(128 90 39 / 13%);
-  --art-glow-light: radial-gradient(circle, rgb(215 170 100 / 11%) 0%, transparent 68%);
-  --photo-placeholder: linear-gradient(160deg, #EAE1D2, #DED4C3);
-  --header-glass: rgb(248 244 236 / 86%);
-  --hero-shade-desktop: linear-gradient(90deg, rgb(0 25 51 / 70%) 0%, rgb(0 25 51 / 72%) 78%, transparent 100%);
-  --hero-shade-tablet: linear-gradient(90deg, rgb(0 25 51 / 80%), rgb(0 25 51 / 72%) 55%, rgb(0 25 51 / 65%));
-  --hero-shade-mobile: linear-gradient(180deg, rgb(0 25 51 / 65%), rgb(0 25 51 / 72%) 50%, var(--hero-bg-fill));
-  --about-shade: linear-gradient(180deg, rgb(0 25 51 / 5%) 10%, rgb(0 25 51 / 15%) 30%, rgb(0 25 51 / 85%) 57%, rgb(0 25 51 / 98%) 100%);
-  --hero-bg-fill: #001933;
-  --r-check: 6px;
-  --night: #001933;
-  --night-soft: #082540;
-  --gold: #D7AA64;
-  --gold-light: #F0D19B;
-  --gold-text: #805A27;
-  --cream: #F8F4EC;
-  --paper: #FFFCF6;
-  --on-dark: #FFF8ED;
+  --night: #0F2F56;
+  --gold: #BB925B;
+  --paper: #FFFFFF;
+  --cream: #E8E5DE;
+  --light-blue: #A9C8E5;
+
+  --night-soft: color-mix(in srgb, var(--night) 90%, black);
+  --gold-light: color-mix(in srgb, var(--gold) 68%, var(--paper));
+  --gold-text: color-mix(in srgb, var(--gold) 40%, var(--night));
+  --on-dark: var(--paper);
   --mist: var(--cream);
-  --mist-deep: #EAE1D2;
+  --mist-deep: var(--light-blue);
   --white: var(--paper);
-  --ink: #102A43;
-  --ink-soft: #526171;
-  --blue: var(--night-soft);
-  --line: #DED4C3;
+  --ink: var(--night);
+  --ink-soft: color-mix(in srgb, var(--night) 86%, var(--paper));
+  --blue: var(--night);
+  --line: color-mix(in srgb, var(--night) 22%, var(--cream));
+
   --bg: var(--cream);
   --surface: var(--paper);
   --surface-soft: var(--cream);
@@ -34,43 +25,57 @@
   --text-strong: var(--ink);
   --text-soft: var(--ink-soft);
   --border: var(--line);
-  --control-border: #897B67;
-  --accent: var(--gold-text);
-  --accent-quiet: var(--gold-text);
-  --accent-hover: var(--night);
+  --control-border: color-mix(in srgb, var(--night) 63%, var(--paper));
+  --accent: var(--night);
+  --accent-quiet: var(--accent);
+  --accent-hover: var(--gold-text);
   --on-accent: var(--paper);
-  --focus: var(--gold-text);
+  --focus: var(--night);
+  --accent-soft: color-mix(in srgb, var(--light-blue) 35%, var(--paper));
+  --accent-ring: color-mix(in srgb, var(--night) 22%, transparent);
+
   --cta-bg: var(--gold);
   --cta-hover: var(--gold-light);
-  --cta-active: #C59650;
+  --cta-active: color-mix(in srgb, var(--gold) 88%, var(--paper));
   --cta-text: var(--night);
-  --cta-disabled: #DED4C3;
-  --cta-disabled-text: #526171;
-  --band-bg: var(--night-soft);
+  --cta-disabled: var(--cream);
+  --cta-disabled-text: var(--ink-soft);
+  --grad-cta: var(--cta-bg);
+  --grad-bar: var(--night);
+  --shadow-cta: 0 16px 32px -16px color-mix(in srgb, var(--gold-text) 35%, transparent);
+
+  --band-bg: var(--night);
   --panel-bg: var(--night);
   --girih-line: var(--gold);
-  --band-cite: #E3D6C1;
-  --grad-panel: radial-gradient(120% 110% at 50% 0%, var(--night-soft), var(--night));
+  --band-cite: var(--light-blue);
+  --grad-panel: radial-gradient(120% 110% at 50% 0%, var(--night), var(--night-soft));
   --grad-stage: var(--grad-panel);
-  --grad-bar: var(--gold-text);
-  --grad-cta: var(--cta-bg);
-  --accent-soft: rgb(215 170 100 / 12%);
-  --accent-ring: rgb(128 90 39 / 22%);
-  --shadow-cta: 0 16px 32px -16px rgb(128 90 39 / 35%);
-  --shadow-float: 0 24px 60px -24px rgb(0 25 51 / 22%);
-  --shadow-form: 0 30px 80px -30px rgb(0 25 51 / 28%);
-  --shadow-play: 0 10px 30px -8px rgb(0 25 51 / 35%);
-  --shadow-segment: 0 2px 6px rgb(0 25 51 / 12%);
-  --shadow-bar: 0 -8px 24px -12px rgb(0 25 51 / 25%);
-  --ornament-border: rgb(215 170 100 / 40%);
-  --caption-bg: rgb(0 25 51 / 75%);
-  --overlay: rgb(0 25 51 / 45%);
-  --photo-overlay: linear-gradient(transparent, rgb(0 25 51 / 70%));
-  --photo-shadow: 0 18px 40px -22px rgb(0 25 51 / 50%), 0 0 0 6px rgb(215 170 100 / 8%);
-  --dark-hover: rgb(255 248 237 / 8%);
-  --dark-divider: rgb(255 248 237 / 12%);
-  --hadith-shade: linear-gradient(rgb(0 25 51 / 45%), rgb(0 25 51 / 45%));
-  --panel-glow: radial-gradient(ellipse at 15% 0%, rgb(215 170 100 / 9%), transparent 60%);
+  --header-glass: color-mix(in srgb, var(--paper) 90%, transparent);
+  --hero-bg-fill: var(--night);
+  --hero-shade-desktop: linear-gradient(90deg, color-mix(in srgb, var(--night) 86%, transparent) 0 78%, transparent 100%);
+  --hero-shade-tablet: linear-gradient(90deg, color-mix(in srgb, var(--night) 88%, transparent), color-mix(in srgb, var(--night) 80%, transparent));
+  --hero-shade-mobile: linear-gradient(180deg, color-mix(in srgb, var(--night) 82%, transparent), color-mix(in srgb, var(--night) 88%, transparent) 50%, var(--hero-bg-fill));
+  --about-shade: linear-gradient(180deg, transparent 10%, color-mix(in srgb, var(--night) 15%, transparent) 30%, color-mix(in srgb, var(--night) 90%, transparent) 57%, var(--night) 100%);
+  --hadith-shade: linear-gradient(color-mix(in srgb, var(--night) 75%, transparent), color-mix(in srgb, var(--night) 75%, transparent));
+  --panel-glow: radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--light-blue) 9%, transparent), transparent 60%);
+  --art-glow: radial-gradient(circle, color-mix(in srgb, var(--light-blue) 50%, transparent) 0%, color-mix(in srgb, var(--gold) 18%, transparent) 38%, transparent 68%);
+  --art-sand-light: color-mix(in srgb, var(--night) 13%, transparent);
+  --art-glow-light: radial-gradient(circle, color-mix(in srgb, var(--light-blue) 35%, transparent) 0%, transparent 68%);
+  --photo-placeholder: linear-gradient(160deg, var(--cream), var(--light-blue));
+  --caption-bg: color-mix(in srgb, var(--night) 88%, transparent);
+  --overlay: color-mix(in srgb, var(--night) 45%, transparent);
+  --photo-overlay: linear-gradient(transparent, color-mix(in srgb, var(--night) 80%, transparent));
+  --photo-shadow: 0 18px 40px -22px color-mix(in srgb, var(--night) 50%, transparent), 0 0 0 6px color-mix(in srgb, var(--gold) 8%, transparent);
+  --shadow-float: 0 24px 60px -24px color-mix(in srgb, var(--night) 22%, transparent);
+  --shadow-form: 0 30px 80px -30px color-mix(in srgb, var(--night) 28%, transparent);
+  --shadow-play: 0 10px 30px -8px color-mix(in srgb, var(--night) 35%, transparent);
+  --shadow-segment: 0 2px 6px color-mix(in srgb, var(--night) 12%, transparent);
+  --shadow-bar: 0 -8px 24px -12px color-mix(in srgb, var(--night) 25%, transparent);
+  --ornament-border: color-mix(in srgb, var(--gold) 40%, transparent);
+  --dark-hover: color-mix(in srgb, var(--paper) 8%, transparent);
+  --dark-divider: color-mix(in srgb, var(--paper) 12%, transparent);
+
+  --r-check: 6px;
   --r-card: 24px;
   --r-panel: 24px;
   --r-photo: 20px;
@@ -81,19 +86,19 @@
 }
 :root:not(:has([data-admin-theme])) :is(.on-dark, .panel, footer) {
   --bg: var(--panel-bg);
-  --surface: rgb(255 248 237 / 7%);
-  --surface-sunken: rgb(255 248 237 / 12%);
-  --surface-soft: rgb(255 248 237 / 7%);
-  --accent-soft: rgb(215 170 100 / 12%);
+  --surface: var(--dark-hover);
+  --surface-sunken: var(--dark-divider);
+  --surface-soft: var(--surface);
+  --accent-soft: color-mix(in srgb, var(--light-blue) 12%, transparent);
   --text-strong: var(--on-dark);
-  --text-soft: #E3D6C1;
-  --border: rgb(240 209 155 / 40%);
-  --control-border: var(--gold);
-  --accent: var(--gold-light);
-  --accent-quiet: var(--gold-light);
-  --accent-hover: var(--gold);
+  --text-soft: var(--light-blue);
+  --border: color-mix(in srgb, var(--light-blue) 40%, transparent);
+  --control-border: var(--light-blue);
+  --accent: var(--light-blue);
+  --accent-quiet: var(--accent);
+  --accent-hover: var(--paper);
   --on-accent: var(--night);
-  --focus: var(--gold-light);
+  --focus: var(--light-blue);
   --grad-bar: var(--gold);
 }
 :root:not(:has([data-admin-theme])) .btn-primary {
@@ -107,7 +112,7 @@
 :root:not(:has([data-admin-theme])) .btn-primary[aria-disabled="true"] {
   background: var(--cta-disabled); color: var(--cta-disabled-text); opacity: 1; filter: none;
 }
-:root:not(:has([data-admin-theme])) footer a { color: var(--gold-light); }
+:root:not(:has([data-admin-theme])) footer a { color: var(--light-blue); }
 
 /* Legacy inner-page sharing uses the same actions as the landing page. */
 :root:not(:has([data-admin-theme])) .share {
@@ -132,3 +137,21 @@
 :root:not(:has([data-admin-theme])) .input[aria-invalid="true"] { border-color: var(--danger); }
 :root:not(:has([data-admin-theme])) .vcard { border-radius: var(--r-card); }
 
+
+:root:not(:has([data-admin-theme])) ::selection {
+  background: var(--light-blue);
+  color: var(--night);
+}
+
+:root:not(:has([data-admin-theme])) .check:has(:checked) .bx {
+  color: var(--on-accent);
+}
+
+:root:not(:has([data-admin-theme])) .stub {
+  background: var(--surface-sunken);
+  border-color: var(--control-border);
+}
+
+:root:not(:has([data-admin-theme])) .stub :is(.lbl, .gist) {
+  color: var(--text-strong);
+}

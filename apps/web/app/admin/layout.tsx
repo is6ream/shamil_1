@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { ToastProvider } from "@/components/admin/ui/Toasts";
 import { AdminSessionProvider } from "@/lib/admin/session";
@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   title: { default: "Админка", template: "%s · Админка" },
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = { themeColor: "#0B2548" };
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (

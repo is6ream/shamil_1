@@ -44,7 +44,7 @@
   font-weight: 700;
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
-  color: var(--gold);   /* 9.54:1 на --ink — AA для мелкого текста */
+  color: var(--gold);
 }
 
 .phone {
