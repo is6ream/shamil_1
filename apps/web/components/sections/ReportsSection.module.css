@@ -1,0 +1,23 @@
+.ranking {
+  min-width: 0;
+  padding: 0;
+}
+
+@media (min-width: 1024px) {
+  .columns:has(> .ranking) {
+    row-gap: 0;
+  }
+
+  /* Shared intrinsic tracks accommodate wrapped headings and either card's content. */
+  .ranking,
+  .feed {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    min-width: 0;
+  }
+
+  .columns:has([data-expanded="true"]) .feed > ul {
+    align-self: start;
+  }
+}

@@ -4,9 +4,6 @@
  * (`apps/web/lib/api/showcase.ts`), — расхождение видно глазами на странице.
  */
 
-/** Строк в рейтинге регионов до «ещё N регионов ждут первого пожертвования». */
-export const TOP_REGIONS_LIMIT = 10;
-
 /** Строк в топе донатеров. */
 export const TOP_DONORS_LIMIT = 10;
 

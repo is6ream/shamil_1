@@ -176,6 +176,28 @@ describeDatabase('витринные эндпоинты', () => {
       expect(top.emptyCount).toBe(1);
     });
 
+    test('все 26 регионов, включая равные суммы, сохраняют порядок API без лимита 10', async () => {
+      const expected = [];
+      for (let index = 0; index < 26; index += 1) {
+        const name = `QA ${String(index).padStart(2, '0')}`;
+        const slug = `qa-${index}`;
+        const region = await prisma.region.create({
+          data: { type: 'subject', countryCode: 'RU', code: `qa${index}`, slug, name, flagUrl: `/qa-${index}.png` },
+        });
+        // Pairs tie on amount; alphabetical name is the existing secondary key.
+        const amount = BigInt(26 - Math.floor(index / 2)) * 10_000n;
+        await paidDonation({ amountKopecks: amount, regionId: region.id });
+        expected.push({ slug, name, flagUrl: `/qa-${index}.png`, donorsCount: 1, paidTotalKopecks: amount.toString() });
+      }
+      await paidDonation({ amountKopecks: 9_000_000n, regionId: fixtures.russiaId });
+      await prisma.region.update({ where: { id: fixtures.kazakhstanId }, data: { isActive: false } });
+      await paidDonation({ amountKopecks: 8_000_000n, regionId: fixtures.kazakhstanId });
+      const result = await new RegionsService(prisma).getTopRegions();
+      expect(result.items).toEqual(expected);
+      expect(result.items).toHaveLength(26);
+      expect(result.emptyCount).toBe(1);
+    });
+
     test('pending в рейтинг не попадает', async () => {
       // Arrange
       await createPendingDonation(prisma, fixtures, { regionId: fixtures.bashkortostanId });

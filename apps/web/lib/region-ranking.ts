@@ -1,0 +1,1 @@
+export const REGION_RANKING_PAGE_SIZE = 6;

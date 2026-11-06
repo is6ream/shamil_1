@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import type { RegionResponse, TopRegionsResponse } from './dto/showcase-response.dto';
 import { toRegionRankRowResponse, toRegionResponse } from './dto/showcase.mappers';
-import { TOP_REGIONS_LIMIT } from './showcase.constants';
 
 /** Условие строки рейтинга землячеств: ранжируемый и включённый регион. */
 const RANKED_REGION = { isRanked: true, isActive: true } as const;
@@ -28,7 +27,7 @@ export class RegionsService {
   }
 
   /**
-   * Топ-10 регионов и число пустых — одним ответом: фронтенд показывает
+   * Все регионы с поступлениями и число пустых — одним ответом: фронтенд показывает
    * «ещё N регионов ждут первого пожертвования», и отдельный запрос ради
    * одного числа не нужен (docs/api-gaps.md §3).
    */
@@ -39,7 +38,6 @@ export class RegionsService {
         // Вторичный ключ — по имени: при равных суммах порядок не должен
         // прыгать от запроса к запросу.
         orderBy: [{ paidTotalKopecks: 'desc' }, { region: { name: 'asc' } }],
-        take: TOP_REGIONS_LIMIT,
         select: {
           paidTotalKopecks: true,
           paidCount: true,

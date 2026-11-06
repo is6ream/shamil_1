@@ -1,27 +1,34 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { DonationsFeed } from "@/components/feed/DonationsFeed";
-import { RegionsBars } from "@/components/ranking/RegionsBars";
+import { RegionRanking } from "@/components/ranking/RegionRanking";
 import type { FeedPage, RegionRankRow } from "@/lib/api/types";
-import { FEED, PAGES, REGIONS } from "@/lib/content";
+import { FEED, PAGES } from "@/lib/content";
 
 import styles from "./TwoColumns.module.css";
+import reports from "./ReportsSection.module.css";
 
 interface Props {
-  readonly regions: readonly RegionRankRow[];
+  readonly regions: Promise<readonly RegionRankRow[] | null>;
   readonly feed: FeedPage;
 }
 
-/** «География поддержки» + «Последние поступления» (макет v2). */
+async function RankingContent({ regions }: Pick<Props, "regions">) {
+  return <RegionRanking regions={await regions} />;
+}
+
 export function ReportsSection({ regions, feed }: Props) {
   return (
-    <div className={styles.columns}>
-      <div>
-        <h2 className={styles.title}>{REGIONS.title}</h2>
-        <RegionsBars regions={regions} />
-      </div>
+    <div className={`${styles.columns} ${reports.columns}`}>
+      <section className={reports.ranking} aria-labelledby="region-ranking-heading">
+        <h2 className={styles.title} id="region-ranking-heading">Топ регионов поддержки</h2>
+        <Suspense fallback={<p role="status">Загружаем рейтинг регионов…</p>}>
+          <RankingContent regions={regions} />
+        </Suspense>
+      </section>
 
-      <div>
+      <div className={reports.feed}>
         <div className={styles.titleRow}>
           <h2 className={styles.title}>{FEED.title}</h2>
           <Link className={styles.titleLink} href={PAGES.reports.href}>

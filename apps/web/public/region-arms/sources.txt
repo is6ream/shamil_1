@@ -1,0 +1,259 @@
+Источники изображений гербов Wikimedia Commons
+Метаданные лицензий проверены через Commons API 04.11.2026.
+Локальные файлы — PNG-копии миниатюр Wikimedia без ретуши и обрезки.
+Растровые копии CC BY-SA распространяются на условиях лицензий исходных изображений.
+
+01.png — Республика Адыгея — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Adygea.svg
+
+02.png — Республика Башкортостан — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Bashkortostan.svg
+
+03.png — Республика Бурятия — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Buryatia.svg
+
+04.png — Республика Алтай — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Altai_Republic.svg
+
+05.png — Республика Дагестан — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Dagestan.svg
+
+06.png — Республика Ингушетия — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Ingushetia.svg
+
+07.png — Кабардино-Балкарская Республика — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Kabardino-Balkaria.svg
+
+08.png — Республика Калмыкия — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Kalmykia.svg
+
+09.png — Карачаево-Черкесская Республика — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Karachay-Cherkessia.svg
+
+10.png — Республика Карелия — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_the_Republic_of_Karelia.svg
+
+11.png — Республика Коми — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_the_Komi_Republic.svg
+
+12.png — Республика Марий Эл — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Mari_El.svg
+
+13.png — Республика Мордовия — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Mordovia.svg
+
+14.png — Республика Саха (Якутия) — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Sakha_%28Yakutia%29.svg
+
+15.png — Республика Северная Осетия — Алания — Public domain
+https://commons.wikimedia.org/wiki/File:Emblem_of_North_Ossetia.svg
+
+16.png — Республика Татарстан — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Tatarstan.svg
+
+17.png — Республика Тыва — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Tuva.svg
+
+18.png — Удмуртская Республика — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Udmurtia.svg
+
+19.png — Республика Хакасия — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Khakassia.svg
+
+21.png — Чувашская Республика — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Chuvashia.svg
+
+22.png — Алтайский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Altai_Krai.svg
+
+23.png — Краснодарский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Krasnodar_Krai.svg
+
+24.png — Красноярский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Krasnoyarsk_Krai.svg
+
+25.png — Приморский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Primorsky_Krai.svg
+
+26.png — Ставропольский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Stavropol_Krai.svg
+
+27.png — Хабаровский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Khabarovsk_Krai.svg
+
+28.png — Амурская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Amur_Oblast.svg
+
+29.png — Архангельская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Arkhangelsk_oblast.svg
+
+30.png — Астраханская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Astrakhan_Oblast.svg
+
+31.png — Белгородская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Belgorod_Oblast.svg
+
+32.png — Брянская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Bryansk_Oblast.svg
+
+33.png — Владимирская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Vladimiri_Oblast.svg
+
+34.png — Волгоградская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Volgograd_oblast.svg
+
+35.png — Вологодская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Vologda_oblast.svg
+
+36.png — Воронежская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Voronezh_Oblast.svg
+
+37.png — Ивановская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Ivanovo_Oblast.svg
+
+38.png — Иркутская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Irkutsk_Oblast.svg
+
+39.png — Калининградская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Kaliningrad_Oblast.svg
+
+40.png — Калужская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Kaluga_Oblast.svg
+
+41.png — Камчатский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Kamchatka_Krai.svg
+
+42.png — Кемеровская область — Кузбасс — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Kemerovo_Oblast.svg
+
+43.png — Кировская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Kirov_Region.svg
+
+44.png — Костромская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Kostroma_Oblast.svg
+
+45.png — Курганская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Kurgan_Oblast.svg
+
+46.png — Курская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Kursk_oblast.svg
+
+47.png — Ленинградская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Leningrad_Oblast.svg
+
+48.png — Липецкая область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Lipetsk_oblast.svg
+
+49.png — Магаданская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Magadan_oblast.svg
+
+50.png — Московская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Moscow_Oblast_%28large%29.svg
+
+51.png — Мурманская область — Public domain
+https://commons.wikimedia.org/wiki/File:%D0%93%D0%B5%D1%80%D0%B1_%D0%9C%D1%83%D1%80%D0%BC%D0%B0%D0%BD%D1%81%D0%BA%D0%BE%D0%B9_%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D0%B8.svg
+
+52.png — Нижегородская область — Евгений Катышев, CC BY-SA 3.0, https://creativecommons.org/licenses/by-sa/3.0
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Nizhny_Novgorod_Region.svg
+
+53.png — Новгородская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Novgorod_Oblast.svg
+
+54.png — Новосибирская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Novosibirsk_oblast.svg
+
+55.png — Омская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Omsk_Oblast.svg
+
+56.png — Оренбургская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Orenburg_Oblast.svg
+
+57.png — Орловская область — Hellerick, CC BY-SA 3.0, https://creativecommons.org/licenses/by-sa/3.0
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Oryol_Oblast_%28large%29.svg
+
+58.png — Пензенская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Penza_Oblast.svg
+
+59.png — Пермский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Perm_Krai.svg
+
+60.png — Псковская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Pskov_Oblast_%282018%29.svg
+
+61.png — Ростовская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Rostov_Oblast.svg
+
+62.png — Рязанская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Ryazan_Oblast.svg
+
+63.png — Самарская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Samara_Oblast.svg
+
+64.png — Саратовская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Saratov_oblast.svg
+
+65.png — Сахалинская область — Public domain
+https://commons.wikimedia.org/wiki/File:Sakhalin_Oblast_Coat_of_Arms.svg
+
+66.png — Свердловская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Sverdlovsk_oblast.svg
+
+67.png — Смоленская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Smolensk_oblast.svg
+
+68.png — Тамбовская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Tambov_Oblast.svg
+
+69.png — Тверская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Tver_oblast.svg
+
+70.png — Томская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Tomsk_Oblast%2C_Russia.svg
+
+71.png — Тульская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Tula_oblast.png
+
+72.png — Тюменская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Tyumen_Oblast_%28large%29.svg
+
+73.png — Ульяновская область — Public domain
+https://commons.wikimedia.org/wiki/File:%D0%93%D0%B5%D1%80%D0%B1_%D0%A3%D0%BB%D1%8C%D1%8F%D0%BD%D0%BE%D0%B2%D1%81%D0%BA%D0%BE%D0%B9_%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D0%B8_%282013%29.svg
+
+74.png — Челябинская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Chelyabinsk_Oblast.svg
+
+75.png — Забайкальский край — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Zabaykalsky_Krai.svg
+
+76.png — Ярославская область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Yaroslavl_Oblast.svg
+
+77.png — Москва — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Moscow.svg
+
+78.png — Санкт-Петербург — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Saint_Petersburg_%282003%29.svg
+
+79.png — Еврейская автономная область — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_the_Jewish_Autonomous_Oblast.svg
+
+82.png — Республика Крым — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Crimea.svg
+
+83.png — Ненецкий автономный округ — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Nenets_Autonomous_Okrug.svg
+
+86.png — Ханты-Мансийский автономный округ — Югра — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Yugra_%28Khanty-Mansia%29.svg
+
+87.png — Чукотский автономный округ — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Chukotka.svg
+
+89.png — Ямало-Ненецкий автономный округ — Public domain
+https://commons.wikimedia.org/wiki/File:Coat_of_Arms_of_Yamal_Nenetsia.svg
+
+92.png — Севастополь — Public domain
+https://commons.wikimedia.org/wiki/File:COA_of_Sevastopol.svg
+
+95.png — Чеченская Республика — Nadia.kashuba, CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0
+https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Chechnya_clean_version.svg

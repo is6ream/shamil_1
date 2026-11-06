@@ -12,7 +12,6 @@ import { RequisitesSection } from "@/components/sections/RequisitesSection";
 import { SharePanel } from "@/components/share/SharePanel";
 import {
   GALLERY_PLACEHOLDERS,
-  HOME_REGIONS_LIMIT,
   getActiveGoal,
   getCampaign,
   getFeed,
@@ -58,10 +57,9 @@ export default async function HomePage() {
   // вместо цифр «обновляем данные», пустые рейтинги не рисуются (with-fallback.ts).
   // Тексты, этапы и видео — из админки; пока их там нет или API недоступен,
   // главная выглядит как до админки (хардкод и фикстуры).
-  const [campaign, regions, topRegions, construction, gallery, feed, content, videos, activeGoal] = await Promise.all([
+  const [campaign, regions, construction, gallery, feed, content, videos, activeGoal] = await Promise.all([
     withFallback(getCampaign(), null, "цифры сбора"),
     withFallback(getRegions(), [], "справочник регионов"),
-    withFallback(getTopRegions(), [], "рейтинг регионов"),
     withFallback(getConstruction(), FIXTURE_CONSTRUCTION, "ход стройки"),
     withFallback(getGallery(), GALLERY_PLACEHOLDERS, "галерея"),
     withFallback(getFeed(), EMPTY_FEED, "лента поступлений"),
@@ -70,6 +68,8 @@ export default async function HomePage() {
     // Этапа нет или API недоступен — блок просто не рисуется.
     withFallback(getActiveGoal(), null, "активный этап сбора"),
   ]);
+
+  const topRegions = withFallback(getTopRegions(), null, "рейтинг регионов");
 
   return (
     <>
@@ -105,7 +105,7 @@ export default async function HomePage() {
         </div>
 
         <MobileAccordion className={styles.reports} id={SECTION_IDS.reports} title={MOBILE_SECTIONS.reports}>
-          <ReportsSection regions={topRegions.slice(0, HOME_REGIONS_LIMIT)} feed={feed} />
+          <ReportsSection regions={topRegions} feed={feed} />
         </MobileAccordion>
 
         <MobileAccordion className={styles.share} id={SECTION_IDS.share} title={MOBILE_SECTIONS.share}>
