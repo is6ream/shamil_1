@@ -34,7 +34,7 @@ export default async function TransferPage({ searchParams }: PageProps<"/donate/
 
   return (
     <>
-      <SiteHeader phone={content.contacts.phone} helpButton={content.hero.helpButton} />
+      <SiteHeader phone={content.contacts.phone} />
 
       <main className={styles.page}>
         <h1 className={styles.title}>Перевод по реквизитам</h1>

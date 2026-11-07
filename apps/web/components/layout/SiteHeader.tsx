@@ -6,7 +6,7 @@ import { useCallback, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { MenuIcon, UserIcon } from "@/components/icons/Icons";
-import { HERO, NAV_ITEMS, SECTION_IDS } from "@/lib/content";
+import { NAV_ITEMS } from "@/lib/content";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import { ORGANIZATION, toTelHref } from "@/lib/organization";
 import { scrollToSection, sectionHref } from "@/lib/scroll-to-section";
@@ -48,7 +48,7 @@ function LoginButton({ className, onOpen }: { readonly className: string; readon
 }
 
 /**
- * Шапка макета v2: логотип, навигация по секциям, телефон, «Помочь».
+ * Шапка: логотип, навигация по секциям, телефон и вход.
  *
  * Работает и на главной, и на служебных страницах: ссылки ведут на `/#id`,
  * а на главной клик перехватывается плавной прокруткой (см.
@@ -57,12 +57,11 @@ function LoginButton({ className, onOpen }: { readonly className: string; readon
  * На телефоне и планшете навигация уезжает в выдвижное меню.
  */
 interface Props {
-  /** Телефон и текст кнопки из админки; по умолчанию — хардкод. */
+  /** Телефон из админки; по умолчанию — хардкод. */
   readonly phone?: string | null;
-  readonly helpButton?: string;
 }
 
-export function SiteHeader({ phone = ORGANIZATION.phone, helpButton = HERO.helpButton }: Props = {}) {
+export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isLoginOpen, setLoginOpen] = useState(false);
   // Окно смонтировано с первого открытия: так чанк не грузится заранее,
@@ -134,16 +133,6 @@ export function SiteHeader({ phone = ORGANIZATION.phone, helpButton = HERO.helpB
         )}
 
         <LoginButton className={styles.loginDesktop} onOpen={openLogin} />
-
-        <a
-          className={`btn btn-primary ${styles.help}`}
-          href={sectionHref(SECTION_IDS.donate)}
-          onClick={(event) => {
-            onNavigate(event, SECTION_IDS.donate);
-          }}
-        >
-          {helpButton}
-        </a>
 
         <LoginButton className={styles.loginMobile} onOpen={openLogin} />
 

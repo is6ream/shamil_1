@@ -22,7 +22,7 @@ export async function SimplePage({ title, lede, children }: Props) {
 
   return (
     <>
-      <SiteHeader phone={content.contacts.phone} helpButton={content.hero.helpButton} />
+      <SiteHeader phone={content.contacts.phone} />
       <main className={styles.main}>
         <h1 className={styles.title}>{title}</h1>
         {lede === undefined ? null : <p className={styles.lede}>{lede}</p>}

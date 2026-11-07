@@ -12,6 +12,7 @@
 
 .primary:hover {
   background: var(--cta-hover);
+  color: var(--cta-text);
 }
 
 .primary:active {

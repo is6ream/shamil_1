@@ -73,7 +73,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <SiteHeader phone={content.contacts.phone} helpButton={content.hero.helpButton} />
+      <SiteHeader phone={content.contacts.phone} />
 
       <main className={styles.page}>
         <div className={styles.backdrop} aria-hidden="true" />

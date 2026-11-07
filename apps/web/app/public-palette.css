@@ -40,9 +40,9 @@
   --accent-hover: var(--night);
   --on-accent: var(--paper);
   --focus: var(--gold-text);
-  --cta-bg: var(--gold);
-  --cta-hover: var(--gold-light);
-  --cta-active: #C59650;
+  --cta-bg: #BB925B;
+  --cta-hover: color-mix(in srgb, var(--cta-bg) 68%, var(--paper));
+  --cta-active: color-mix(in srgb, var(--cta-bg) 88%, var(--paper));
   --cta-text: var(--night);
   --cta-disabled: #DED4C3;
   --cta-disabled-text: #526171;
@@ -125,7 +125,7 @@
 }
 :root:not(:has([data-admin-theme])) .share a:hover { background: var(--accent-soft); border-color: var(--accent); }
 :root:not(:has([data-admin-theme])) .share a.lead { background: var(--cta-bg); color: var(--cta-text); border-color: var(--gold-text); }
-:root:not(:has([data-admin-theme])) .share a.lead:hover { background: var(--cta-hover); }
+:root:not(:has([data-admin-theme])) .share a.lead:hover { background: var(--cta-hover); color: var(--cta-text); }
 :root:not(:has([data-admin-theme])) .share a.lead:active { background: var(--cta-active); }
 :root:not(:has([data-admin-theme])) :is(.btn-ghost, .input, .pay, .check .bx) { border-color: var(--control-border); }
 :root:not(:has([data-admin-theme])) :is(.btn-ghost, .input, .pay):hover { border-color: var(--accent); }
