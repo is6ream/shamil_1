@@ -86,7 +86,7 @@ export function DonationForm({
         </div>
         <Image
           className={styles.mark}
-          src="/brand/logo.svg"
+          src="/brand/logo-gold.webp"
           alt=""
           width={52}
           height={52}

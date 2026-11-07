@@ -10,14 +10,9 @@ interface Props {
   readonly size?: "md" | "lg";
 }
 
-/** Круглый знак группы «Мечеть Шамиль»; тот же файл — иконка вкладки (`app/icon.svg`). */
-const LOGO_SRC = "/brand/logo.svg";
+/** Золотой знак мечети из изображения заказчика; иконки браузера созданы из того же исходника. */
+const LOGO_SRC = "/brand/logo-gold.webp";
 
-/**
- * Логотип: круглый знак мечети + «МЕЧЕТЬ ШАМИЛЬ».
- * Знак — `<img>`, а не инлайн-SVG: в файле свои id градиентов и масок,
- * при двух копиях на странице (шапка и футер) они бы конфликтовали.
- */
 export function BrandMark({ hasTagline = false, size = "md" }: Props) {
   return (
     <span className={`${styles.brand} ${size === "lg" ? styles.lg : ""}`}>
