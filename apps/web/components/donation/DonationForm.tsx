@@ -75,7 +75,6 @@ export function DonationForm({
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>{DONATION_FORM.title}</h2>
-          <p className={styles.subtitle}>{DONATION_FORM.subtitle}</p>
         </div>
         <Image
           className={styles.mark}
