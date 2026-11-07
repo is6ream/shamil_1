@@ -1,9 +1,37 @@
-/* Белая карточка «Куда идут пожертвования» (макет v2). */
+/* Орнамент заказчика: исходный цвет и пропорции всех четырёх углов. */
 
 .card {
-  padding: var(--card-pad);
+  position: relative;
+  isolation: isolate;
+  padding: 27% 8% 30%;
   border-radius: var(--r-card);
-  background: var(--surface);
+  background: #f0eadf;
+}
+
+/* Две кромки независимо привязаны к краям: высота контента не растягивает узор.
+   Центральное поле исходника однотонное; орнамент целиком помещается в 430 px. */
+.card::before,
+.card::after {
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0;
+  aspect-ratio: 1024 / 430;
+  background-image: url("/construction/donation-ornament.webp");
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  border-radius: inherit;
+  pointer-events: none;
+  content: "";
+}
+
+.card::before {
+  top: 0;
+  background-position: center top;
+}
+
+.card::after {
+  bottom: 0;
+  background-position: center bottom;
 }
 
 .header {
@@ -165,8 +193,7 @@
 
 @media (max-width: 767px) {
   .card {
-    padding: 0;
-    background: transparent;
+    padding: 32% 8% 34%;
   }
 
   /* На телефоне заголовок — строка аккордеона; дата остаётся. */
