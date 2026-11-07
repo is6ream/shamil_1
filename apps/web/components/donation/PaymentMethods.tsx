@@ -6,7 +6,8 @@ import { PaymentIcon } from "./PaymentIcons";
 import styles from "./PaymentMethods.module.css";
 
 interface Props {
-  readonly value: PaymentOptionId;
+  readonly value: PaymentOptionId | null;
+  readonly available: readonly PaymentOptionId[];
   readonly onChange: (option: PaymentOptionId) => void;
 }
 
@@ -15,15 +16,11 @@ interface Props {
  *
  * Визуально — плитки с квадратной галочкой, по смыслу — одна радиогруппа:
  * выбрать можно ровно один способ, стрелки клавиатуры работают нативно.
- *
- * Онлайн-метод бэкенду НЕ передаётся — в `CreateDonationDto` его нет,
- * способ выбирают на странице Robokassa. «Расчётный счёт» меняет `channel`
- * и уводит на реквизиты. TODO(api): передать метод, когда DTO его примет.
  */
-export function PaymentMethods({ value, onChange }: Props) {
+export function PaymentMethods({ value, available, onChange }: Props) {
   return (
     <fieldset className={styles.fieldset}>
-      <legend className="sr-only">{DONATION_FORM.methodLegend}</legend>
+      <legend className={styles.legend}>{DONATION_FORM.methodLegend}</legend>
       <div className={styles.grid}>
         {DONATION_FORM.methods.map((option) => (
           <label
@@ -36,6 +33,7 @@ export function PaymentMethods({ value, onChange }: Props) {
               name="payment-option"
               value={option.id}
               checked={value === option.id}
+              disabled={!available.includes(option.id)}
               onChange={() => {
                 onChange(option.id);
               }}
@@ -45,7 +43,11 @@ export function PaymentMethods({ value, onChange }: Props) {
             </span>
             <span className={styles.text}>
               <span className={styles.label}>{option.label}</span>
-              {option.hint === null ? null : <span className={styles.hint}>{option.hint}</span>}
+              {!available.includes(option.id) ? (
+                <span className={styles.hint}>Недоступно в этом режиме</span>
+              ) : option.hint === null ? null : (
+                <span className={styles.hint}>{option.hint}</span>
+              )}
             </span>
             <span className={styles.check} aria-hidden="true">
               <CheckMarkIcon className={styles.checkMark} />

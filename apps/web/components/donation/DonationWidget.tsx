@@ -1,6 +1,6 @@
 import type { Region } from "@/lib/api/types";
 
-import { DonationForm } from "./DonationForm";
+import { DonationAdapter } from "./DonationAdapter";
 
 interface Props {
   readonly regions: readonly Region[];
@@ -14,5 +14,5 @@ interface Props {
  * в блок «Собрано».
  */
 export function DonationWidget({ regions }: Props) {
-  return <DonationForm regions={regions} />;
+  return <DonationAdapter regions={regions} />;
 }

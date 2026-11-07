@@ -1,37 +1,33 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 
-import { ApiError, createDonation } from "@/lib/api/client";
-import { buildCreateDonationBody } from "@/lib/api/donation-body";
-import { readStoredAttribution } from "@/lib/attribution";
 import type { Region } from "@/lib/api/types";
+import { ApiError } from "@/lib/api/client";
 import { DONATION_FORM } from "@/lib/content";
 import { useRegionFromUrl } from "@/lib/hooks/useRegionFromUrl";
 
 import {
   AMOUNT_PRESETS_RUBLES,
+  patchDonationState,
   INITIAL_FORM_STATE,
   applyPhoneEdit,
+  buildDonationSubmission,
   formatAmountInput,
   hasErrors,
-  normalizePhone,
   resolveRegion,
   selectAmountRubles,
-  sendsFullName,
   validate,
   withoutError,
 } from "./donation-form.model";
-import type { DonationField, DonationFormState, FieldErrors } from "./donation-form.model";
-
-/**
- * Пауза перед уходом на оплату: человек успевает прочитать
- * «Джазакаллаху хайран!» и понять, что форма сработала.
- */
-const REDIRECT_DELAY_MS = 800;
-
-export type SubmitStatus = "idle" | "submitting" | "redirecting";
+import type {
+  DonationCapabilities,
+  DonationField,
+  DonationFormState,
+  DonationSubmit,
+  FieldErrors,
+} from "./donation-form.model";
 
 function presetFor(amountInput: string): number | null {
   const amount = selectAmountRubles({ ...INITIAL_FORM_STATE, amountInput });
@@ -39,30 +35,18 @@ function presetFor(amountInput: string): number | null {
   return AMOUNT_PRESETS_RUBLES.find((preset) => preset === amount) ?? null;
 }
 
-/**
- * Состояние и поведение формы доната. Разметка — в `DonationForm`.
- *
- * Двухшаговая схема из CLAUDE.md: клиент проверяет только формат, заказ
- * создаёт сервер, он же назначает сумму списания и подписывает ссылку.
- *
- * Валидация — по blur и по submit, не на каждый символ: ошибка «введите
- * сумму» под полем, в котором человек ещё печатает, только мешает.
- */
-export function useDonationForm(regions: readonly Region[], initialRegionSlug?: string) {
+export function useDonationForm(
+  regions: readonly Region[],
+  initialRegionSlug: string | undefined,
+  config: DonationCapabilities,
+  submitDonation?: DonationSubmit,
+) {
   const [state, setState] = useState<DonationFormState>(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [status, setStatus] = useState<SubmitStatus>("idle");
-  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (redirectTimer.current !== null) {
-        clearTimeout(redirectTimer.current);
-      }
-    },
-    [],
-  );
+  const [result, setResult] = useState<Awaited<ReturnType<DonationSubmit>> | null>(null);
+  const [isBusy, setBusy] = useState(false);
+  const inFlight = useRef(false);
 
   const linkSlugFromUrl = useRegionFromUrl();
 
@@ -75,12 +59,14 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
   };
 
   const patch = (changes: Partial<DonationFormState>) => {
-    setState((current) => ({ ...current, ...changes }));
+    setFormError(null);
+    setResult(null);
+    setState((current) => patchDonationState(current, changes));
   };
 
   /** Проверка одного поля при уходе из него. */
   const validateField = (field: DonationField) => {
-    const message = validate(state)[field];
+    const message = validate(state, config)[field];
 
     setErrors((current) =>
       message === undefined ? withoutError(current, field) : { ...current, [field]: message },
@@ -101,7 +87,7 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
 
   const setPhone = (raw: string) => {
     clearError("phone");
-    setState((current) => ({ ...current, phone: applyPhoneEdit(current.phone, raw) }));
+    patch({ phone: applyPhoneEdit(state.phone, raw) });
   };
 
   const setAnonymous = (isAnonymous: boolean) => {
@@ -118,50 +104,38 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const found = validate(state);
-
+    if (inFlight.current) return;
+    const found = validate(state, config);
     setErrors(found);
     setFormError(null);
+    setResult(null);
 
-    const amountRubles = selectAmountRubles(state);
-
-    if (hasErrors(found) || amountRubles === null) {
+    if (hasErrors(found)) {
+      const form = event.currentTarget;
+      requestAnimationFrame(() => form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
     }
 
-    setStatus("submitting");
+    if (submitDonation === undefined) {
+      setFormError("Это предпросмотр формы. Отправка пожертвований здесь отключена.");
+      return;
+    }
 
+    const data = buildDonationSubmission(state, config, region);
+    if (data === null) {
+      setFormError("Этот вариант пожертвования пока недоступен.");
+      return;
+    }
+
+    inFlight.current = true;
+    setBusy(true);
     try {
-      const { redirectUrl } = await createDonation(
-        buildCreateDonationBody({
-          amountRubles,
-          isAnonymous: state.isAnonymous,
-          donorName: state.isAnonymous ? "" : state.donorName,
-          // Имя для сверки поступления по выписке — только на пути
-          // «по реквизитам»: в онлайне сверять нечего.
-          fullName: sendsFullName(state) ? state.donorName : "",
-          phone: normalizePhone(state.phone),
-          personalDataConsent: state.personalDataConsent,
-          regionSlug: region.slug,
-          regionSource: region.source,
-          antispam: state.antispam,
-          // Канал выбирает провайдера на бэкенде. `onlineMethod` в тело
-          // не уходит: в DTO его нет. Пожертвование всегда разовое.
-          channel: state.channel,
-        }, readStoredAttribution()),
-      );
-
-      // Куда идти, решает сервер по каналу: онлайн — страница оплаты
-      // Robokassa (или локального эмулятора), перевод — наши реквизиты.
-      setStatus("redirecting");
-      redirectTimer.current = setTimeout(() => {
-        window.location.assign(redirectUrl);
-      }, REDIRECT_DELAY_MS);
+      setResult(await submitDonation(data));
     } catch (error: unknown) {
-      setStatus("idle");
-      setFormError(
-        error instanceof ApiError ? error.messages.join(". ") : DONATION_FORM.unknownError,
-      );
+      setFormError(error instanceof ApiError ? error.messages.join(". ") : DONATION_FORM.unknownError);
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
     }
   };
 
@@ -169,7 +143,8 @@ export function useDonationForm(regions: readonly Region[], initialRegionSlug?: 
     state,
     errors,
     formError,
-    status,
+    result,
+    isBusy,
     patch,
     clearError,
     validateField,

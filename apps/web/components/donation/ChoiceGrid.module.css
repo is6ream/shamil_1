@@ -4,7 +4,7 @@
  */
 
 .fieldset {
-  flex: none;
+  flex: 0 1 auto;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -13,7 +13,7 @@
 
 .chips {
   display: flex;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
 }
 
 .chip {
@@ -21,8 +21,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: var(--control-h-sm);
-  padding: 0 var(--sp-4);
+  min-height: 44px;
+  padding: 0 clamp(6px, 2cqi, 16px);
   border-radius: var(--r-pill);
   background: var(--surface-soft);
   color: var(--text-strong);
@@ -52,14 +52,7 @@
 .chip:has(:checked):hover { background: var(--cta-hover); }
 .chip:has(:disabled) { background: var(--cta-disabled); color: var(--cta-disabled-text); box-shadow: none; cursor: not-allowed; }
 
-/* Узкая карточка: пилюли уходят под сумму и делят ширину поровну. */
-@container (max-width: 400px) {
-  .fieldset {
-    flex-basis: 100%;
-  }
-
-  .chip {
-    flex: 1;
-    padding: 0 var(--sp-2);
-  }
+@container (max-width: 275px) {
+  .fieldset { flex-basis: 100%; }
+  .chip { flex: 1; }
 }

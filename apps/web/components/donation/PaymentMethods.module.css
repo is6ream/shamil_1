@@ -7,19 +7,27 @@
   border: 0;
 }
 
+.legend {
+  margin-bottom: var(--sp-2);
+  padding: 0;
+  color: var(--text-strong);
+  font-size: var(--fs-small);
+  font-weight: 700;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-3);
+  gap: var(--sp-2);
 }
 
 .tile {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  min-height: var(--control-h);
-  padding: 6px var(--sp-3);
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: var(--sp-1) var(--sp-2);
   border: var(--stroke) solid var(--control-border);
   border-radius: var(--r-md);
   background: var(--surface);
@@ -42,7 +50,7 @@
   outline-offset: var(--focus-offset);
 }
 
-.tile:has(:disabled) { background: var(--surface-sunken); cursor: not-allowed; }
+.tile:has(:disabled) { background: var(--surface-soft); cursor: not-allowed; }
 
 .wide {
   grid-column: 1 / -1;
@@ -52,8 +60,8 @@
   display: grid;
   flex: none;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--r-field);
   background: var(--surface-sunken);
   color: var(--accent);
@@ -61,8 +69,8 @@
 
 /* Полный исходный холст: внутренние охранные поля не обрезаем. */
 .icon:has(.logo) {
-  width: 56px;
-  height: 56px;
+  width: 32px;
+  height: 32px;
   background: transparent;
 }
 
@@ -79,7 +87,7 @@
 
 .logoSberPay,
 .logoTPay {
-  width: 56px;
+  width: 32px;
   height: auto;
 }
 
@@ -91,7 +99,7 @@
 }
 
 .label {
-  font-size: var(--fs-button);
+  font-size: var(--fs-small);
   font-weight: 600;
   line-height: 1.25;
   color: var(--text-strong);
@@ -107,8 +115,8 @@
 .check {
   position: relative;
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border: 1.5px solid var(--control-border);
   border-radius: var(--r-check);
   background: var(--surface);
@@ -117,9 +125,9 @@
 
 .checkMark {
   position: absolute;
-  inset: 1.5px;
-  width: 16px;
-  height: 16px;
+  inset: 0;
+  width: 15px;
+  height: 15px;
   color: var(--on-accent);
   opacity: 0;
   transition: opacity var(--dur-fast);
@@ -134,37 +142,7 @@
   opacity: 1;
 }
 
-/* В узкой форме, включая sticky-колонку, знак и индикатор сверху. */
-@container (max-width: 480px) {
-  .tile {
-    gap: var(--sp-2);
-    padding-inline: var(--sp-2);
-  }
-
-  .tile:not(.wide) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: 56px auto;
-    align-content: start;
-    min-height: 92px;
-  }
-
-  .tile:not(.wide) .icon {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .tile:not(.wide) .check {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .tile:not(.wide) .text {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .label {
-    font-size: var(--fs-small);
-  }
+@container (max-width: 340px) {
+  .tile { gap: var(--sp-1); }
+  .label { font-size: 12px; }
 }

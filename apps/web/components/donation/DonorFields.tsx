@@ -48,17 +48,17 @@ export function DonorFields({
       <div>
         <div className={styles.box} data-invalid={errors.donorName === undefined ? undefined : true}>
           <label className="sr-only" htmlFor={NAME_ID}>
-            {DONATION_FORM.nameLabel}
+            Имя и фамилия
           </label>
           <input
             className={styles.input}
             id={NAME_ID}
             name="donorName"
             type="text"
-            autoComplete="given-name"
+            autoComplete="name"
             maxLength={NAME_MAX_LENGTH}
             placeholder={
-              state.isAnonymous ? DONATION_FORM.anonymousPlaceholder : DONATION_FORM.namePlaceholder
+              state.isAnonymous ? DONATION_FORM.anonymousPlaceholder : "Имя и фамилия"
             }
             value={state.donorName}
             disabled={state.isAnonymous}
@@ -73,12 +73,13 @@ export function DonorFields({
           />
 
           <label className={styles.anonymous} htmlFor={ANONYMOUS_ID}>
-            <span>{DONATION_FORM.anonymous}</span>
+            <span aria-hidden="true">{DONATION_FORM.anonymous}</span>
             <span className={styles.check}>
               <input
                 className={styles.checkInput}
                 id={ANONYMOUS_ID}
                 name="isAnonymous"
+                aria-label="Анонимное пожертвование"
                 type="checkbox"
                 checked={state.isAnonymous}
                 onChange={(event) => {

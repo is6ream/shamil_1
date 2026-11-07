@@ -73,8 +73,16 @@ export function buildCreateDonationBody(
   draft: DonationDraft,
   attribution: DonationAttribution | null = null,
 ): CreateDonationBody {
+  return buildCreateDonationBodyFromKopecks(draft, rublesToKopecks(draft.amountRubles), attribution);
+}
+
+export function buildCreateDonationBodyFromKopecks(
+  draft: Omit<DonationDraft, "amountRubles">,
+  amountKopecks: number,
+  attribution: DonationAttribution | null = null,
+): CreateDonationBody {
   const body: MutableDonationBody = {
-    amountKopecks: rublesToKopecks(draft.amountRubles),
+    amountKopecks,
     isAnonymous: draft.isAnonymous,
     channel: draft.channel,
   };

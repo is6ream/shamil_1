@@ -2,125 +2,80 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
 
 import { Checkbox } from "@/components/ui/Checkbox";
 import field from "@/components/ui/field.module.css";
 import type { Region } from "@/lib/api/types";
-import { DONATION_FORM, DONATION_MODES, PAGES } from "@/lib/content";
+import { kopecksToRubDisplay, rublesToKopecks } from "@/lib/money";
+import { DONATION_FORM, PAGES } from "@/lib/content";
 import { DONATION_REQUEST_EVENT, readDonationRequest } from "@/lib/donation-request";
-import { formatCount } from "@/lib/format";
+import { useEffect, useRef } from "react";
 
 import { AmountPresets } from "./AmountPresets";
 import styles from "./DonationForm.module.css";
-import { paymentOptionChanges, selectPaymentOption, selectValidAmount } from "./donation-form.model";
-import { DonationModeTabs } from "./DonationModeTabs";
-import type { DonationMode } from "./DonationModeTabs";
+import {
+  PREVIEW_CAPABILITIES,
+  paymentOptionChanges,
+  selectPaymentOption,
+  selectValidAmount,
+} from "./donation-form.model";
+import type { DonationCapabilities, DonationSubmit } from "./donation-form.model";
 import { DonorFields } from "./DonorFields";
 import { PaymentMethods } from "./PaymentMethods";
-import { SbpQrPanel } from "./SbpQrPanel";
 import { useDonationForm } from "./useDonationForm";
 
 interface Props {
   readonly regions: readonly Region[];
   /** Регион из региональной ссылки `/{код}/`, если человек пришёл по ней. */
   readonly initialRegionSlug?: string;
+  readonly capabilities?: DonationCapabilities;
+  readonly submitDonation?: DonationSubmit;
 }
 
 const AMOUNT_ID = "donation-amount";
 const AMOUNT_ERROR_ID = `${AMOUNT_ID}-error`;
 const CONSENT_ID = "donation-consent";
 const CONSENT_ERROR_ID = `${CONSENT_ID}-error`;
-const MODE_PANEL_ID = "donation-mode-panel";
 
-/** Куда ставить фокус по запросу снаружи: выбранный пресет или поле суммы. */
-const CHECKED_PRESET = 'input[name="amount-preset"]:checked';
+export function DonationForm({
+  regions,
+  initialRegionSlug,
+  capabilities = PREVIEW_CAPABILITIES,
+  submitDonation,
+}: Props) {
+  const form = useDonationForm(regions, initialRegionSlug, capabilities, submitDonation);
+  const { state, errors, isBusy, result } = form;
+  const amountInput = useRef<HTMLInputElement>(null);
 
-/** Запас ширины поля суммы под курсор, в символах. */
-const AMOUNT_WIDTH_PADDING_CH = 0.5;
-
-/**
- * Форма «Поддержать строительство» (макет v2). Логика — в `useDonationForm`, здесь
- * только разметка.
- *
- * Порядок формы: кто жертвует → сколько → чем → согласие → кнопка.
- * «Расчётный счёт» в сетке способов переключает `channel` на перевод.
- *
- * Сумма в кнопке обновляется живьём: «Пожертвовать 2 500 ₽» — последнее,
- * что человек читает перед оплатой, и оно должно совпадать с тем, что
- * он выбрал. При невалидной сумме — просто «Пожертвовать».
- *
- * Над формой — переключатель «По QR-коду / Через форму». Пока не подключена
- * Robokassa, открыт QR (DONATION_MODES.defaultMode). Состояние формы живёт
- * в хуке, поэтому переключение туда-обратно введённое не теряет.
- */
-export function DonationForm({ regions, initialRegionSlug }: Props) {
-  const form = useDonationForm(regions, initialRegionSlug);
-  const { state, errors, status } = form;
-  const [mode, setMode] = useState<DonationMode>(DONATION_MODES.defaultMode);
-  // Подписка одна на всю жизнь формы, а `selectPreset` новый на каждый рендер.
-  const selectPresetRef = useRef(form.selectPreset);
-
-  useEffect(() => {
-    selectPresetRef.current = form.selectPreset;
-  });
-
-  // Чипы «100 ₽ / 500 ₽ / 1 000 ₽» и «Другая сумма» в плашке этапа
-  // (`requestDonation`). Сумма есть только во вкладке «Через форму»,
-  // поэтому переключаемся на неё. flushSync — чтобы поля уже были в DOM,
-  // когда ставим фокус.
+  const formRef = useRef(form);
+  useEffect(() => { formRef.current = form; });
   useEffect(() => {
     const onRequest = (event: Event) => {
       const request = readDonationRequest(event);
-
-      if (request === null) {
-        return;
-      }
-
-      const { amountRubles } = request;
-
-      flushSync(() => {
-        setMode("form");
-        if (amountRubles !== null) {
-          selectPresetRef.current(amountRubles);
-        }
+      if (!request) return;
+      formRef.current.patch({ donationType: "one_time" });
+      if (request.amountRubles !== null) formRef.current.selectPreset(request.amountRubles);
+      requestAnimationFrame(() => {
+        amountInput.current?.focus({ preventScroll: true });
+        if (request.amountRubles === null) amountInput.current?.select();
       });
-
-      const panel = document.getElementById(MODE_PANEL_ID);
-      const control =
-        amountRubles === null
-          ? document.getElementById(AMOUNT_ID)
-          : (panel?.querySelector<HTMLElement>(CHECKED_PRESET) ?? document.getElementById(AMOUNT_ID));
-
-      // preventScroll: страница в это время плавно едет к форме.
-      control?.focus({ preventScroll: true });
-      if (amountRubles === null && control instanceof HTMLInputElement) {
-        control.select();
-      }
     };
-
     document.addEventListener(DONATION_REQUEST_EVENT, onRequest);
-
-    return () => {
-      document.removeEventListener(DONATION_REQUEST_EVENT, onRequest);
-    };
+    return () => document.removeEventListener(DONATION_REQUEST_EVENT, onRequest);
   }, []);
 
-  const validAmount = selectValidAmount(state);
-  const isBusy = status !== "idle";
-  const submitLabel =
-    validAmount === null
-      ? DONATION_FORM.submit
-      : `${DONATION_FORM.submit} ${formatCount(validAmount)} ₽`;
-  // Поле суммы растёт вместе с числом, чтобы «₽» стоял сразу за цифрами.
-  const amountWidth = `${Math.max(state.amountInput.length, 1) + AMOUNT_WIDTH_PADDING_CH}ch`;
+  const isRecurring = state.donationType === "recurring";
+  const oneTimeMethod = selectPaymentOption(state);
+  const amount = selectValidAmount(state, capabilities);
+  const submitLabel = amount === null ? DONATION_FORM.submit : `Пожертвовать ${kopecksToRubDisplay(rublesToKopecks(amount))}`;
+  const unavailable = capabilities.oneTimeMethods.length === 0;
 
   return (
-    <div className={styles.card}>
+    <div className={styles.card} data-donation-mode={state.donationType}>
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>{DONATION_FORM.title}</h2>
+          <p className={styles.subtitle}>{DONATION_FORM.subtitle}</p>
         </div>
         <Image
           className={styles.mark}
@@ -132,19 +87,53 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
         />
       </div>
 
-      <DonationModeTabs value={mode} onChange={setMode} panelId={MODE_PANEL_ID} />
+      <form className={styles.form} onSubmit={(event) => {
+        if (isRecurring) event.preventDefault();
+        else void form.submit(event);
+      }} noValidate>
+        <div className={styles.controls} inert={isBusy}>
+          {submitDonation === undefined && (
+            <p className={styles.preview}>Предпросмотр формы · платежи отключены</p>
+          )}
 
-      {mode === "qr" ? (
-        <SbpQrPanel id={MODE_PANEL_ID} />
-      ) : (
-        <form
-          className={styles.form}
-          id={MODE_PANEL_ID}
-          role="tabpanel"
-          aria-labelledby="donation-mode-form"
-          onSubmit={form.submit}
-          noValidate
-        >
+          <fieldset className={styles.choices}>
+            <legend className="sr-only">Тип пожертвования</legend>
+            <div className={styles.modes}>
+              <label className={styles.mode}>
+                <input
+                  className="sr-only"
+                  type="radio"
+                  name="donation-type"
+                  checked={!isRecurring}
+                  onChange={() => {
+                    form.clearError("recurringConsentAccepted");
+                    form.patch({ donationType: "one_time" });
+                  }}
+                />
+                Разовое пожертвование
+              </label>
+              <label className={styles.mode}>
+                <input
+                  className="sr-only"
+                  type="radio"
+                  name="donation-type"
+                  checked={isRecurring}
+                  onChange={() => form.patch({ donationType: "recurring" })}
+                />
+                Автоплатёж
+              </label>
+            </div>
+          </fieldset>
+
+          {isRecurring ? (
+            <div className={styles.comingSoon} role="status">
+              <p>Регулярные пожертвования скоро появятся. Сейчас вы можете сделать разовое пожертвование</p>
+              <button className={`btn btn-block ${styles.submit}`} type="button"
+                onClick={() => form.patch({ donationType: "one_time" })}>
+                Сделать разовое пожертвование
+              </button>
+            </div>
+          ) : (<>
           <DonorFields
             state={state}
             errors={errors}
@@ -158,21 +147,29 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
           />
 
           <div>
+            <div className={styles.amountHeading}>
+              <label className={styles.groupLabel} htmlFor={AMOUNT_ID}>Сумма пожертвования</label>
+                <button className={styles.customAmount} type="button" onClick={() => {
+                  amountInput.current?.focus();
+                  amountInput.current?.select();
+                }}>
+                  Другая сумма
+                </button>
+            </div>
             <div
               className={styles.amountBox}
               data-invalid={errors.amount === undefined ? undefined : true}
             >
               <label className={styles.amountField} htmlFor={AMOUNT_ID}>
-                <span className="sr-only">{DONATION_FORM.customAmountLabel}</span>
                 <input
                   className={styles.amountInput}
                   id={AMOUNT_ID}
                   name="amount"
                   type="text"
-                  inputMode="numeric"
+                  ref={amountInput}
+                  inputMode="decimal"
                   autoComplete="off"
                   placeholder="0"
-                  style={{ width: amountWidth }}
                   value={state.amountInput}
                   aria-invalid={errors.amount === undefined ? undefined : true}
                   aria-describedby={errors.amount === undefined ? undefined : AMOUNT_ERROR_ID}
@@ -196,7 +193,9 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
           </div>
 
           <PaymentMethods
-            value={selectPaymentOption(state)}
+            value={capabilities.oneTimeMethods.includes(oneTimeMethod)
+              ? oneTimeMethod : capabilities.oneTimeMethods[0] ?? null}
+            available={capabilities.oneTimeMethods}
             onChange={(option) => {
               form.patch(paymentOptionChanges(option));
             }}
@@ -230,54 +229,54 @@ export function DonationForm({ regions, initialRegionSlug }: Props) {
             )}
           </div>
 
-          {/* Honeypot: человек этого поля не видит и не заполняет.
+          </>)}
+        </div>
+
+        {/* Honeypot: человек этого поля не видит и не заполняет.
             Отправляется как есть — заполненное бэкенд отклонит. */}
-          <input
-            className={styles.honeypot}
-            type="text"
-            name="antispam"
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-            value={state.antispam}
-            onChange={(event) => {
-              form.patch({ antispam: event.target.value });
-            }}
-          />
+        <input
+          className={styles.honeypot}
+          type="text"
+          name="antispam"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          value={state.antispam}
+          onChange={(event) => {
+            form.patch({ antispam: event.target.value });
+          }}
+        />
 
-          <div className={styles.actions}>
-            {form.formError === null ? null : (
-              <p className={styles.formError} role="alert">
-                {form.formError}
-              </p>
+        {!isRecurring && <div className={styles.actions}>
+          {form.formError === null ? null : (
+            <p className={styles.formError} role="alert">
+              {form.formError}
+            </p>
+          )}
+
+          <button
+            className={`btn btn-block ${styles.submit}`}
+            type="submit"
+            aria-busy={isBusy}
+            disabled={isBusy || unavailable}
+          >
+            {isBusy ? (
+              <>
+                <span className="spinner" aria-hidden="true" />
+                {DONATION_FORM.submitting}
+              </>
+            ) : (
+              submitLabel
             )}
+          </button>
 
-            <button
-              className={`btn btn-block ${styles.submit}`}
-              type="submit"
-              aria-busy={isBusy}
-              disabled={isBusy}
-            >
-              {status === "submitting" ? (
-                <>
-                  <span className="spinner" aria-hidden="true" />
-                  {DONATION_FORM.submitting}
-                </>
-              ) : (
-                submitLabel
-              )}
-            </button>
-
-            <div role="status" aria-live="polite">
-              {status === "redirecting" ? (
-                <p className={styles.success}>{DONATION_FORM.success}</p>
-              ) : null}
-            </div>
+          <div role="status" aria-live="polite">
+            {result?.message && <p className={styles.success}>{result.message}</p>}
           </div>
+        </div>}
 
-          <p className={styles.note}>{DONATION_FORM.commission}</p>
-        </form>
-      )}
+        {!isRecurring && submitDonation !== undefined && <p className={styles.note}>{DONATION_FORM.commission}</p>}
+      </form>
     </div>
   );
 }

@@ -10,7 +10,7 @@
 import type { DonationChannel } from "@/lib/api/donation-body";
 import type { RegionSource } from "@/lib/api/types";
 import { groupDigits } from "@/lib/format";
-import { parseRublesInput } from "@/lib/money";
+import { parseRublesInput, rublesToKopecks } from "@/lib/money";
 import { MAX_DONATION_RUBLES, MIN_DONATION_RUBLES, SLOGAN_DONATION_RUBLES } from "@/lib/site";
 
 /**
@@ -34,7 +34,61 @@ export type OnlineMethodId = "sbp" | "card" | "sberpay" | "tpay";
 /** Плитка в сетке способов: онлайн-методы плюс перевод по реквизитам. */
 export type PaymentOptionId = OnlineMethodId | "transfer";
 
+export const DONATION_FREQUENCIES = {
+  monthly: { label: "Каждый месяц", description: "Автоматическое пожертвование один раз в месяц", cadence: "каждый месяц" },
+  every_friday: { label: "Каждую пятницу", description: "Автоматическое пожертвование по пятницам", cadence: "каждую пятницу" },
+  daily: { label: "Каждый день", description: "Автоматическое пожертвование ежедневно", cadence: "каждый день" },
+} as const;
+
+export type DonationFrequency = keyof typeof DONATION_FREQUENCIES;
+export type DonationType = "one_time" | "recurring";
+
+export interface DonationCapabilities {
+  readonly oneTimeMethods: readonly PaymentOptionId[];
+  readonly recurring: {
+    readonly methods: readonly OnlineMethodId[];
+    readonly frequencies: readonly DonationFrequency[];
+    readonly termsUrl?: string;
+    readonly dates?: Readonly<Record<DonationFrequency, string>>;
+    readonly maxRubles?: number;
+    readonly cancellationUrl?: string;
+  } | null;
+  readonly minRubles: number;
+  readonly maxRubles?: number;
+}
+
+export const PREVIEW_CAPABILITIES: DonationCapabilities = {
+  oneTimeMethods: ["sbp", "card", "sberpay", "tpay", "transfer"],
+  recurring: { methods: ["card"], frequencies: ["monthly", "every_friday", "daily"] },
+  minRubles: MIN_DONATION_RUBLES,
+  maxRubles: MAX_DONATION_RUBLES,
+};
+
+export type DonationSubmission = {
+  readonly amountKopecks: number;
+  readonly isAnonymous: boolean;
+  readonly donorName: string;
+  readonly donorPhone: string;
+  readonly consentAccepted: true;
+  readonly region: ResolvedRegion;
+  readonly antispam: string;
+} & (
+  | { donationType: "one_time"; frequency: null; paymentMethod: PaymentOptionId; recurringConsentAccepted: false }
+  | { donationType: "recurring"; frequency: DonationFrequency; paymentMethod: OnlineMethodId; recurringConsentAccepted: true }
+);
+
+export type DonationSubmit = (data: DonationSubmission) => Promise<{
+  /** Текст статуса, подтверждённый адаптером. */
+  readonly message?: string;
+  /** Готовая к отображению дата от сервера. */
+  readonly nextChargeDateLabel?: string;
+}>;
+
 export interface DonationFormState {
+  readonly donationType: DonationType;
+  readonly frequency: DonationFrequency;
+  readonly recurringMethod: OnlineMethodId;
+  readonly recurringConsentAccepted: boolean;
   /** Онлайн или перевод по реквизитам. Уходит в запрос полем `channel`. */
   readonly channel: DonationChannel;
   /** Сырой ввод суммы — человек может печатать «1 000 ₽». */
@@ -78,6 +132,10 @@ export function resolveRegion(
 }
 
 export const INITIAL_FORM_STATE: DonationFormState = {
+  donationType: "one_time",
+  frequency: "monthly",
+  recurringMethod: "card",
+  recurringConsentAccepted: false,
   channel: "online",
   // 100 ₽ по умолчанию: сумма из слогана. Вариант «1 000 ₽ поднимает средний
   // чек» остаётся открытым вопросом к заказчику (docs/design/handoff.md §10).
@@ -94,7 +152,7 @@ export const INITIAL_FORM_STATE: DonationFormState = {
 };
 
 /** Поля, у которых бывает своё сообщение об ошибке. */
-export type DonationField = "amount" | "donorName" | "phone" | "personalDataConsent";
+export type DonationField = "amount" | "donorName" | "phone" | "personalDataConsent" | "recurringConsentAccepted";
 
 export type FieldErrors = Partial<Record<DonationField, string>>;
 
@@ -125,7 +183,7 @@ export function normalizePhone(raw: string): string {
 
   const digits = digitsAndPlus.replace(/\D/g, "");
 
-  if (digits.startsWith("8") && digits.length === 11) {
+  if (digits.startsWith("8")) {
     return `+7${digits.slice(1)}`;
   }
 
@@ -138,39 +196,25 @@ export function selectAmountRubles(state: DonationFormState): number | null {
 }
 
 /**
- * Уходит ли имя как `fullName` — имя для сверки поступления по реквизитам.
- *
- * Важная оговорка: провайдер выбирается глобально через `PAYMENT_PROVIDER`,
- * поэтому таб — это намерение человека, а не гарантия маршрута. Если сервер
- * работает в режиме ручного перевода, по реквизитам уйдут и те, кто выбрал
- * «Онлайн». Имя для сверки от этого не становится вредным — просто
- * не у всех оно будет.
- */
-export function sendsFullName(state: DonationFormState): boolean {
-  return state.channel === "transfer" && state.donorName.trim() !== "";
-}
-
-/** Нужно ли согласие на обработку ПДн: есть телефон или имя для сверки. */
-export function requiresPersonalDataConsent(state: DonationFormState): boolean {
-  return state.phone.trim() !== "" || sendsFullName(state);
-}
-
-/**
  * Проверка формата. Пустой объект — можно отправлять.
  *
  * Регион не проверяется намеренно: донат без региона обязан проходить,
  * платёж важнее статистики (CLAUDE.md).
  */
-export function validate(state: DonationFormState): FieldErrors {
+export function validate(state: DonationFormState, config = PREVIEW_CAPABILITIES): FieldErrors {
   const errors: FieldErrors = {};
   const amount = selectAmountRubles(state);
 
   if (amount === null) {
-    errors.amount = "Введите сумму пожертвования";
-  } else if (amount < MIN_DONATION_RUBLES) {
-    errors.amount = `Минимальная сумма — ${MIN_DONATION_RUBLES} ₽`;
-  } else if (amount > MAX_DONATION_RUBLES) {
-    errors.amount = "Такую сумму онлайн не провести — переведите её по реквизитам ниже";
+    errors.amount = "Введите сумму пожертвования цифрами";
+  } else if (amount <= 0) {
+    errors.amount = "Сумма должна быть больше нуля";
+  } else if (amount < config.minRubles) {
+    errors.amount = `Минимальная сумма — ${groupDigits(String(config.minRubles))} ₽`;
+  } else if (config.maxRubles !== undefined && amount > config.maxRubles) {
+    errors.amount = `Максимальная сумма — ${groupDigits(String(config.maxRubles))} ₽`;
+  } else if (!Number.isSafeInteger(Math.round(amount * 100))) {
+    errors.amount = "Введите меньшую сумму";
   }
 
   if (!state.isAnonymous && state.donorName.trim().length > NAME_MAX_LENGTH) {
@@ -179,15 +223,26 @@ export function validate(state: DonationFormState): FieldErrors {
 
   const phone = state.phone.trim();
 
-  if (phone !== "" && !PHONE_E164_PATTERN.test(normalizePhone(phone))) {
+  const normalizedPhone = normalizePhone(phone);
+  if (!state.isAnonymous && phone !== "" && (
+    !PHONE_E164_PATTERN.test(normalizedPhone) ||
+    (normalizedPhone.startsWith("+7") && !/^\+7\d{10}$/.test(normalizedPhone))
+  )) {
     errors.phone = "Проверьте номер: нужен формат +7 917 123-45-67";
   }
 
-  if (requiresPersonalDataConsent(state) && !state.personalDataConsent) {
-    // Бэкенд ответит на это 400 и будет прав: без согласия он не создаёт
-    // строку с ПДн вовсе. Ловим здесь, чтобы человек увидел причину
-    // рядом с галочкой, а не общей ошибкой внизу формы.
-    errors.personalDataConsent = "Без согласия мы не можем сохранить имя и телефон";
+  if (!state.personalDataConsent) {
+    errors.personalDataConsent = "Подтвердите согласие с условиями пожертвования";
+  }
+
+  const recurringMax = config.recurring?.maxRubles;
+  if (state.donationType === "recurring" && recurringMax !== undefined &&
+    (selectAmountRubles(state) ?? 0) > recurringMax) {
+    errors.amount = `Максимальная сумма автоплатежа — ${recurringMax.toLocaleString("ru-RU")} ₽`;
+  }
+
+  if (state.donationType === "recurring" && !state.recurringConsentAccepted) {
+    errors.recurringConsentAccepted = "Подтвердите согласие на автоплатёж";
   }
 
   return errors;
@@ -208,17 +263,14 @@ export function hasErrors(errors: FieldErrors): boolean {
   return Object.keys(errors).length > 0;
 }
 
-/** Сколько цифр суммы можно набрать: 10 000 000 ₽ — это восемь. */
-const AMOUNT_MAX_DIGITS = 8;
-
 /**
  * Ввод суммы с разрядами: «2500» → «2 500» (неразрывный пробел).
- * Копейки в поле не набираются — пресеты и слоган в целых рублях.
+ * Дробный и незавершённый ввод остаётся видимым для проверки.
  */
 export function formatAmountInput(raw: string): string {
-  const digits = raw.replace(/\D/g, "").replace(/^0+/, "").slice(0, AMOUNT_MAX_DIGITS);
+  const cleaned = raw.replace(/[\s₽]/g, "");
 
-  return digits === "" ? "" : groupDigits(digits);
+  return /^\d+$/.test(cleaned) ? groupDigits(cleaned) : raw;
 }
 
 /** Цифр в российском номере после +7. */
@@ -242,7 +294,10 @@ export function formatPhoneInput(raw: string): string {
   const allDigits = trimmed.replace(/\D/g, "");
   const digits =
     allDigits.startsWith("7") || allDigits.startsWith("8") ? allDigits.slice(1) : allDigits;
-  const national = digits.slice(0, RU_NATIONAL_DIGITS);
+  if (digits.length > RU_NATIONAL_DIGITS) {
+    return trimmed;
+  }
+  const national = digits;
 
   if (national === "") {
     // «8» или «+7» без номера — начало ввода, показываем код страны.
@@ -281,14 +336,8 @@ export function applyPhoneEdit(previous: string, next: string): string {
 }
 
 /** Сумма для подписи кнопки: только когда она проходит проверку. */
-export function selectValidAmount(state: DonationFormState): number | null {
-  const amount = selectAmountRubles(state);
-
-  if (amount === null || amount < MIN_DONATION_RUBLES || amount > MAX_DONATION_RUBLES) {
-    return null;
-  }
-
-  return amount;
+export function selectValidAmount(state: DonationFormState, config: DonationCapabilities): number | null {
+  return validate(state, config).amount === undefined ? selectAmountRubles(state) : null;
 }
 
 /**
@@ -305,4 +354,54 @@ export function paymentOptionChanges(option: PaymentOptionId): Partial<DonationF
   return option === "transfer"
     ? { channel: "transfer" }
     : { channel: "online", onlineMethod: option };
+}
+
+export function selectRecurringOptions(state: DonationFormState, config: DonationCapabilities) {
+  const methods = config.recurring?.methods ?? [];
+  const frequencies = config.recurring?.frequencies ?? [];
+
+  return {
+    method: methods.includes(state.recurringMethod) ? state.recurringMethod : methods[0] ?? null,
+    frequency: frequencies.includes(state.frequency) ? state.frequency : frequencies[0] ?? null,
+  };
+}
+
+export function buildDonationSubmission(
+  state: DonationFormState,
+  config: DonationCapabilities,
+  region: ResolvedRegion,
+): DonationSubmission | null {
+  const amount = selectAmountRubles(state);
+  if (amount === null || hasErrors(validate(state, config))) return null;
+
+  const common = {
+    amountKopecks: rublesToKopecks(amount),
+    isAnonymous: state.isAnonymous,
+    donorName: state.isAnonymous ? "" : state.donorName.trim(),
+    donorPhone: state.isAnonymous ? "" : normalizePhone(state.phone),
+    consentAccepted: true as const,
+    region,
+    antispam: state.antispam,
+  };
+
+  if (state.donationType === "recurring") {
+    const { method, frequency } = selectRecurringOptions(state, config);
+    if (method === null || frequency === null || !config.recurring?.termsUrl || !config.recurring.cancellationUrl) {
+      return null;
+    }
+    return { ...common, donationType: "recurring", frequency, paymentMethod: method, recurringConsentAccepted: true };
+  }
+
+  const method = selectPaymentOption(state);
+  const paymentMethod = config.oneTimeMethods.includes(method) ? method : config.oneTimeMethods[0];
+  if (paymentMethod === undefined) return null;
+  return { ...common, donationType: "one_time", frequency: null, paymentMethod, recurringConsentAccepted: false };
+}
+
+/** Changes to the charged terms require a fresh explicit consent. */
+export function patchDonationState(current: DonationFormState, changes: Partial<DonationFormState>): DonationFormState {
+  const termsChanged = changes.donationType !== undefined || changes.frequency !== undefined
+    || changes.amountInput !== undefined || changes.recurringMethod !== undefined;
+  return { ...current, ...changes, recurringConsentAccepted: termsChanged ? false
+    : changes.recurringConsentAccepted ?? current.recurringConsentAccepted };
 }
