@@ -16,9 +16,16 @@ const DEFAULT_GROUPING: SourceGrouping = 'source';
 const MAX_ROWS = 200;
 
 /** Колонки моделей. Имена — только отсюда: в SQL они попадают через `Prisma.raw`. */
-const MODEL_COLUMNS: Readonly<Record<AttributionModel, { source: string; campaign: string; content: string }>> = {
-  first: { source: '"utm_source"', campaign: '"utm_campaign"', content: '"utm_content"' },
-  last: { source: '"last_utm_source"', campaign: '"last_utm_campaign"', content: '"last_utm_content"' },
+const MODEL_COLUMNS: Readonly<
+  Record<AttributionModel, { source: string; medium: string; campaign: string; content: string }>
+> = {
+  first: { source: '"utm_source"', medium: '"utm_medium"', campaign: '"utm_campaign"', content: '"utm_content"' },
+  last: {
+    source: '"last_utm_source"',
+    medium: '"last_utm_medium"',
+    campaign: '"last_utm_campaign"',
+    content: '"last_utm_content"',
+  },
 };
 
 const HOW_DID_YOU_HEAR_COLUMN = '"how_did_you_hear"';
@@ -32,6 +39,8 @@ export interface SourceAggregate {
 export interface SourceRow extends SourceAggregate {
   /** Источник; для `how_did_you_hear` — ответ из формы перевода. */
   readonly source: string;
+  /** Только при `groupBy=medium`. `null` — метки канала не было. */
+  readonly medium?: string | null;
   /** Только при `groupBy=campaign|content`. `null` — метки кампании не было. */
   readonly campaign?: string | null;
   /** Только при `groupBy=content`. */
@@ -51,7 +60,10 @@ export interface DonationsBySourceResponse {
 interface Grouping {
   /** Колонка, `NULL` в которой — «без атрибуции». */
   readonly key: string;
-  readonly columns: readonly { readonly alias: 'source' | 'campaign' | 'content'; readonly column: string }[];
+  readonly columns: readonly {
+    readonly alias: 'source' | 'medium' | 'campaign' | 'content';
+    readonly column: string;
+  }[];
 }
 
 interface AggregateRow {
@@ -61,6 +73,7 @@ interface AggregateRow {
 
 interface GroupedRow extends AggregateRow {
   readonly source: string;
+  readonly medium?: string | null;
   readonly campaign?: string | null;
   readonly content?: string | null;
 }
@@ -80,6 +93,10 @@ function grouping(model: AttributionModel, groupBy: SourceGrouping): Grouping {
 
   if (groupBy === 'source') {
     return { key: columns.source, columns: bySource };
+  }
+
+  if (groupBy === 'medium') {
+    return { key: columns.source, columns: [...bySource, { alias: 'medium', column: columns.medium }] };
   }
 
   const byCampaign = [...bySource, { alias: 'campaign', column: columns.campaign }] as const;
@@ -154,6 +171,7 @@ export class AnalyticsService {
       groupBy,
       rows: rows.map((row) => ({
         source: row.source,
+        ...(row.medium === undefined ? {} : { medium: row.medium }),
         ...(row.campaign === undefined ? {} : { campaign: row.campaign }),
         ...(row.content === undefined ? {} : { content: row.content }),
         ...aggregate(row.count, row.total),

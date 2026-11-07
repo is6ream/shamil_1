@@ -233,6 +233,13 @@ model Donation {
   /// что и `provider`: список значений живёт в DTO.
   howDidYouHear String? @map("how_did_you_hear") @db.VarChar(32)
 
+  /// ClientID Яндекс Метрики (`getClientID`) на момент создания доната. Только
+  /// цифры — CHECK в миграции. Нужен, чтобы оплату связать с визитом
+  /// офлайн-конверсией; без согласия на cookie счётчика нет и поле пусто.
+  ymClientId String? @map("ym_client_id") @db.VarChar(32)
+  /// Метка клика Яндекс Директа из адреса (cookie на 21 день — окно сопоставления).
+  yclid      String? @db.VarChar(64)
+
   /// Комментарий админа к ручному поступлению («перевод по выписке от 08.10»).
   /// Обязателен для ручного поступления; ПДн сюда не пишут — подсказка в админке.
   adminComment String? @map("admin_comment") @db.VarChar(500)
@@ -245,6 +252,7 @@ model Donation {
   region   Region?          @relation(fields: [regionId], references: [id], onDelete: Restrict)
   contact  DonationContact?
   events   PaymentEvent[]
+  metrikaConversion MetrikaOfflineConversion?
 
   @@unique([provider, providerPaymentId])
   /// Индекс живой ленты: keyset-пагинация по (paid_at, id), без OFFSET.
@@ -659,4 +667,58 @@ model FundraisingGoal {
   @@index([status, createdAt(sort: Desc)])
   @@index([campaignId])
   @@map("fundraising_goal")
+}
+
+/// Жизненный цикл офлайн-конверсии в Яндекс Метрику.
+enum MetrikaConversionStatus {
+  /// Ждёт выгрузки.
+  PENDING
+  /// Забрана инстансом планировщика и выгружается прямо сейчас.
+  UPLOADING
+  /// Файл принят Метрикой (`uploading_id` заполнен), ждём обработки.
+  UPLOADED
+  /// Метрика обработала файл.
+  PROCESSED
+  /// Выгрузка отклонена или исчерпаны попытки; причина — `last_error`.
+  FAILED
+  /// Выгружать нечего или поздно; причина — `skip_reason`.
+  SKIPPED
+
+  @@map("metrika_conversion_status")
+}
+
+/// Outbox офлайн-конверсий: строка появляется в той же транзакции, что и
+/// переход доната в `paid`, а выгружает её планировщик. Деньги в Метрику
+/// отправляет только сервер — без двойного учёта и подделок с клиента.
+model MetrikaOfflineConversion {
+  id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Unique — идемпотентность: повторный колбэк не создаёт вторую конверсию.
+  donationId   String                  @unique @map("donation_id") @db.Uuid
+  /// Идентификатор цели «JavaScript-событие» в Метрике.
+  target       String                  @db.VarChar(64)
+  clientId     String?                 @map("client_id") @db.VarChar(32)
+  yclid        String?                 @db.VarChar(64)
+  /// Ценность цели в копейках, как все деньги в схеме. В рубли с точкой
+  /// (колонка `Price` CSV) переводится только при сборке файла.
+  amountKopecks BigInt                 @map("amount_kopecks")
+  currency     String                  @default("RUB") @db.Char(3)
+  /// Время оплаты — колонка `DateTime` (Unix-время).
+  conversionAt DateTime                @map("conversion_at") @db.Timestamptz(3)
+  status       MetrikaConversionStatus @default(PENDING)
+  /// `no_identifier` | `expired`.
+  skipReason   String?                 @map("skip_reason") @db.VarChar(32)
+  /// Номер загрузки в Метрике — по нему опрашивается статус обработки.
+  uploadingId  BigInt?                 @map("uploading_id")
+  attempts     Int                     @default(0)
+  lastError    String?                 @map("last_error") @db.VarChar(500)
+  /// Когда инстанс забрал строку в `UPLOADING`: зависшие возвращаются в очередь.
+  lockedAt     DateTime?               @map("locked_at") @db.Timestamptz(3)
+  createdAt    DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  donation Donation @relation(fields: [donationId], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+  @@index([uploadingId])
+  @@map("metrika_offline_conversion")
 }

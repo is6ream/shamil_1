@@ -512,7 +512,7 @@ export type HowDidYouHear = (typeof HOW_DID_YOU_HEAR)[number];
 /** Модель атрибуции: первый заход на сайт или последний заход с метками. */
 export type AttributionModel = "first" | "last";
 
-export type SourceGrouping = "source" | "campaign" | "content" | "how_did_you_hear";
+export type SourceGrouping = "source" | "medium" | "campaign" | "content" | "how_did_you_hear";
 
 export interface SourceAggregate {
   readonly count: number;
@@ -522,6 +522,8 @@ export interface SourceAggregate {
 
 export interface SourceRow extends SourceAggregate {
   readonly source: string;
+  /** Только в разрезе `medium`. */
+  readonly medium?: string | null;
   /** Только в разрезах `campaign` и `content`. */
   readonly campaign?: string | null;
   readonly content?: string | null;

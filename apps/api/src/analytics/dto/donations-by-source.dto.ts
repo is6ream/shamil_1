@@ -6,11 +6,12 @@ export const ATTRIBUTION_MODELS = ['first', 'last'] as const;
 export type AttributionModel = (typeof ATTRIBUTION_MODELS)[number];
 
 /**
- * Разрез отчёта. `campaign` и `content` группируются вместе с источником:
+ * Разрез отчёта. `medium` — источник и канал (`vk / social` и `vk / cpc` —
+ * разные строки). `campaign` и `content` группируются вместе с источником:
  * одна и та же `utm_campaign=ramadan` в Telegram и в Instagram — разные строки.
  * `how_did_you_hear` — ответ из вкладки перевода; модель атрибуции на него не влияет.
  */
-export const SOURCE_GROUPINGS = ['source', 'campaign', 'content', 'how_did_you_hear'] as const;
+export const SOURCE_GROUPINGS = ['source', 'medium', 'campaign', 'content', 'how_did_you_hear'] as const;
 
 export type SourceGrouping = (typeof SOURCE_GROUPINGS)[number];
 

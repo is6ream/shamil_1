@@ -105,6 +105,17 @@ export interface ThrottleConfig {
   readonly limit: number;
 }
 
+/** Офлайн-конверсии Яндекс Метрики. */
+export interface MetrikaConfig {
+  /** Выключено — очередь копится, но в Метрику ничего не уходит. */
+  readonly offlineEnabled: boolean;
+  /** `undefined` только при выключенной выгрузке — это гарантирует валидация. */
+  readonly counterId?: number;
+  readonly oauthToken?: string;
+  readonly offlineGoal: string;
+  readonly intervalMs: number;
+}
+
 export interface AppConfig {
   readonly nodeEnv: NodeEnv;
   readonly isProduction: boolean;
@@ -118,9 +129,11 @@ export interface AppConfig {
   readonly adminAuth: AdminAuthConfig;
   readonly media: MediaConfig;
   readonly revalidation: RevalidationConfig;
+  readonly metrika: MetrikaConfig;
 }
 
 const BYTES_IN_MB = 1024 * 1024;
+const MINUTE_MS = 60 * 1000;
 
 /** Публичный путь, под которым Nest отдаёт каталог медиатеки (`local`). */
 export const MEDIA_ROUTE_PREFIX = '/media';
@@ -255,6 +268,13 @@ export function configuration(): AppConfig {
     revalidation: {
       secret: env.REVALIDATE_SECRET,
       url: trimTrailingSlash(env.WEB_REVALIDATE_URL ?? `${siteUrl}${REVALIDATE_PATH}`),
+    },
+    metrika: {
+      offlineEnabled: env.YM_OFFLINE_ENABLED,
+      counterId: env.YM_COUNTER_ID,
+      oauthToken: env.YM_OAUTH_TOKEN,
+      offlineGoal: env.YM_OFFLINE_GOAL,
+      intervalMs: env.YM_OFFLINE_INTERVAL_MINUTES * MINUTE_MS,
     },
   };
 }

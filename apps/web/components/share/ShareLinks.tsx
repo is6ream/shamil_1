@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import { METRIKA_GOALS } from "@/lib/analytics/goals";
+import { metrika } from "@/lib/analytics/metrika";
+
 import { SHARE_TARGETS, SHARE_TEXT, buildShareUrl } from "./share-targets";
 
 interface Props {
@@ -24,6 +27,7 @@ export function ShareLinks({ regionSlug, counts, onShared, highlightFirst = fals
 
   const copyLink = async () => {
     try {
+      metrika.reachGoal(METRIKA_GOALS.shareClick, { channel: "copy" });
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       onShared?.("copy");
@@ -48,6 +52,7 @@ export function ShareLinks({ regionSlug, counts, onShared, highlightFirst = fals
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => {
+              metrika.reachGoal(METRIKA_GOALS.shareClick, { channel: target.id });
               onShared?.(target.id);
             }}
           >

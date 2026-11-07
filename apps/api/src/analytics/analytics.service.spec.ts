@@ -18,8 +18,8 @@ interface DonationSeed {
   readonly kopecks: bigint;
   readonly status?: DonationStatus;
   readonly paidAt?: Date;
-  readonly first?: { source: string; campaign?: string; content?: string };
-  readonly last?: { source: string; campaign?: string };
+  readonly first?: { source: string; medium?: string; campaign?: string; content?: string };
+  readonly last?: { source: string; medium?: string; campaign?: string };
   readonly howDidYouHear?: string;
 }
 
@@ -55,9 +55,11 @@ describeDatabase('AnalyticsService.donationsBySource', () => {
           paidAmountKopecks: isPaid ? donation.kopecks : null,
           paidAt: isPaid ? (donation.paidAt ?? IN_PERIOD) : null,
           utmSource: donation.first?.source ?? null,
+          utmMedium: donation.first?.medium ?? null,
           utmCampaign: donation.first?.campaign ?? null,
           utmContent: donation.first?.content ?? null,
           lastUtmSource: donation.last?.source ?? donation.first?.source ?? null,
+          lastUtmMedium: donation.last?.medium ?? donation.first?.medium ?? null,
           lastUtmCampaign: donation.last?.campaign ?? donation.first?.campaign ?? null,
           howDidYouHear: donation.howDidYouHear ?? null,
         },
@@ -145,6 +147,28 @@ describeDatabase('AnalyticsService.donationsBySource', () => {
 
     // Assert
     expect(report.rows[0]).toMatchObject({ source: 'vk', campaign: 'oct', content: 'banner-1' });
+  });
+
+  test('разрез по medium: один источник с разными каналами — разные строки', async () => {
+    // Arrange
+    await seed([
+      { kopecks: 50_000n, first: { source: 'vk', medium: 'social' }, last: { source: 'vk', medium: 'cpc' } },
+      { kopecks: 10_000n, first: { source: 'vk', medium: 'social' } },
+      { kopecks: 10_000n, first: { source: 'vk' } },
+    ]);
+
+    // Act
+    const last = await service.donationsBySource({ ...PERIOD, model: 'last', groupBy: 'medium' }, NOW);
+    const first = await service.donationsBySource({ ...PERIOD, model: 'first', groupBy: 'medium' }, NOW);
+
+    // Assert
+    expect(last.rows).toEqual([
+      expect.objectContaining({ source: 'vk', medium: 'cpc', count: 1, totalKopecks: '50000' }),
+      expect.objectContaining({ source: 'vk', medium: 'social', count: 1, totalKopecks: '10000' }),
+      expect.objectContaining({ source: 'vk', medium: null, count: 1, totalKopecks: '10000' }),
+    ]);
+    expect(first.rows[0]).toMatchObject({ source: 'vk', medium: 'social', count: 2, totalKopecks: '60000' });
+    expect(first.rows[0]).not.toHaveProperty('campaign');
   });
 
   test('разрез «откуда узнали» для переводов', async () => {

@@ -9,7 +9,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test \"lib/**/*.test.ts\""
+    "test": "tsx --test \"lib/**/*.test.ts\"",
+    "test:e2e": "node --test e2e/*.e2e.mjs",
+    "test:cov": "tsx --test --experimental-test-coverage --test-coverage-include=\"lib/analytics/**\" --test-coverage-exclude=\"**/*.test.ts\" --test-coverage-lines=90 --test-coverage-branches=90 \"lib/**/*.test.ts\""
   },
   "dependencies": {
     "next": "16.3.5",

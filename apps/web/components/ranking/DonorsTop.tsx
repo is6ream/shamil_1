@@ -38,7 +38,7 @@ export function DonorsTop({ donors }: Props) {
             <li className="rank" key={`${donor.donorName}-${index}`}>
               <div className="pos">{index + 1}</div>
               <div className="body">
-                <div className="name">{donor.donorName}</div>
+                <div className="name ym-hide-content">{donor.donorName}</div>
               </div>
               <div className="amt">{kopecksToRubDisplay(donor.paidAmountKopecks)}</div>
             </li>

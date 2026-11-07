@@ -2,6 +2,8 @@
 
 import { CopyIcon } from "@/components/icons/Icons";
 import { Toast } from "@/components/ui/Toast";
+import { METRIKA_GOALS } from "@/lib/analytics/goals";
+import { metrika } from "@/lib/analytics/metrika";
 import { REQUISITES } from "@/lib/content";
 import { useCopy } from "@/lib/hooks/useCopy";
 import { BANK_DETAILS, ORGANIZATION, PAYMENT_PURPOSE } from "@/lib/organization";
@@ -58,6 +60,7 @@ export function RequisitesTable({ bank = BANK_DETAILS }: { readonly bank?: BankD
                     aria-label={`Скопировать ${row.label.toLowerCase()}`}
                     data-copied={copiedKey === row.key ? "true" : undefined}
                     onClick={() => {
+                      metrika.reachGoal(METRIKA_GOALS.sbpQrInteraction, { action: "copy" });
                       void copy(row.key, row.value ?? "");
                     }}
                   >

@@ -5,6 +5,7 @@ import type { AppConfig } from '../config/configuration';
 import { PaymentProviderCode } from '../config/env.validation';
 import { AuditModule } from '../audit/audit.module';
 import { DatabaseModule } from '../database/database.module';
+import { MetrikaModule } from '../metrika/metrika.module';
 import type { PaymentProvider } from './payment-provider.interface';
 import { PaymentProviderResolver } from './payment-provider.resolver';
 import { PaymentCallbacksController } from './payment-callbacks.controller';
@@ -59,7 +60,7 @@ export function createPaymentProviderResolver(config: ConfigService<AppConfig, t
 }
 
 @Module({
-  imports: [DatabaseModule, AuditModule],
+  imports: [DatabaseModule, AuditModule, MetrikaModule],
   controllers: [PaymentCallbacksController],
   providers: [
     PaymentsService,

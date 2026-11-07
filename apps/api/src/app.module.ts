@@ -15,6 +15,7 @@ import { DonationsModule } from './donations/donations.module';
 import { FundraisingGoalsModule } from './fundraising-goals/fundraising-goals.module';
 import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
+import { MetrikaModule } from './metrika/metrika.module';
 import {
   PaymentEmulatorModule,
   isPaymentEmulatorEnabled,
@@ -53,6 +54,7 @@ import { ShowcaseModule } from './showcase/showcase.module';
     FundraisingGoalsModule,
     ShortLinksModule,
     AnalyticsModule,
+    MetrikaModule,
     // Эмулятор оплаты — только локально: в production флаг запрещён
     // валидацией окружения, и маршрутов `/api/dev/…` там нет (404).
     ConditionalModule.registerWhen(PaymentEmulatorModule, isPaymentEmulatorEnabled),

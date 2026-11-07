@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Amiri, Golos_Text, Montserrat, Philosopher } from "next/font/google";
 
+import { CookieConsent } from "@/components/analytics/CookieConsent";
+import { YandexMetrika } from "@/components/analytics/YandexMetrika";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, SLOGAN } from "@/lib/site";
 
 import "./globals.css";
@@ -73,6 +75,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ru" className={`${montserrat.variable} ${philosopher.variable} ${golos.variable} ${amiri.variable}`}>
       <body>
         {children}
+        {/* Без NEXT_PUBLIC_YM_ENABLED и номера счётчика оба компонента ничего не рендерят. */}
+        <YandexMetrika />
+        <CookieConsent />
       </body>
     </html>
   );

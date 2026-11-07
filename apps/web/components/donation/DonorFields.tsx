@@ -50,8 +50,9 @@ export function DonorFields({
           <label className="sr-only" htmlFor={NAME_ID}>
             Имя и фамилия
           </label>
+          {/* ym-disable-keys: Вебвизор Метрики не записывает ввод — это ПДн. */}
           <input
-            className={styles.input}
+            className={`${styles.input} ym-disable-keys`}
             id={NAME_ID}
             name="donorName"
             type="text"
@@ -104,7 +105,7 @@ export function DonorFields({
               {DONATION_FORM.phoneLabel}
             </label>
             <input
-              className={styles.input}
+              className={`${styles.input} ym-disable-keys`}
               id={PHONE_ID}
               name="phone"
               type="tel"

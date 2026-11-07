@@ -10,11 +10,13 @@ import type { Column } from "@/components/admin/ui/DataTable";
 import { SelectField, TextField } from "@/components/admin/ui/Field";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/ui/StateViews";
 import { GROUPING_OPTIONS, MODEL_OPTIONS, sourceLabel, sourceRowKey, sourcesReportPath } from "@/lib/admin/attribution";
+import { saveBlob } from "@/lib/admin/download";
 import { resolvePeriod } from "@/lib/admin/dashboard";
 import type { DashboardPeriod, PeriodPreset } from "@/lib/admin/dashboard";
 import { LIMITS } from "@/lib/admin/endpoints";
 import { useAdminQuery } from "@/lib/admin/hooks";
 import { formatKopecks } from "@/lib/admin/money";
+import { dimensionsOf, shareOfTotal, sourcesReportCsv, sourcesReportFileName } from "@/lib/admin/sources-report";
 import type { AttributionModel, DonationsBySource, SourceAggregate, SourceGrouping, SourceRow } from "@/lib/admin/types";
 import { formatCount } from "@/lib/format";
 
@@ -27,26 +29,37 @@ const PRESETS: readonly { readonly value: PeriodPreset; readonly label: string }
 
 const NO_VALUE = "—";
 
-function aggregateColumns(): readonly Column<SourceAggregate>[] {
+function aggregateColumns(totalKopecks: string): readonly Column<SourceAggregate>[] {
   return [
     { key: "count", header: "Пожертвований", isNumeric: true, render: (row) => formatCount(row.count) },
     { key: "total", header: "Сумма", isNumeric: true, render: (row) => formatKopecks(row.totalKopecks) },
     { key: "average", header: "Средний чек", isNumeric: true, render: (row) => formatKopecks(row.averageKopecks) },
+    { key: "share", header: "Доля", isNumeric: true, render: (row) => shareOfTotal(row.totalKopecks, totalKopecks) },
   ];
 }
 
-function columnsFor(groupBy: SourceGrouping): readonly Column<SourceRow>[] {
+const DIMENSION_COLUMNS: Readonly<Record<"medium" | "campaign" | "content", Column<SourceRow>>> = {
+  medium: { key: "medium", header: "Канал", render: (row) => row.medium ?? NO_VALUE },
+  campaign: { key: "campaign", header: "Кампания", render: (row) => row.campaign ?? NO_VALUE },
+  content: { key: "content", header: "Объявление", render: (row) => row.content ?? NO_VALUE },
+};
+
+function columnsFor(groupBy: SourceGrouping, totalKopecks: string): readonly Column<SourceRow>[] {
   const source: Column<SourceRow> = {
     key: "source",
     header: groupBy === "how_did_you_hear" ? "Откуда узнали" : "Источник",
     render: (row) => sourceLabel(row.source, groupBy),
   };
-  const campaign: Column<SourceRow> = { key: "campaign", header: "Кампания", render: (row) => row.campaign ?? NO_VALUE };
-  const content: Column<SourceRow> = { key: "content", header: "Объявление", render: (row) => row.content ?? NO_VALUE };
-  const dimensions =
-    groupBy === "campaign" ? [source, campaign] : groupBy === "content" ? [source, campaign, content] : [source];
 
-  return [...dimensions, ...aggregateColumns()];
+  return [
+    source,
+    ...dimensionsOf(groupBy).map((dimension) => DIMENSION_COLUMNS[dimension]),
+    ...aggregateColumns(totalKopecks),
+  ];
+}
+
+function exportCsv(data: DonationsBySource): void {
+  saveBlob(new Blob([sourcesReportCsv(data)], { type: "text/csv;charset=utf-8" }), sourcesReportFileName(data));
 }
 
 function Totals({ data }: { readonly data: DonationsBySource }) {
@@ -144,12 +157,17 @@ export function SourcesReport() {
         {data ? (
           <>
             <Totals data={data} />
+            <div>
+              <Button isSmall variant="ghost" onClick={() => exportCsv(data)}>
+                Скачать CSV
+              </Button>
+            </div>
             {data.rows.length === 0 ? (
               <EmptyState title="За период нет оплаченных пожертвований с источником." />
             ) : (
               <DataTable
                 caption="Пожертвования по источникам"
-                columns={columnsFor(data.groupBy)}
+                columns={columnsFor(data.groupBy, data.total.totalKopecks)}
                 rows={data.rows}
                 rowKey={sourceRowKey}
               />

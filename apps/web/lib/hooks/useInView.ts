@@ -12,6 +12,7 @@ import type { RefObject } from "react";
  */
 export function useInViewOnce<T extends Element>(
   threshold = 0.3,
+  requireThreshold = false,
 ): readonly [RefObject<T | null>, boolean] {
   const ref = useRef<T>(null);
   const [isInView, setInView] = useState(false);
@@ -25,7 +26,7 @@ export function useInViewOnce<T extends Element>(
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
+        if (entries.some((entry) => entry.isIntersecting && (!requireThreshold || entry.intersectionRatio >= threshold))) {
           setInView(true);
           observer.disconnect();
         }
@@ -38,7 +39,7 @@ export function useInViewOnce<T extends Element>(
     return () => {
       observer.disconnect();
     };
-  }, [threshold]);
+  }, [threshold, requireThreshold]);
 
   return [ref, isInView] as const;
 }

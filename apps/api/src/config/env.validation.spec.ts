@@ -413,4 +413,45 @@ describe('сборка конфига', () => {
     expect(config.payment.secretKey).toBe('');
     expect(config.payment.receipt.enabled).toBe(false);
   });
+  describe('Яндекс Метрика', () => {
+    test('по умолчанию выгрузка выключена и не требует токена', () => {
+      // Act
+      const env = validateEnv({ ...BASE_ENV });
+
+      // Assert
+      expect(env).toMatchObject({
+        YM_OFFLINE_ENABLED: false,
+        YM_OFFLINE_GOAL: 'donation_paid',
+        YM_OFFLINE_INTERVAL_MINUTES: 30,
+      });
+      expect(env.YM_OAUTH_TOKEN).toBeUndefined();
+    });
+
+    test('включённая выгрузка без номера счётчика и токена не поднимается', () => {
+      // Act
+      const act = (): unknown => validateEnv({ ...BASE_ENV, YM_OFFLINE_ENABLED: 'true' });
+
+      // Assert
+      expect(act).toThrow(/YM_COUNTER_ID/);
+      expect(act).toThrow(/YM_OAUTH_TOKEN/);
+    });
+
+    test('включённая выгрузка с номером и токеном поднимается', () => {
+      // Act
+      const env = validateEnv({
+        ...BASE_ENV,
+        YM_OFFLINE_ENABLED: '1',
+        YM_COUNTER_ID: '98765432',
+        YM_OAUTH_TOKEN: 'y0_'.padEnd(40, 'x'),
+        YM_OFFLINE_INTERVAL_MINUTES: '5',
+      });
+
+      // Assert
+      expect(env).toMatchObject({ YM_OFFLINE_ENABLED: true, YM_COUNTER_ID: 98765432, YM_OFFLINE_INTERVAL_MINUTES: 5 });
+    });
+
+    test('цель с недопустимыми символами роняет старт', () => {
+      expect(() => validateEnv({ ...BASE_ENV, YM_OFFLINE_GOAL: 'donation paid' })).toThrow(/YM_OFFLINE_GOAL/);
+    });
+  });
 });

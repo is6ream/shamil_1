@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from "react";
 
 import { Toast } from "@/components/ui/Toast";
+import { METRIKA_GOALS } from "@/lib/analytics/goals";
+import { metrika } from "@/lib/analytics/metrika";
 import { SHARE } from "@/lib/content";
 import { useCopy } from "@/lib/hooks/useCopy";
 import { useRegionFromUrl } from "@/lib/hooks/useRegionFromUrl";
@@ -44,7 +46,12 @@ export function ShareActions() {
   const toast =
     copiedKey === COPY_KEY ? SHARE.copied : hasFailed ? `Скопируйте вручную: ${shareUrl}` : null;
 
+  const trackShare = (channel: string) => {
+    metrika.reachGoal(METRIKA_GOALS.shareClick, { channel });
+  };
+
   const nativeShare = async () => {
+    trackShare("native");
     try {
       await navigator.share({ title: SHARE_TEXT, text: SHARE_TEXT, url: shareUrl });
     } catch {
@@ -60,6 +67,9 @@ export function ShareActions() {
           href={whatsapp.buildUrl(shareUrl, SHARE_TEXT)}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            trackShare(whatsapp.id);
+          }}
         >
           {SHARE.whatsapp}
         </a>
@@ -73,6 +83,9 @@ export function ShareActions() {
             href={target.buildUrl(shareUrl, SHARE_TEXT)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              trackShare(target.id);
+            }}
           >
             {target.label}
           </a>
@@ -84,6 +97,7 @@ export function ShareActions() {
           className={styles.link}
           type="button"
           onClick={() => {
+            trackShare("copy");
             void copy(COPY_KEY, shareUrl);
           }}
         >

@@ -251,6 +251,20 @@ export const FOOTER = {
   copyright: "© 2026 Мечеть «Шамиль», Уфа",
 } as const;
 
+/**
+ * Баннер согласия на cookie Яндекс Метрики. Тон — разговорный, без канцелярита;
+ * юридическая модель согласия — вопрос к заказчику (docs/metrika/CHECKLIST_OWNER.md).
+ */
+export const COOKIE_CONSENT = {
+  label: "Согласие на cookie",
+  text:
+    "Мы используем cookie Яндекс Метрики, чтобы понимать, откуда люди узнают о сборе. " +
+    "Пожертвование работает и без них.",
+  more: "Подробнее",
+  accept: "Принять",
+  decline: "Отказаться",
+} as const;
+
 export const MOBILE_BAR = {
   of: "из",
   donate: "Пожертвовать",

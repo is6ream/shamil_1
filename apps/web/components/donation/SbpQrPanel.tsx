@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 
+import { METRIKA_GOALS } from "@/lib/analytics/goals";
+import { metrika } from "@/lib/analytics/metrika";
 import { SBP_QR } from "@/lib/content";
 import { SBP_PAYMENT } from "@/lib/organization";
 
@@ -43,6 +47,9 @@ export function SbpQrPanel({ id }: Props) {
         href={SBP_PAYMENT.payUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => {
+          metrika.reachGoal(METRIKA_GOALS.sbpQrInteraction, { action: "open_bank" });
+        }}
       >
         {SBP_QR.button}
       </a>

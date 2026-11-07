@@ -182,7 +182,7 @@ describeDatabase('витринные эндпоинты', () => {
         const name = `QA ${String(index).padStart(2, '0')}`;
         const slug = `qa-${index}`;
         const region = await prisma.region.create({
-          data: { type: 'subject', countryCode: 'RU', code: `qa${index}`, slug, name, flagUrl: `/qa-${index}.png` },
+          data: { type: 'subject', parentId: fixtures.russiaId, countryCode: 'RU', code: `qa${index}`, slug, name, flagUrl: `/qa-${index}.png` },
         });
         // Pairs tie on amount; alphabetical name is the existing secondary key.
         const amount = BigInt(26 - Math.floor(index / 2)) * 10_000n;

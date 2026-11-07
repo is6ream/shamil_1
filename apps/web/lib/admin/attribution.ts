@@ -47,6 +47,7 @@ export const MODEL_OPTIONS: readonly { readonly value: AttributionModel; readonl
 
 export const GROUPING_OPTIONS: readonly { readonly value: SourceGrouping; readonly label: string }[] = [
   { value: "source", label: "По источнику" },
+  { value: "medium", label: "По источнику и каналу" },
   { value: "campaign", label: "По кампании" },
   { value: "content", label: "По объявлению" },
   { value: "how_did_you_hear", label: "«Откуда узнали» (переводы)" },
@@ -60,9 +61,9 @@ export function sourceLabel(source: string, groupBy: SourceGrouping): string {
   return SOURCE_LABELS[source] ?? source;
 }
 
-/** Ключ строки отчёта: источник, кампания и объявление вместе уникальны. */
+/** Ключ строки отчёта: источник, канал, кампания и объявление вместе уникальны. */
 export function sourceRowKey(row: SourceRow): string {
-  return [row.source, row.campaign ?? "", row.content ?? ""].join("|");
+  return [row.source, row.medium ?? "", row.campaign ?? "", row.content ?? ""].join("|");
 }
 
 export function sourcesReportPath(

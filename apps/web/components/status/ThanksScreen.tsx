@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { HandsScene } from "@/components/hero/HandsScene";
 import { ShareLinks } from "@/components/share/ShareLinks";
+import { METRIKA_GOALS } from "@/lib/analytics/goals";
+import { metrika } from "@/lib/analytics/metrika";
 import { kopecksToRubDisplay } from "@/lib/money";
 
 import { PollingPhrases } from "./PollingPhrases";
@@ -52,6 +55,14 @@ function OrderLine({ orderId, hint }: { readonly orderId: string; readonly hint:
  */
 export function ThanksScreen({ orderId }: Props) {
   const { phase, status, error, retry } = useDonationStatus(orderId);
+
+  // Вспомогательная цель без суммы: деньги в Метрику отправляет только сервер
+  // офлайн-конверсией `donation_paid`, иначе оплата посчиталась бы дважды.
+  useEffect(() => {
+    if (phase === "paid") {
+      metrika.reachGoal(METRIKA_GOALS.successView);
+    }
+  }, [phase]);
 
   if (orderId === null) {
     return (

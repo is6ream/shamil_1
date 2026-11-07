@@ -27,6 +27,9 @@ export interface AttributionColumns {
   readonly lastUtmCampaign: string | null;
   readonly lastUtmContent: string | null;
   readonly lastUtmTerm: string | null;
+  /** Идентификаторы визита для офлайн-конверсий Метрики. */
+  readonly ymClientId: string | null;
+  readonly yclid: string | null;
 }
 
 /** Что пришло в теле доната: новая форма, старая или ничего. */
@@ -52,6 +55,8 @@ export const EMPTY_ATTRIBUTION: AttributionColumns = {
   landingPage: null,
   firstTouchAt: null,
   ...toLastColumns(EMPTY_TOUCH),
+  ymClientId: null,
+  yclid: null,
 };
 
 /** Повторная нормализация в сервисе: сервис вызывают не только через ValidationPipe. */
@@ -159,6 +164,8 @@ export class AttributionService {
       landingPage: trimmed(attribution.landingPage),
       firstTouchAt: this.parseFirstTouchAt(attribution.firstTouchAt, now),
       ...toLastColumns(last),
+      ymClientId: trimmed(attribution.ymClientId),
+      yclid: trimmed(attribution.yclid),
     };
   }
 

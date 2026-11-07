@@ -133,6 +133,45 @@ describe('атрибуция first/last в теле доната', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  test('ymClientId и yclid из цифр принимаются, края обрезаются', async () => {
+    // Act
+    const dto = (await transform({
+      ...VALID_BODY,
+      attribution: { ymClientId: ' 1729000000123456789 ', yclid: '5207465128348827647' },
+    })) as CreateDonationDto;
+
+    // Assert
+    expect(dto.attribution).toMatchObject({ ymClientId: '1729000000123456789', yclid: '5207465128348827647' });
+  });
+
+  test.each([
+    ['ymClientId', 'abc'],
+    ['ymClientId', '1'.repeat(33)],
+    ['ymClientId', ['1', '2']],
+    ['yclid', '-1'],
+    ['yclid', '1'.repeat(65)],
+    ['yclid', { nested: true }],
+  ])('%s=%p не по формату — отбрасывается без 400', async (key, value) => {
+    // Act
+    const dto = (await transform({ ...VALID_BODY, attribution: { [key]: value } })) as CreateDonationDto;
+
+    // Assert: деньги важнее аналитики — донат проходит без идентификатора
+    expect(dto.attribution?.[key as 'ymClientId' | 'yclid']).toBeUndefined();
+  });
+
+  test.each([
+    ['ymClientId', ''],
+    ['ymClientId', null],
+    ['yclid', ''],
+    ['yclid', null],
+  ])('пустой %s=%p — донат проходит без идентификатора', async (key, value) => {
+    // Act
+    const dto = (await transform({ ...VALID_BODY, attribution: { [key]: value } })) as CreateDonationDto;
+
+    // Assert
+    expect(dto.attribution?.[key as 'ymClientId' | 'yclid']).toBeUndefined();
+  });
+
   test.each(['telegram', 'banner_qr', 'other'])('howDidYouHear=%s проходит', async (value) => {
     // Act
     const dto = await transform({ ...VALID_BODY, channel: 'transfer', howDidYouHear: value });

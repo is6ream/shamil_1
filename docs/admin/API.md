@@ -584,7 +584,8 @@ FundraisingGoalAdmin = {
 
 Отчёт по источникам: **только `status = paid`**, период по дате оплаты (как у дашборда: по умолчанию 30 дней,
 не длиннее 366). `model`: `last` (по умолчанию — последний заход с метками) | `first` (первый заход).
-`groupBy`: `source` (по умолчанию) | `campaign` (источник + кампания) | `content` (источник + кампания +
+`groupBy`: `source` (по умолчанию) | `medium` (источник + канал: `vk / social` и `vk / cpc` — разные строки) |
+`campaign` (источник + кампания) | `content` (источник + кампания +
 объявление) | `how_did_you_hear` (ответ «откуда узнали»; `model` не влияет).
 
 ```json
@@ -596,7 +597,8 @@ FundraisingGoalAdmin = {
 }
 ```
 
-В разрезах `campaign`/`content` у строки есть `campaign` и `content` (`null` — метки не было). Топ-200 строк
+В разрезе `medium` у строки есть `medium`, в разрезах `campaign`/`content` — `campaign` и `content` (`null` —
+метки не было). Доля от суммы и CSV считаются в админке из `rows` и `total`. Топ-200 строк
 по сумме. «Без атрибуции» — нет cookie, ручное поступление, перевод без ответа. Источник без UTM бэкенд
 выводит из Referer: `t.me` → `telegram`/`referral`, Яндекс/Google → `yandex|google`/`organic`,
 пустой → `direct`/`none`.

@@ -1,0 +1,79 @@
+# Проверки на PR и перед выкаткой (push в production деплоит Timeweb).
+# Тесты в сеть не ходят: Метрика и API в e2e перехватываются в браузере,
+# HTTP Метрики в тестах API — фейковый fetch.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [production]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API — lint, typecheck, unit + integration (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: shamil
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: shamil
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U shamil -d shamil"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Тестовая база создаётся и мигрируется в global-setup Jest.
+      TEST_DATABASE_URL: postgresql://shamil:ci_password@localhost:5432/shamil_test
+      DATABASE_URL: postgresql://shamil:ci_password@localhost:5432/shamil
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate --workspace @shamil/api
+      - run: npm run lint --workspace @shamil/api
+      - run: npm run typecheck --workspace @shamil/api
+      # test:cov — весь набор плюс порог 90% для src/metrika (jest.config.js).
+      - run: npm run test:cov --workspace @shamil/api
+
+  web:
+    name: Web — lint, typecheck, unit, build, e2e (Playwright)
+    runs-on: ubuntu-latest
+    env:
+      # Метрика включена тестовым номером: e2e проверяют именно эту ветку.
+      # tag.js в e2e подменяется заглушкой, в Яндекс запросы не уходят.
+      NEXT_PUBLIC_YM_ENABLED: 'true'
+      NEXT_PUBLIC_YM_COUNTER_ID: '12345678'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: npm
+      - run: npm ci
+      - run: npm run lint --workspace @shamil/web
+      - name: Typecheck
+        working-directory: apps/web
+        run: npx next typegen && npx tsc -p tsconfig.json --noEmit
+      # test:cov — все unit-тесты плюс порог 90% для lib/analytics.
+      - run: npm run test:cov --workspace @shamil/web
+      - run: npm run build --workspace @shamil/web
+      - name: Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: E2E
+        working-directory: apps/web
+        env:
+          SITE_URL: http://localhost:3355
+        run: |
+          npx next start -p 3355 &
+          for _ in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3355/ && break; sleep 1; done
+          npm run test:e2e

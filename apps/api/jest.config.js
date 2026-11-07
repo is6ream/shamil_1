@@ -28,6 +28,16 @@ module.exports = {
   maxWorkers: 1,
 
   coverageDirectory: '../coverage',
+  // Порог для нового кода (офлайн-конверсии Метрики). Действует при `npm run test:cov`;
+  // считается вместе с тестами на БД — без поднятой базы интеграционные тесты
+  // пропускаются, и порог честно не сходится. Непокрытый остаток — ветки
+  // метаданных декораторов TypeScript в конструкторах, а не логика.
+  // Ключ Jest разрешает от cwd (`path.resolve`), а не от rootDir: `npm run test:cov`
+  // идёт из apps/api, поэтому путь — с `src/`. С `./metrika/` порог не находил
+  // файлов и ронял прогон «Coverage data … was not found».
+  coverageThreshold: {
+    './src/metrika/': { lines: 90, branches: 90, functions: 90, statements: 90 },
+  },
   collectCoverageFrom: [
     '**/*.(t|j)s',
     '!**/*.spec.ts',

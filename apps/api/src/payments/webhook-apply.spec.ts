@@ -16,6 +16,7 @@ import { DonationStatus } from '../generated/prisma/enums';
 import type { ParsedWebhook, WebhookBody } from './payment-provider.types';
 import { AuditService } from '../audit/audit.service';
 import { PaymentsService } from './payments.service';
+import { createTestConversionEnqueue } from '../metrika/testing/metrika-test-config';
 
 /**
  * Применение колбэка на реальном PostgreSQL.
@@ -71,7 +72,7 @@ describeDatabase('применение колбэка', () => {
 
   beforeAll(() => {
     prisma = createPrisma();
-    payments = new PaymentsService(prisma, new AuditService(prisma));
+    payments = new PaymentsService(prisma, new AuditService(prisma), createTestConversionEnqueue());
   });
 
   afterAll(async () => {

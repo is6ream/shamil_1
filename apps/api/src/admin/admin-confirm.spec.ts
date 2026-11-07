@@ -19,6 +19,7 @@ import type { TestFixtures } from '../database/testing/test-database';
 import { DonationStatus } from '../generated/prisma/enums';
 import { AuditService } from '../audit/audit.service';
 import { PaymentsService } from '../payments/payments.service';
+import { createTestConversionEnqueue } from '../metrika/testing/metrika-test-config';
 
 /**
  * Админское подтверждение ручного перевода на реальном PostgreSQL.
@@ -46,7 +47,7 @@ describeDatabase('подтверждение ручного перевода', (
 
   beforeAll(() => {
     prisma = createPrisma();
-    payments = new PaymentsService(prisma, new AuditService(prisma));
+    payments = new PaymentsService(prisma, new AuditService(prisma), createTestConversionEnqueue());
   });
 
   afterAll(async () => {

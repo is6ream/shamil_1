@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { ProgressTrack } from "@/components/goal/ProgressTrack";
 import type { Campaign } from "@/lib/api/types";
 import { MOBILE_BAR, SECTION_IDS } from "@/lib/content";
+import { useSectionVisible } from "@/lib/hooks/useSectionVisible";
 import { kopecksToRubDisplay, kopecksToRubNumberDisplay, percentOfGoal } from "@/lib/money";
 import { scrollToSection, sectionHref } from "@/lib/scroll-to-section";
 
@@ -23,28 +22,7 @@ interface Props {
  * с первого экрана.
  */
 export function MobileDonateBar({ campaign }: Props) {
-  const [isFormVisible, setFormVisible] = useState(false);
-
-  useEffect(() => {
-    const form = document.getElementById(SECTION_IDS.donate);
-
-    if (form === null || typeof IntersectionObserver === "undefined") {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        setFormVisible(entries.some((entry) => entry.isIntersecting));
-      },
-      { threshold: 0.05 },
-    );
-
-    observer.observe(form);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  const isFormVisible = useSectionVisible(SECTION_IDS.donate);
 
   const percent = percentOfGoal(campaign.collectedKopecks, campaign.goalKopecks);
 

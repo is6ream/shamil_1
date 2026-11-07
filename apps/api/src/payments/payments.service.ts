@@ -5,6 +5,7 @@ import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
 import { isEffectiveTransition } from '../donations/donation-status';
 import { DonationStatus } from '../generated/prisma/enums';
+import { ConversionEnqueueService } from '../metrika/conversion-enqueue.service';
 import type { ParsedWebhook, WebhookBody } from './payment-provider.types';
 import type {
   ApplyEventInput,
@@ -63,6 +64,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly conversions: ConversionEnqueueService,
   ) {}
 
   /**
@@ -271,6 +273,12 @@ export class PaymentsService {
             ...(input.method === undefined ? {} : { method: input.method }),
           },
         });
+
+        if (isPaid) {
+          // Офлайн-конверсия Метрики — в той же транзакции: деньги в Метрику
+          // уходят только по факту оплаты, и только один раз (unique donation_id).
+          await this.conversions.enqueue(tx, input.donationId);
+        }
 
         if (input.onApplied !== undefined) {
           await input.onApplied(tx);

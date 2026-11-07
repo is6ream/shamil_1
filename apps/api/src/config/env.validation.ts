@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   Max,
   Min,
   MinLength,
@@ -18,6 +19,13 @@ import {
   ROBOKASSA_PAYMENT_URL,
   ROBOKASSA_PRODUCTION_URL_PREFIX,
 } from '../payments/robokassa/robokassa.constants';
+import {
+  YM_DEFAULT_OFFLINE_GOAL,
+  YM_GOAL_PATTERN,
+  YM_OAUTH_TOKEN_MIN_LENGTH,
+  YM_OFFLINE_DEFAULT_INTERVAL_MINUTES,
+  YM_OFFLINE_MAX_INTERVAL_MINUTES,
+} from '../metrika/metrika.constants';
 import {
   ADMIN_JWT_SECRET_MIN_LENGTH,
   ADMIN_TOKEN_MIN_LENGTH,
@@ -409,6 +417,44 @@ export class EnvVars {
   @IsOptional()
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   WEB_REVALIDATE_URL?: string;
+
+  // ─── Яндекс Метрика: офлайн-конверсии ──────────────────────────────────────
+
+  /**
+   * Выгрузка оплат в Метрику. Выключена — модуль поднимается, очередь копится
+   * (строка outbox на каждую оплату), но в Метрику ничего не уходит.
+   */
+  @envBoolean(false)
+  @IsBoolean()
+  YM_OFFLINE_ENABLED: boolean = false;
+
+  /** Номер счётчика. Обязателен при включённой выгрузке. */
+  @ValidateIf(whenMetrikaOffline)
+  @IsInt()
+  @Min(1)
+  YM_COUNTER_ID?: number;
+
+  /** OAuth-токен с правом загрузки данных в Метрику. Никогда не логируется. */
+  @ValidateIf(whenMetrikaOffline)
+  @IsString()
+  @MinLength(YM_OAUTH_TOKEN_MIN_LENGTH)
+  YM_OAUTH_TOKEN?: string;
+
+  /** Идентификатор цели «JavaScript-событие», к которой привязывается оплата. */
+  @IsString()
+  @Matches(YM_GOAL_PATTERN)
+  YM_OFFLINE_GOAL: string = YM_DEFAULT_OFFLINE_GOAL;
+
+  /** Как часто планировщик выгружает очередь и опрашивает статусы, минуты. */
+  @IsInt()
+  @Min(1)
+  @Max(YM_OFFLINE_MAX_INTERVAL_MINUTES)
+  YM_OFFLINE_INTERVAL_MINUTES: number = YM_OFFLINE_DEFAULT_INTERVAL_MINUTES;
+}
+
+/** Условие «поле обязательно, потому что выгрузка в Метрику включена». */
+function whenMetrikaOffline(env: EnvVars): boolean {
+  return env.YM_OFFLINE_ENABLED;
 }
 
 /** Условие «поле обязательно, потому что медиатека в S3». */

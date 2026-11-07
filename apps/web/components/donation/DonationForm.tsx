@@ -5,6 +5,10 @@ import Link from "next/link";
 
 import { Checkbox } from "@/components/ui/Checkbox";
 import field from "@/components/ui/field.module.css";
+import { METRIKA_GOALS } from "@/lib/analytics/goals";
+import { metrika } from "@/lib/analytics/metrika";
+import { claimOncePerVisit } from "@/lib/analytics/once-per-visit";
+import { useInViewOnce } from "@/lib/hooks/useInView";
 import type { Region } from "@/lib/api/types";
 import { kopecksToRubDisplay, rublesToKopecks } from "@/lib/money";
 import { DONATION_FORM, PAGES } from "@/lib/content";
@@ -47,6 +51,10 @@ export function DonationForm({
   const { state, errors, isBusy, result } = form;
   const amountInput = useRef<HTMLInputElement>(null);
 
+  const [cardRef, inView] = useInViewOnce<HTMLDivElement>(0.5, true);
+  useEffect(() => {
+    if (inView) metrika.reachGoalOncePerVisit(METRIKA_GOALS.formView, claimOncePerVisit);
+  }, [inView]);
   const formRef = useRef(form);
   useEffect(() => { formRef.current = form; });
   useEffect(() => {
@@ -71,7 +79,7 @@ export function DonationForm({
   const unavailable = capabilities.oneTimeMethods.length === 0;
 
   return (
-    <div className={styles.card} data-donation-mode={state.donationType}>
+    <div className={styles.card} data-donation-mode={state.donationType} ref={cardRef}>
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>{DONATION_FORM.title}</h2>
@@ -177,6 +185,7 @@ export function DonationForm({
                   }}
                   onBlur={() => {
                     form.validateField("amount");
+                    form.commitCustomAmount();
                   }}
                 />
                 <span aria-hidden="true">₽</span>
@@ -196,6 +205,7 @@ export function DonationForm({
               ? oneTimeMethod : capabilities.oneTimeMethods[0] ?? null}
             available={capabilities.oneTimeMethods}
             onChange={(option) => {
+              metrika.reachGoal(METRIKA_GOALS.methodSelect, { method: option });
               form.patch(paymentOptionChanges(option));
             }}
           />

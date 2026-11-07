@@ -82,7 +82,7 @@ export function DonationsFeed({ initialPage, canLoadMore = false }: Props) {
         {items.map((item) => (
           <li className={styles.row} key={item.id}>
             <div>
-              <p className={styles.title}>{titleOf(item)}</p>
+              <p className={`${styles.title} ym-hide-content`}>{titleOf(item)}</p>
               <p className={styles.when}>
                 <time dateTime={item.paidAt}>{whenOf(item, now)}</time>
               </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { metrika } from "@/lib/analytics/metrika";
 import { createDonation } from "@/lib/api/client";
 import { buildCreateDonationBodyFromKopecks } from "@/lib/api/donation-body";
 import type { Region } from "@/lib/api/types";
@@ -12,7 +13,7 @@ import type { DonationCapabilities, DonationSubmission } from "./donation-form.m
 // Checkout stays one-time even if a future API advertises recurring support.
 const capabilities: DonationCapabilities = { ...PREVIEW_CAPABILITIES, recurring: null };
 
-function bodyFor(data: DonationSubmission) {
+function bodyFor(data: DonationSubmission, clientId: string | null) {
   const transfer = data.paymentMethod === "transfer";
   const name = data.isAnonymous ? "" : data.donorName;
   return buildCreateDonationBodyFromKopecks({
@@ -25,13 +26,13 @@ function bodyFor(data: DonationSubmission) {
     regionSlug: data.region.slug,
     regionSource: data.region.source,
     antispam: data.antispam,
-  }, data.amountKopecks, readStoredAttribution());
+  }, data.amountKopecks, readStoredAttribution(clientId));
 }
 
 export function DonationAdapter({ regions }: { regions: readonly Region[] }) {
   async function submit(data: DonationSubmission) {
     if (data.donationType !== "one_time") throw new Error("Автоплатежи пока недоступны");
-    window.location.assign((await createDonation(bodyFor(data))).redirectUrl);
+    window.location.assign((await createDonation(bodyFor(data, await metrika.getClientId()))).redirectUrl);
     return {};
   }
 

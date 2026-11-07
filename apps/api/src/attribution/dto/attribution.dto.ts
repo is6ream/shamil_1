@@ -1,4 +1,4 @@
-import { applyDecorators } from '@nestjs/common';
+import { applyDecorators, Logger } from '@nestjs/common';
 import { Transform, Type } from 'class-transformer';
 import {
   IsISO8601,
@@ -18,6 +18,7 @@ import {
   UTM_VALUE_MAX_LENGTH,
   UTM_VALUE_PATTERN,
 } from '../attribution.constants';
+import { YCLID_PATTERN, YM_CLIENT_ID_PATTERN } from '../../metrika/metrika.constants';
 
 /**
  * Нормализация метки до валидации: края обрезаются, регистр — нижний.
@@ -44,6 +45,34 @@ function trimToUndefined({ value }: { value: unknown }): unknown {
   const trimmed = value.trim();
 
   return trimmed.length === 0 ? undefined : trimmed;
+}
+
+const logger = new Logger('AttributionDto');
+
+/**
+ * Идентификатор визита для Метрики: значение не по формату отбрасывается
+ * с предупреждением, а не превращается в 400.
+ *
+ * Бизнес-правило: деньги важнее аналитики. ClientID приходит из чужого
+ * скрипта (`getClientID`), yclid — из адреса рекламного клика; их формат
+ * сайт не контролирует, и сорвать из-за них пожертвование нельзя.
+ * UTM-метки остаются строгими (400): их фронт вычищает сам до отправки,
+ * и этот контракт закреплён e2e-тестами прошлого релиза.
+ */
+export function lenientIdentifier(pattern: RegExp, field: string) {
+  return ({ value }: { value: unknown }): string | undefined => {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    if (typeof value === 'string' && pattern.test(value.trim())) {
+      return value.trim();
+    }
+
+    logger.warn(`Атрибуция: ${field} не по формату — отброшен, донат создаётся без него`);
+
+    return undefined;
+  };
 }
 
 /** Поле UTM-метки: необязательное, нормализованное, закрытый набор символов. */
@@ -125,4 +154,16 @@ export class AttributionDto {
   @IsOptional()
   @IsISO8601({ strict: true })
   firstTouchAt?: string;
+
+  /** ClientID Яндекс Метрики — для офлайн-конверсии оплаты. Только цифры. */
+  @Transform(lenientIdentifier(YM_CLIENT_ID_PATTERN, 'ymClientId'))
+  @IsOptional()
+  @IsString()
+  ymClientId?: string;
+
+  /** Метка клика Яндекс Директа (`yclid` из адреса). Только цифры. */
+  @Transform(lenientIdentifier(YCLID_PATTERN, 'yclid'))
+  @IsOptional()
+  @IsString()
+  yclid?: string;
 }

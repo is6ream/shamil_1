@@ -5,6 +5,8 @@ import {
   ATTRIBUTION_MAX_AGE_S,
   FIRST_TOUCH_COOKIE,
   LAST_TOUCH_COOKIE,
+  YCLID_COOKIE,
+  YCLID_MAX_AGE_S,
   planAttributionCookies,
 } from "@/lib/attribution";
 
@@ -50,6 +52,10 @@ export function proxy(request: NextRequest): NextResponse {
 
   if (plan.lastTouch !== undefined) {
     response.cookies.set({ name: LAST_TOUCH_COOKIE, value: plan.lastTouch, ...cookie });
+  }
+
+  if (plan.yclid !== undefined) {
+    response.cookies.set({ name: YCLID_COOKIE, value: plan.yclid, ...cookie, maxAge: YCLID_MAX_AGE_S });
   }
 
   return response;

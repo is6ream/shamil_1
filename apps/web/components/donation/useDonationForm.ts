@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 
+import { METRIKA_GOALS } from "@/lib/analytics/goals";
+import { metrika } from "@/lib/analytics/metrika";
 import type { Region } from "@/lib/api/types";
 import { ApiError } from "@/lib/api/client";
 import { DONATION_FORM } from "@/lib/content";
@@ -80,7 +82,12 @@ export function useDonationForm(
     patch({ amountInput, selectedPreset: presetFor(amountInput) });
   };
 
+  const commitCustomAmount = () => {
+    const amount = selectAmountRubles(state);
+    if (amount !== null && state.selectedPreset === null) metrika.reachGoal(METRIKA_GOALS.amountSelect, { amount });
+  };
   const selectPreset = (rubles: number) => {
+    metrika.reachGoal(METRIKA_GOALS.amountSelect, { amount: rubles });
     clearError("amount");
     patch({ amountInput: formatAmountInput(String(rubles)), selectedPreset: rubles });
   };
@@ -130,6 +137,7 @@ export function useDonationForm(
     inFlight.current = true;
     setBusy(true);
     try {
+      metrika.reachGoal(METRIKA_GOALS.submit, { amount: Number(data.amountKopecks) / 100, method: data.paymentMethod });
       setResult(await submitDonation(data));
     } catch (error: unknown) {
       setFormError(error instanceof ApiError ? error.messages.join(". ") : DONATION_FORM.unknownError);
@@ -149,6 +157,7 @@ export function useDonationForm(
     clearError,
     validateField,
     setAmountInput,
+    commitCustomAmount,
     selectPreset,
     setPhone,
     setAnonymous,

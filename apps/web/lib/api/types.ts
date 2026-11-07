@@ -43,6 +43,10 @@ export interface DonationAttribution {
   readonly landingPage?: string;
   /** ISO-время первого захода. */
   readonly firstTouchAt?: string;
+  /** ClientID Яндекс Метрики — для офлайн-конверсии оплаты. Только цифры. */
+  readonly ymClientId?: string;
+  /** Метка клика Яндекс Директа из адреса. Только цифры. */
+  readonly yclid?: string;
 }
 
 /** Зеркало `HOW_DID_YOU_HEAR` бэкенда. */

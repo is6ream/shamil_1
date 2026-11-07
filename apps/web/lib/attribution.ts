@@ -31,6 +31,19 @@ export const LAST_TOUCH_COOKIE = "shamil_lt";
 /** 90 дней — окно атрибуции. Зеркало `ATTRIBUTION_WINDOW_DAYS` бэкенда. */
 export const ATTRIBUTION_MAX_AGE_S = 90 * 24 * 60 * 60;
 
+/**
+ * Метка клика Яндекс Директа (`yclid`) — отдельной cookie, а не в last-touch:
+ * клик из рекламы бывает без UTM, и last-touch без источника потерял бы смысл.
+ * Срок — 21 день: столько Метрика сопоставляет офлайн-конверсию с визитом,
+ * хранить дольше незачем.
+ */
+export const YCLID_COOKIE = "shamil_yclid";
+export const YCLID_MAX_AGE_S = 21 * 24 * 60 * 60;
+
+/** Зеркало `YCLID_PATTERN` / `YM_CLIENT_ID_PATTERN` бэкенда. */
+const YCLID_PATTERN = /^[0-9]{1,64}$/;
+const YM_CLIENT_ID_PATTERN = /^[0-9]{1,32}$/;
+
 const UTM_VALUE_MAX_LENGTH = 128;
 const URL_MAX_LENGTH = 512;
 /** Без `@`: e-mail в метке — персональные данные. */
@@ -239,6 +252,14 @@ export function parseLastTouch(raw: string | undefined): UtmTouch | null {
 export interface AttributionCookiePlan {
   readonly firstTouch?: string;
   readonly lastTouch?: string;
+  readonly yclid?: string;
+}
+
+/** `yclid` из query, только цифры. Иначе `null`: битая метка не перезаписывает хорошую. */
+export function readYclid(search: string): string | null {
+  const value = new URLSearchParams(search).get("yclid")?.trim() ?? "";
+
+  return YCLID_PATTERN.test(value) ? value : null;
 }
 
 /**
@@ -251,7 +272,7 @@ export function planAttributionCookies(
   context: LandingContext,
   existingFirstTouch: string | undefined,
 ): AttributionCookiePlan {
-  const plan: { firstTouch?: string; lastTouch?: string } = {};
+  const plan: { firstTouch?: string; lastTouch?: string; yclid?: string } = {};
 
   if (parseFirstTouch(existingFirstTouch) === null) {
     plan.firstTouch = JSON.stringify(buildFirstTouch(context));
@@ -261,6 +282,12 @@ export function planAttributionCookies(
 
   if (utm !== null) {
     plan.lastTouch = JSON.stringify(utm);
+  }
+
+  const yclid = readYclid(context.search);
+
+  if (yclid !== null) {
+    plan.yclid = yclid;
   }
 
   return plan;
@@ -308,10 +335,41 @@ export function readCookie(cookieHeader: string, name: string): string | undefin
   }
 }
 
-/** Атрибуция из cookie браузера. Только на клиенте. */
-export function readStoredAttribution(): DonationAttribution | null {
-  return toDonationAttribution(
-    readCookie(document.cookie, FIRST_TOUCH_COOKIE),
-    readCookie(document.cookie, LAST_TOUCH_COOKIE),
+/** Идентификаторы визита для офлайн-конверсий Метрики. */
+export interface VisitIdentifiers {
+  readonly ymClientId?: string | null;
+  readonly yclid?: string | null;
+}
+
+/**
+ * Добавляет к атрибуции ClientID Метрики и yclid — каждый только по формату:
+ * метка не имеет права сорвать донат, и бэкенд получает лишь то, что примет.
+ */
+export function withVisitIdentifiers(
+  attribution: DonationAttribution | null,
+  ids: VisitIdentifiers,
+): DonationAttribution | null {
+  const ymClientId = ids.ymClientId?.trim() ?? "";
+  const yclid = ids.yclid?.trim() ?? "";
+  const extra = {
+    ...(YM_CLIENT_ID_PATTERN.test(ymClientId) ? { ymClientId } : {}),
+    ...(YCLID_PATTERN.test(yclid) ? { yclid } : {}),
+  };
+
+  if (!hasKeys(extra)) {
+    return attribution;
+  }
+
+  return { ...(attribution ?? {}), ...extra };
+}
+
+/** Атрибуция из cookie браузера, с ClientID Метрики. Только на клиенте. */
+export function readStoredAttribution(ymClientId: string | null = null): DonationAttribution | null {
+  return withVisitIdentifiers(
+    toDonationAttribution(
+      readCookie(document.cookie, FIRST_TOUCH_COOKIE),
+      readCookie(document.cookie, LAST_TOUCH_COOKIE),
+    ),
+    { ymClientId, yclid: readCookie(document.cookie, YCLID_COOKIE) },
   );
 }

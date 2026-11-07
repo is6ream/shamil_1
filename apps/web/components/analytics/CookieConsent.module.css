@@ -1,0 +1,58 @@
+/*
+ * Баннер cookie: не модальный, компактный, не перекрывает форму доната.
+ * Десктоп — карточка слева внизу (форма в правой колонке).
+ * Телефон — над нижней плашкой; пока форма на экране, баннер спрятан.
+ */
+.banner {
+  position: fixed;
+  bottom: var(--sp-5);
+  left: var(--sp-5);
+  z-index: var(--z-sheet);
+  display: grid;
+  gap: var(--sp-3);
+  width: min(380px, calc(100vw - 2 * var(--sp-4)));
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-bar);
+  color: var(--text-strong);
+}
+
+.text {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.text a {
+  color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.actions :global(.btn) {
+  flex: 1;
+  height: var(--control-h-sm);
+  padding: 0 var(--sp-4);
+}
+
+@media (max-width: 1023px) {
+  .banner[data-form-visible="true"] {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .banner {
+    right: var(--sp-4);
+    left: var(--sp-4);
+    /* Над нижней плашкой «Пожертвовать» (≈80px), она не должна уйти под баннер. */
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+  }
+}
