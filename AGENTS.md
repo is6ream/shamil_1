@@ -24,6 +24,7 @@
 | Платежи, вебхуки, переводы | `shamil-payments` |
 | Next.js, SEO/OG, кеш, серверные/клиентские компоненты | `shamil-nextjs` |
 | Подготовка выпуска | `shamil-release` (не разрешение на публикацию) |
+| Диагностика и исправление деплоя фронтенда shamil-web в Timeweb | [shamil-web-deploy](.agents/skills/shamil-web-deploy/SKILL.md) |
 | Запросы Prisma / команды ORM 7 | `prisma-client-api` / `prisma-cli` |
 | NestJS | уже установленный пользовательский `nestjs-expert` |
 | Доработка и проверка интерфейса | основной `impeccable` |
