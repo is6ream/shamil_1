@@ -9,9 +9,6 @@ import styles from "./SiteFooter.module.css";
 
 const INFO_LINKS = [PAGES.privacy, PAGES.offer, PAGES.cookie, PAGES.reports] as const;
 
-/** На телефоне в макете только две ссылки из трёх. */
-const MOBILE_HIDDEN_HREF: string = PAGES.cookie.href;
-
 /**
  * Футер макета v2: логотип и юрлицо, контакты, информация.
  *
@@ -57,10 +54,7 @@ export function SiteFooter({ contacts = ORGANIZATION }: { readonly contacts?: Co
             <p className={styles.eyebrow}>{FOOTER.info}</p>
             <ul className={styles.links}>
               {INFO_LINKS.map((link) => (
-                <li
-                  key={link.href}
-                  className={link.href === MOBILE_HIDDEN_HREF ? styles.desktopOnly : undefined}
-                >
+                <li key={link.href}>
                   <Link href={link.href}>{link.title}</Link>
                 </li>
               ))}
