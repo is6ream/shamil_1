@@ -18,8 +18,8 @@ export const metadata: Metadata = {
  * TODO(заказчик): отчёты о расходах по этапам стройки — документами
  * или таблицей. Пока страница показывает приход, а не расход.
  */
-/** Лента живёт так же, как на главной: не реже раза в 15 секунд. */
-export const revalidate = 15;
+/** Свежая лента при открытии; новости сохраняют свой кеш в API-слое. */
+export const revalidate = 0;
 
 export default async function ReportsPage() {
   const [feed, news] = await Promise.all([

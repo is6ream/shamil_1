@@ -162,6 +162,7 @@ export interface ApiGetOptions {
  */
 export function apiGet<T>(path: string, options: ApiGetOptions): Promise<T> {
   return send<T>(path, {
+    ...(options.revalidate === 0 ? { cache: "no-store" as const } : {}),
     next: { revalidate: options.revalidate, ...(options.tags ? { tags: [...options.tags] } : {}) },
   });
 }

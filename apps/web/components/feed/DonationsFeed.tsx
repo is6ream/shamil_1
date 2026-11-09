@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { getFeed } from "@/lib/api/showcase";
 import type { FeedItem, FeedPage } from "@/lib/api/types";
@@ -50,13 +50,15 @@ export function DonationsFeed({ initialPage, canLoadMore = false }: Props) {
   const [cursor, setCursor] = useState<string | null>(initialPage.nextCursor);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadingRef = useRef(false);
   const now = useClientNow();
 
   const loadMore = async () => {
-    if (cursor === null) {
+    if (cursor === null || loadingRef.current) {
       return;
     }
 
+    loadingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -68,6 +70,7 @@ export function DonationsFeed({ initialPage, canLoadMore = false }: Props) {
     } catch {
       setError("Не удалось загрузить продолжение ленты. Попробуйте ещё раз.");
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   };

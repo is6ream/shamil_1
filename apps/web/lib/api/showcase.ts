@@ -32,7 +32,7 @@ import type {
 export const FEED_PAGE_SIZE = 6;
 
 /**
- * Живые цифры: сумма, рейтинги, лента. 15 секунд — донатер, вернувшийся
+ * Живые цифры: сумма и рейтинги. 15 секунд — донатер, вернувшийся
  * со «спасибо», видит свой платёж почти сразу, а бэкенд не отвечает
  * на каждое открытие главной.
  */
@@ -113,8 +113,9 @@ export function getTopDonors(): Promise<readonly DonorRankRow[]> {
  * а возвращает бэкенду как есть — иначе смена схемы пагинации потребует
  * правки клиента.
  *
- * Кешируется только первая страница: продолжение запрашивает браузер
- * («Показать ещё»), и там `next.revalidate` не действует.
+ * Без кеша на сервере и в браузере: независимые ISR-снимки главной и
+ * отчётов могли начинаться с разных записей. Продолжение использует
+ * курсор последней показанной записи, даже если появились новые платежи.
  */
 export function getFeed(cursor?: string): Promise<FeedPage> {
   const query = new URLSearchParams({ limit: String(FEED_PAGE_SIZE) });
@@ -123,7 +124,7 @@ export function getFeed(cursor?: string): Promise<FeedPage> {
     query.set("cursor", cursor);
   }
 
-  return apiGet<FeedPage>(`/donations/feed?${query.toString()}`, { revalidate: LIVE_REVALIDATE_S });
+  return apiGet<FeedPage>(`/donations/feed?${query.toString()}`, { revalidate: 0 });
 }
 
 /**

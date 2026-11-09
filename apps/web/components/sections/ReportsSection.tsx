@@ -31,7 +31,7 @@ export function ReportsSection({ regions, feed }: Props) {
       <div className={reports.feed}>
         <div className={styles.titleRow}>
           <h2 className={styles.title}>{FEED.title}</h2>
-          <Link className={styles.titleLink} href={PAGES.reports.href}>
+          <Link className={styles.titleLink} href={PAGES.reports.href} prefetch={false}>
             {FEED.allReports}
           </Link>
         </div>
