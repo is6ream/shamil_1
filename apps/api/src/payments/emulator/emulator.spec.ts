@@ -22,6 +22,7 @@ import { ScenarioLinkError, signScenario, verifyScenario } from './scenario-link
 const ORDER_ID = '11111111-2222-4333-8444-555555555555';
 
 const PAYMENT: PaymentConfig = {
+  onlineOrdersEnabled: true,
   provider: PaymentProviderCode.Robokassa,
   isTest: true,
   hashAlgorithm: PaymentHashAlgorithm.Md5,

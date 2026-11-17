@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RecurringReconciliationController } from './recurring-reconciliation.controller';
 
 import { AuditModule } from '../audit/audit.module';
 import { AuthCoreModule } from '../auth/auth-core.module';
@@ -21,7 +22,7 @@ import { ManualDonationService } from './manual-donation.service';
  */
 @Module({
   imports: [AuthCoreModule, AuditModule, PaymentsModule, RevalidationModule],
-  controllers: [AdminDonationsController, AdminDonationsListController, CampaignAdminController, DashboardController],
+  controllers: [AdminDonationsController, AdminDonationsListController, CampaignAdminController, DashboardController, RecurringReconciliationController],
   providers: [AdminDonationsService, AdminDonationsQueryService, ManualDonationService, CampaignAdminService, DashboardService],
 })
 export class AdminModule {}

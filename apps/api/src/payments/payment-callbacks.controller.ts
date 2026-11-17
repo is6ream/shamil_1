@@ -56,7 +56,7 @@ export class PaymentCallbacksController {
 
     const parsed = this.parse(provider, body);
 
-    await this.payments.applyWebhook(parsed, body);
+    await this.payments.applyWebhook(parsed, body, provider.isTestPayment);
 
     // Robokassa считает колбэк принятым, только получив ровно эту строку;
     // что угодно другое она будет ретраить.

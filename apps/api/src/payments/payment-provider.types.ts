@@ -20,6 +20,7 @@ export interface CreatePaymentInput {
   readonly amountKopecks: bigint;
   /** Назначение платежа: видит донатер на стороне провайдера. */
   readonly description: string;
+  readonly recurringCardLabel?: string;
 }
 
 export interface CreatedPayment {

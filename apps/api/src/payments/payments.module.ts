@@ -1,3 +1,10 @@
+import { RecurringService } from './recurring/recurring.service';
+import { DonorAuthModule } from '../donor-auth/donor-auth.module';
+import { RECURRING_OPTIONS } from '../recurring-contract/contract';
+import { RecurringManagementController } from './recurring/recurring-management.controller';
+import { RecurringManagementService } from './recurring/recurring-management.service';
+import { RECURRING_EVIDENCE_POLICY, RECURRING_TERMS_SOURCE, RECURRING_TRANSPORT, documentedEvidencePolicy, robokassaTransport } from './recurring/runtime-policy';
+import { RECURRING_TERMS_ARCHIVE } from './recurring/terms';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -17,9 +24,9 @@ import { RobokassaProvider } from './providers/robokassa.provider';
  * Онлайн-провайдер приложения, если он включён.
  *
  * `PAYMENT_PROVIDER` теперь значит «какой онлайн-агрегатор подключён»:
- * `manual` — онлайн выключен целиком, и таб «Онлайн» получает 400 с просьбой
- * перевести по реквизитам. Это же и рубильник: выключить приём картой
- * в день проблем у агрегатора — одна переменная, пароли стирать не нужно.
+ * `manual` — провайдер отключён целиком, включая ResultURL.
+ * Для остановки новых заказов используйте PAYMENT_ONLINE_ORDERS_ENABLED=false:
+ * провайдер и проверка уведомлений ранее созданных заказов сохраняются.
  *
  * Классы создаются здесь вручную, а не регистрируются провайдерами модуля,
  * намеренно: Nest поднимает всех провайдеров модуля сразу, а конструктор
@@ -54,16 +61,23 @@ export function createPaymentProviderResolver(config: ConfigService<AppConfig, t
   return new PaymentProviderResolver({
     manual: new ManualProvider(config),
     online,
+    onlineOrdersEnabled: config.get('payment', { infer: true }).onlineOrdersEnabled,
     // Без `channel` в запросе — прежнее поведение: провайдер из PAYMENT_PROVIDER.
     defaultChannel: online === null ? 'transfer' : 'online',
   });
 }
 
 @Module({
-  imports: [DatabaseModule, AuditModule, MetrikaModule],
-  controllers: [PaymentCallbacksController],
+  imports: [DatabaseModule, AuditModule, MetrikaModule, DonorAuthModule],
+  controllers: [PaymentCallbacksController, RecurringManagementController],
   providers: [
     PaymentsService,
+    RecurringService,
+    RecurringManagementService,
+    { provide: RECURRING_OPTIONS, inject: [ConfigService], useFactory: (config: ConfigService) => config.get('recurring') },
+    { provide: RECURRING_TERMS_SOURCE, useValue: RECURRING_TERMS_ARCHIVE },
+    { provide: RECURRING_EVIDENCE_POLICY, useValue: documentedEvidencePolicy },
+    { provide: RECURRING_TRANSPORT, useValue: robokassaTransport },
     {
       provide: PaymentProviderResolver,
       inject: [ConfigService],
@@ -73,6 +87,6 @@ export function createPaymentProviderResolver(config: ConfigService<AppConfig, t
   // PaymentsService экспортируется ради админского подтверждения ручного
   // доната: перевод pending → paid обязан идти через ту же машинерию, что
   // и вебхук, а не через вторую копию логики в админском модуле.
-  exports: [PaymentProviderResolver, PaymentsService],
+  exports: [PaymentProviderResolver, PaymentsService, RecurringService],
 })
 export class PaymentsModule {}

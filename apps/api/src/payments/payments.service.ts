@@ -24,7 +24,7 @@ import { MANUAL_EVENT_ID_PREFIX } from './payments.types';
  * данных (152-ФЗ, CONTEXT.md §7). Для разбора спорного платежа хватает
  * номера счёта, суммы и подписи.
  */
-const REDACTED_FIELDS = new Set(['email']);
+const REDACTED_FIELDS = new Set(['email', 'signaturevalue', 'incaccount']);
 const REDACTED_MARKER = '[скрыто: ПДн]';
 
 /** Код нарушения уникального индекса у Prisma. */
@@ -77,16 +77,22 @@ export class PaymentsService {
    * Сам переход живёт в `applyEvent` — общем для вебхука и для ручного
    * подтверждения из админки.
    */
-  async applyWebhook(parsed: ParsedWebhook, body: WebhookBody): Promise<void> {
+  async applyWebhook(parsed: ParsedWebhook, body: WebhookBody, isTestPayment?: boolean): Promise<void> {
     const donation = await this.prisma.donation.findUnique({
       where: { invoiceNo: parsed.invoiceNo },
-      select: { id: true, amountKopecks: true, provider: true },
+      select: { id: true, amountKopecks: true, provider: true, subscriptionFirst: { select: { id: true } }, recurringAttempt: { select: { donationId: true } } },
     });
 
     if (donation === null) {
       await this.storeUnmatchedEvent(parsed, body);
 
       return;
+    }
+
+    if ((donation.subscriptionFirst || donation.recurringAttempt)
+      && (donation.provider !== parsed.provider || (body.IsTest !== undefined && body.IsTest !== '0')
+        || body.Shp_order_id !== donation.id)) {
+      throw new BadRequestException('Уведомление не соответствует регулярному заказу');
     }
 
     if (donation.provider !== parsed.provider) {
@@ -117,6 +123,7 @@ export class PaymentsService {
       status: parsed.status,
       amountKopecks: parsed.amountKopecks,
       method: parsed.method,
+      isTestPayment,
       payload: toStoredPayload(body),
     });
 
@@ -230,11 +237,14 @@ export class PaymentsService {
   private async applyEvent(input: ApplyEventInput): Promise<PaymentEventOutcome> {
     try {
       return await this.prisma.$transaction(async (tx) => {
+        // Сериализуем события одного заказа, включая разные event id:
+        // повторный paid не должен переписывать фактическую сумму/время.
+        await tx.$queryRaw`SELECT id FROM donation WHERE id = ${input.donationId}::uuid FOR UPDATE`;
         // Статус перечитывается внутри транзакции: между поиском доната
         // и записью события могла пройти параллельная доставка.
         const current = await tx.donation.findUniqueOrThrow({
           where: { id: input.donationId },
-          select: { status: true },
+          select: { status: true, isTestPayment: true },
         });
 
         const isEffective = isEffectiveTransition(current.status, input.status);
@@ -270,6 +280,9 @@ export class PaymentsService {
             // Robokassa времени платежа в Result URL не присылает, у ручного
             // перевода его нет вовсе — фиксируем момент подтверждения.
             paidAt: isPaid ? appliedAt : null,
+            isTestPayment: isPaid && input.isTestPayment !== undefined
+              ? current.isTestPayment === true || input.isTestPayment
+              : undefined,
             ...(input.method === undefined ? {} : { method: input.method }),
           },
         });

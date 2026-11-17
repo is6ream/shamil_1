@@ -131,6 +131,36 @@ function whenRobokassa(env: EnvVars): boolean {
  * лучше упасть на старте, чем принимать платежи с половиной конфига.
  */
 export class EnvVars {
+  @envBoolean(false)
+  @IsBoolean()
+  PAYMENT_RECURRING_CHECKOUT_ENABLED: boolean = false;
+
+  @envBoolean(false)
+  @IsBoolean()
+  PAYMENT_RECURRING_DISPATCH_ENABLED: boolean = false;
+
+  @IsOptional() @IsString()
+  DONOR_CODE_HMAC_SECRET?: string;
+  @ValidateIf((_object: unknown, value: unknown) => value !== undefined && value !== '') @IsString() @MinLength(32)
+  DONOR_IP_FORWARDING_SECRET?: string;
+  @IsOptional() @IsString()
+  DONOR_SMTP_HOST?: string;
+  @IsInt() @Min(1) @Max(65535)
+  DONOR_SMTP_PORT: number = 465;
+  @envBoolean(true) @IsBoolean()
+  DONOR_SMTP_SECURE: boolean = true;
+  @IsOptional() @IsString()
+  DONOR_SMTP_USER?: string;
+  @IsOptional() @IsString()
+  DONOR_SMTP_PASS?: string;
+  @IsOptional() @IsString()
+  DONOR_SMTP_FROM?: string;
+  @IsOptional() @IsString()
+  PAYMENT_RECURRING_APPROVAL_REFERENCE?: string;
+  @IsOptional() @IsString()
+  PAYMENT_RECURRING_CARD_LABEL?: string;
+  @IsOptional() @IsString()
+  PAYMENT_RECURRING_CARD_METHOD_CODE?: string;
   @IsEnum(NodeEnv)
   NODE_ENV: NodeEnv = NodeEnv.Development;
 
@@ -162,6 +192,9 @@ export class EnvVars {
   @IsString()
   CORS_ORIGINS: string = 'http://localhost:3000';
 
+  @IsOptional() @IsString()
+  DONOR_TRUSTED_PROXY_CIDRS?: string;
+
   @IsInt()
   @Min(1)
   THROTTLE_TTL_MS: number = DEFAULT_THROTTLE_TTL_MS;
@@ -188,6 +221,11 @@ export class EnvVars {
 
   @IsEnum(PaymentProviderCode)
   PAYMENT_PROVIDER: PaymentProviderCode = PaymentProviderCode.Manual;
+
+  /** Отключает только новые онлайн-заказы, сохраняя ResultURL старых. */
+  @envBoolean(true)
+  @IsBoolean()
+  PAYMENT_ONLINE_ORDERS_ENABLED: boolean = true;
 
   /**
    * Режим провайдера. Значения по умолчанию намеренно нет: выбор между боевыми
@@ -473,7 +511,8 @@ function crossFieldErrors(env: EnvVars): readonly string[] {
   // Демо-стенд — единственное исключение из запретов production: эмулятор
   // там и есть способ оплаты. Любая другая стадия при NODE_ENV=production
   // проверяется ровно как боевой сайт.
-  const isProduction = env.NODE_ENV === NodeEnv.Production && env.DEPLOY_STAGE !== DeployStage.Demo;
+  const isProduction = env.DEPLOY_STAGE === DeployStage.Production ||
+    (env.NODE_ENV === NodeEnv.Production && env.DEPLOY_STAGE !== DeployStage.Demo);
 
   if (isProduction && env.PAYMENT_EMULATOR_ENABLED) {
     errors.push('PAYMENT_EMULATOR_ENABLED: эмулятор оплаты в production запрещён');

@@ -1,4 +1,6 @@
-import { Type } from 'class-transformer';
+import { Equals, IsDateString } from 'class-validator';
+import { frequencies, type Frequency } from '../../payments/recurring/calendar';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsEmpty,
@@ -40,7 +42,36 @@ const PHONE_E164_PATTERN = /^\+[1-9][0-9]{7,14}$/;
  * сверяется с минимумом сбора и дальше не используется нигде — в подпись
  * уходит значение, посчитанное на бэкенде.
  */
+class RecurringConsentDto {
+  @IsIn(frequencies)
+  frequency!: Frequency;
+
+  @Equals('card')
+  method!: 'card';
+
+  @Equals(true)
+  @Transform(({ obj }: { obj: Record<string, unknown> }) => obj.accepted)
+  accepted!: true;
+
+  @IsString()
+  @MaxLength(100)
+  version!: string;
+
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  previewDate!: string;
+
+  @Matches(/^[0-9a-f]{64}$/)
+  key!: string;
+}
+
 export class CreateDonationDto {
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => RecurringConsentDto)
+  recurring?: RecurringConsentDto;
+
   /**
    * Сумма в копейках. Целое число, без плавающей точки: рубли с копейками
    * в JSON — это double, а double на деньгах сбора расходится с выпиской.

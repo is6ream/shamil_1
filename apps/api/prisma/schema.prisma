@@ -186,6 +186,8 @@ model Donation {
   /// KGS для Mbank. Учётная сумма при этом всегда в копейках рубля.
   chargedCurrency    String         @default("RUB") @map("charged_currency") @db.Char(3)
   chargedAmountMinor BigInt?        @map("charged_amount_minor")
+  /// NULL means historical payment mode is unknown; never infer production eligibility.
+  isTestPayment      Boolean?       @map("is_test_payment")
   /// Код провайдера: 'manual' | 'robokassa' | 'kaspi' | 'mbank'. Не enum —
   /// агрегатор ещё не согласован (блокер), а миграцию enum'а на проде не хочется.
   provider           String         @default("manual") @db.VarChar(32)
@@ -250,6 +252,8 @@ model Donation {
 
   campaign Campaign         @relation(fields: [campaignId], references: [id], onDelete: Restrict)
   region   Region?          @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  subscriptionFirst RecurringSubscription? @relation("RecurringFirst")
+  recurringAttempt RecurringAttempt?
   contact  DonationContact?
   events   PaymentEvent[]
   metrikaConversion MetrikaOfflineConversion?
@@ -721,4 +725,108 @@ model MetrikaOfflineConversion {
   @@index([status, createdAt])
   @@index([uploadingId])
   @@map("metrika_offline_conversion")
+}
+
+model RecurringSubscription {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Legacy access only, separate from checkout idempotency.
+  keyHash           String?  @unique @map("key_hash")
+  ownerId           String?  @map("owner_id") @db.Uuid
+  owner             DonorIdentity? @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  checkoutKey       String?  @map("checkout_key") @db.Uuid
+  checkoutRequestHash String? @map("checkout_request_hash") @db.VarChar(64)
+  checkoutUrl       String? @map("checkout_url")
+  providerEvidence  String? @map("provider_evidence")
+  settlementEvidence String? @map("settlement_evidence")
+  reconciliationReason String? @map("reconciliation_reason")
+  lastReconciledAt DateTime? @map("last_reconciled_at") @db.Timestamptz(3)
+  /// Historical evidence stays unverified; claiming does not verify consent.
+  consentVerifiedAt DateTime? @map("consent_verified_at") @db.Timestamptz(3)
+  legacyClaimedAt   DateTime? @map("legacy_claimed_at") @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  cancelledAt       DateTime? @map("cancelled_at") @db.Timestamptz(3)
+  merchantId        String   @map("merchant_id")
+  firstDonationId   String   @unique @map("first_donation_id") @db.Uuid
+  firstDonation     Donation @relation("RecurringFirst", fields: [firstDonationId], references: [id])
+  frequency         String
+  termsVersion      String   @map("terms_version")
+  termsSnapshot     String?  @map("terms_snapshot")
+  consentedAt       DateTime @default(now()) @map("consented_at") @db.Timestamptz(3)
+  previewDate       String   @map("preview_date")
+  state             String   @default("pending")
+  anchorDay         Int?     @map("anchor_day")
+  nextAt            DateTime? @map("next_at") @db.Timestamptz(3)
+  nextCheckAt       DateTime @default(now()) @map("next_check_at") @db.Timestamptz(3)
+  attempts          RecurringAttempt[]
+
+  @@unique([ownerId, checkoutKey])
+  @@index([ownerId, createdAt, id])
+  @@index([state, nextAt])
+  @@index([state, nextCheckAt])
+  @@map("recurring_subscription")
+}
+
+model RecurringAttempt {
+  reconciliationReason String? @map("reconciliation_reason")
+  lastReconciledAt DateTime? @map("last_reconciled_at") @db.Timestamptz(3)
+  subscriptionId String @map("subscription_id") @db.Uuid
+  subscription   RecurringSubscription @relation(fields: [subscriptionId], references: [id])
+  period         String
+  scheduledAt    DateTime @map("scheduled_at") @db.Timestamptz(3)
+  donationId     String @unique @map("donation_id") @db.Uuid
+  donation       Donation @relation(fields: [donationId], references: [id])
+  state          String @default("reserved")
+  nextCheckAt    DateTime @default(now()) @map("next_check_at") @db.Timestamptz(3)
+
+  @@id([subscriptionId, period])
+  @@index([state, nextCheckAt])
+  @@map("recurring_attempt")
+}
+
+model RecurringHeartbeat {
+  id String @id
+  lastStartedAt DateTime @map("last_started_at") @db.Timestamptz(3)
+  lastCompletedAt DateTime? @map("last_completed_at") @db.Timestamptz(3)
+  @@map("recurring_heartbeat")
+}
+
+/// Separate from AdminUser and DonationContact; created only after email verification.
+model DonorIdentity {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  emailNormalized String @unique @map("email_normalized") @db.VarChar(254)
+  emailVerifiedAt DateTime @map("email_verified_at") @db.Timestamptz(3)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  sessions        DonorSession[]
+  subscriptions   RecurringSubscription[]
+
+  @@map("donor_identity")
+}
+
+model DonorEmailChallenge {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  emailNormalized String @map("email_normalized") @db.VarChar(254)
+  /// HMAC of id, email and code with a dedicated server secret.
+  codeHash        String @map("code_hash") @db.VarChar(64)
+  expiresAt       DateTime @map("expires_at") @db.Timestamptz(3)
+  consumedAt      DateTime? @map("consumed_at") @db.Timestamptz(3)
+  failedAttempts  Int @default(0) @map("failed_attempts")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([emailNormalized, createdAt])
+  @@index([expiresAt])
+  @@map("donor_email_challenge")
+}
+
+model DonorSession {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  donorId   String @map("donor_id") @db.Uuid
+  donor     DonorIdentity @relation(fields: [donorId], references: [id], onDelete: Restrict)
+  tokenHash String @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([donorId, expiresAt])
+  @@index([expiresAt])
+  @@map("donor_session")
 }

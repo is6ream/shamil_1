@@ -46,6 +46,13 @@ export function configureApp(app: NestExpressApplication): void {
   const media = config.get('media', { infer: true });
 
   const express: Express = app.getHttpAdapter().getInstance();
+  express.use((request, response, next) => {
+    if (/^\/api\/(?:donor(?:\/|$)|donations\/(?:capabilities|recurring)(?:\/|$))/.test(request.path)) {
+      response.setHeader('Cache-Control', 'no-store');
+      response.setHeader('Referrer-Policy', 'no-referrer');
+    }
+    next();
+  });
   express.set('trust proxy', TRUSTED_PROXY_HOPS);
 
   app.setGlobalPrefix(API_GLOBAL_PREFIX);

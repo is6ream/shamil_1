@@ -64,6 +64,10 @@ export class RobokassaProvider implements PaymentProvider {
 
   private readonly payment: PaymentConfig;
 
+  get isTestPayment(): boolean {
+    return this.payment.isTest || this.payment.emulatorEnabled === true;
+  }
+
   constructor(config: ConfigService<AppConfig, true>) {
     this.payment = config.get('payment', { infer: true });
 
@@ -109,7 +113,7 @@ export class RobokassaProvider implements PaymentProvider {
     // (docs.robokassa.ru, «Фискализация»). Кодируем один раз здесь:
     // разное кодирование в этих двух местах и есть классическая причина
     // «подпись не сходится».
-    const receiptJson = this.payment.receipt.enabled
+    const receiptJson = input.recurringCardLabel === undefined && this.payment.receipt.enabled
       ? buildReceiptJson({ outSum, config: this.payment.receipt })
       : undefined;
     const receiptEncoded = receiptJson === undefined ? undefined : encodeURIComponent(receiptJson);
@@ -148,6 +152,11 @@ export class RobokassaProvider implements PaymentProvider {
       url.searchParams.set('Receipt', receiptJson);
     }
 
+    if (input.recurringCardLabel !== undefined) {
+      url.searchParams.set('Recurring', 'true');
+      url.searchParams.set('IncCurrLabel', input.recurringCardLabel);
+    }
+
     if (this.payment.isTest) {
       url.searchParams.set('IsTest', '1');
     }
@@ -169,6 +178,12 @@ export class RobokassaProvider implements PaymentProvider {
     const invId = readField(body, 'InvId');
 
     if (received === undefined || outSum === undefined || invId === undefined) {
+      return false;
+    }
+
+    // Нельзя пропускать массив Shp_* мимо подписи как отсутствующий ключ.
+    if (Object.entries(body).some(([name, value]) =>
+      name.toLowerCase().startsWith('shp_') && typeof value !== 'string')) {
       return false;
     }
 

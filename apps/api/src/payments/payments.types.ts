@@ -26,6 +26,7 @@ export type PaymentEventOutcome = 'applied' | 'duplicate' | 'ignored';
 /** Событие, применяемое к донату. Собирается вызывающим — вебхуком или админкой. */
 export interface ApplyEventInput {
   readonly donationId: string;
+  readonly isTestPayment?: boolean;
   /**
    * Код провайдера события — берётся из самого доната, а не из активного
    * провайдера приложения. При `PAYMENT_PROVIDER=robokassa` админ всё равно

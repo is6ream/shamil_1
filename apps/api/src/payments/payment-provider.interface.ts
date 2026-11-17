@@ -20,6 +20,7 @@ import type {
 export interface PaymentProvider {
   /** Код провайдера, он же `donation.provider`: 'manual' | 'robokassa' | … */
   readonly code: string;
+  readonly isTestPayment?: boolean;
 
   /**
    * Ссылка на оплату по заказу, который уже создал сервер.

@@ -73,6 +73,12 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
 const TRUNCATED_TABLES = [
   'metrika_offline_conversion',
   'fundraising_goal',
+  'recurring_heartbeat',
+  'recurring_attempt',
+  'recurring_subscription',
+  'donor_session',
+  'donor_email_challenge',
+  'donor_identity',
   'payment_event',
   'donation_contact',
   'donation',

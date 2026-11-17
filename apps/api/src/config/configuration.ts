@@ -1,12 +1,16 @@
 import { randomBytes } from 'node:crypto';
+import { isIP } from 'node:net';
 import { resolve as resolvePath } from 'node:path';
 import type { TaxationSystem, VatRate } from './constants';
+import type { DonorSmtpOptions } from '../mail/smtp-mail.sender';
+import type { RecurringOptions } from '../recurring-contract/contract';
 import { NodeEnv, StorageDriver, validateEnv } from './env.validation';
 import type { DeployStage, EnvVars, PaymentHashAlgorithm, PaymentProviderCode } from './env.validation';
 
 export interface HttpConfig {
   readonly port: number;
   readonly corsOrigins: readonly string[];
+  readonly trustedProxyCidrs?: readonly string[];
 }
 
 export interface PublicUrlsConfig {
@@ -25,6 +29,7 @@ export interface ReceiptConfig {
 }
 
 export interface PaymentConfig {
+  readonly onlineOrdersEnabled: boolean;
   readonly provider: PaymentProviderCode;
   readonly isTest: boolean;
   readonly hashAlgorithm: PaymentHashAlgorithm;
@@ -117,6 +122,8 @@ export interface MetrikaConfig {
 }
 
 export interface AppConfig {
+  readonly donor?: { readonly codeHmacSecret: string; readonly ipForwardingSecret?: string; readonly smtp?: DonorSmtpOptions };
+  readonly recurring?: RecurringOptions;
   readonly nodeEnv: NodeEnv;
   readonly isProduction: boolean;
   readonly deployStage: DeployStage;
@@ -207,6 +214,7 @@ function buildPaymentConfig(env: EnvVars): PaymentConfig {
 
   return {
     provider: env.PAYMENT_PROVIDER,
+    onlineOrdersEnabled: env.PAYMENT_ONLINE_ORDERS_ENABLED,
     isTest,
     hashAlgorithm: env.PAYMENT_HASH_ALGORITHM,
     merchantId: env.PAYMENT_MERCHANT_ID ?? '',
@@ -233,15 +241,40 @@ export function configuration(): AppConfig {
   const isProduction = env.NODE_ENV === NodeEnv.Production;
   const apiUrl = trimTrailingSlash(env.PUBLIC_API_URL);
   const siteUrl = trimTrailingSlash(env.PUBLIC_SITE_URL);
+  const candidates = env.DONOR_TRUSTED_PROXY_CIDRS?.split(',').map((value) => value.trim()) ?? [];
+  const proxyCidrs = candidates.length && candidates.every((value) => {
+    const [ip, prefix, extra] = value.split('/');
+    const family = isIP(ip ?? '');
+    return family !== 0 && !ip?.includes('%') && prefix !== undefined && extra === undefined && /^\d{1,3}$/.test(prefix)
+      && Number(prefix) > 0 && Number(prefix) <= (family === 4 ? 32 : 128);
+  }) ? candidates : undefined;
 
   return {
     nodeEnv: env.NODE_ENV,
+    donor: {
+      codeHmacSecret: env.DONOR_CODE_HMAC_SECRET ?? '',
+      ipForwardingSecret: env.DONOR_IP_FORWARDING_SECRET,
+      smtp: env.DONOR_SMTP_HOST && env.DONOR_SMTP_USER && env.DONOR_SMTP_PASS && env.DONOR_SMTP_FROM ? {
+        host: env.DONOR_SMTP_HOST, port: env.DONOR_SMTP_PORT, secure: env.DONOR_SMTP_SECURE,
+        user: env.DONOR_SMTP_USER, pass: env.DONOR_SMTP_PASS, from: env.DONOR_SMTP_FROM,
+      } : undefined,
+    },
+    recurring: {
+      checkoutEnabled: env.PAYMENT_RECURRING_CHECKOUT_ENABLED,
+      dispatchEnabled: env.PAYMENT_RECURRING_DISPATCH_ENABLED,
+      termsVersion: null, termsUrl: null, cancellationUrl: null,
+      cardLabel: env.PAYMENT_RECURRING_CARD_LABEL ?? null,
+      cardMethodCode: env.PAYMENT_RECURRING_CARD_METHOD_CODE ?? null,
+      approvalReference: env.PAYMENT_RECURRING_APPROVAL_REFERENCE ?? null,
+      maxKopecks: null,
+    },
     isProduction,
     deployStage: env.DEPLOY_STAGE,
     http: {
       // Порт хостинга приоритетнее: Vercel и PaaS назначают его сами.
       port: env.PORT ?? env.API_PORT,
       corsOrigins: parseOrigins(env.CORS_ORIGINS),
+      trustedProxyCidrs: proxyCidrs ?? [],
     },
     database: {
       url: env.DATABASE_URL,

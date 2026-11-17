@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ServiceUnavailableException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { AttributionService } from '../attribution/attribution.service';
 import { CAMPAIGN_SLUG } from '../database/seed/campaign.data';
@@ -32,6 +32,7 @@ export class DonationsService {
    * списания не используется никогда — только для проверки диапазона.
    */
   async create(dto: CreateDonationDto, consentIp?: string): Promise<CreatedDonationResponse> {
+    if (dto.recurring !== undefined) throw new ServiceUnavailableException({ error: { code: 'RECURRING_UNAVAILABLE', message: 'Оформление автоплатежа недоступно' } });
     const campaign = await this.prisma.campaign.findFirst({
       where: { slug: CAMPAIGN_SLUG, isActive: true },
       select: { id: true, title: true, minDonationKopecks: true },
@@ -73,6 +74,7 @@ export class DonationsService {
         // Код провайдера доната: по нему колбэк и админка потом знают,
         // кто вправе подтвердить этот платёж.
         provider: provider.code,
+        isTestPayment: provider.isTestPayment ?? null,
         isAnonymous,
         // Анонимный донат не хранит публичную подпись вообще — это CHECK
         // `donation_anonymous_has_no_public_name`: чего в таблице нет,
