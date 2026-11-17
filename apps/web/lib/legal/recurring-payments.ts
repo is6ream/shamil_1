@@ -23,4 +23,3 @@ export const RECURRING_PAYMENTS: LegalDocumentData = {
       links({ label: "Согласие на обработку персональных данных", href: "/soglasie" }, { label: "Политика конфиденциальности", href: "/privacy" })),
   ],
 };
-
