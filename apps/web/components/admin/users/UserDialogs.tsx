@@ -23,7 +23,7 @@ const ROLE_OPTIONS = ADMIN_ROLES.map((role) => ({ value: role, label: ROLE_LABEL
 
 export const ROLE_HINTS: Readonly<Record<AdminRole, string>> = {
   SUPER_ADMIN: "Всё, включая пользователей и реквизиты счёта.",
-  EDITOR: "Тексты, стройка, новости, фото, цели; пожертвования без данных жертвователей.",
+  EDITOR: "Тексты, стройка, новости, фото, цели; пожертвования без персональных данных.",
   ACCOUNTANT: "Пожертвования с данными для сверки, CSV, журнал; без контента.",
 };
 

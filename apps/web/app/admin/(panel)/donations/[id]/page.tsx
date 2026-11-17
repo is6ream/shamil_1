@@ -122,7 +122,7 @@ export default function DonationDetailsPage() {
           <Section title="Платёж">
             <KeyValueList rows={mainRows(data)} />
           </Section>
-          <Section title={data.contactMasked ? "Данные жертвователя (скрыты для вашей роли)" : "Данные жертвователя"}>
+          <Section title={data.contactMasked ? "Контактные данные (скрыты для вашей роли)" : "Контактные данные"}>
             <KeyValueList rows={personalRows(data)} />
           </Section>
           <Section title="Откуда пришёл">

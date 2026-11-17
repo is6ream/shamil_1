@@ -93,7 +93,7 @@ export default function AuditPage() {
     users.data?.map((user) => ({ value: user.id, label: user.displayName ?? user.email })) ?? [];
 
   return (
-    <AdminPage title="Журнал действий" lead="Кто, когда и что менял в админке. Время — по Уфе. Данные жертвователей скрыты." isWide>
+    <AdminPage title="Журнал действий" lead="Кто, когда и что менял в админке. Время — по Уфе. Персональные данные скрыты." isWide>
       <form className={filterStyles.filters} onSubmit={handleSubmit} aria-label="Фильтры журнала">
         <div className={filterStyles.filterGrid}>
           <TextField label="С" type="date" value={draft.from} onChange={(event) => set("from", event.target.value)} />

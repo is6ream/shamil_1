@@ -100,7 +100,7 @@ const COLUMNS: readonly Column<AdminDonation>[] = [
     ),
   },
   { key: "region", header: "Регион", render: (row) => row.region?.name ?? <span className={styles.muted}>—</span> },
-  { key: "donor", header: "Жертвователь", render: (row) => <DonorCell donation={row} /> },
+  { key: "donor", header: "Отправитель", render: (row) => <DonorCell donation={row} /> },
   { key: "utm", header: "Источник (UTM)", render: (row) => <UtmCell donation={row} /> },
 ];
 

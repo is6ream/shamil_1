@@ -1,7 +1,6 @@
 "use client";
 
 import { metrika } from "@/lib/analytics/metrika";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { donorRequest, DonorRequestError } from "@/lib/donor-client";
 import access from "./DonorEmailAccess.module.css";
@@ -106,13 +105,13 @@ export function DonationAdapter({ regions }: { regions: readonly Region[] }) {
     <DonationForm regions={regions} capabilities={capabilities} submitDonation={submit} donorReady={signedIn && conditionsReady} consentRevision={consentRevision}
       donorAccess={sessionBusy ? <p role="status">Проверяем вход…</p> : signedIn ? <p role="status">{capabilities.recurring ? "Email подтверждён. Проверьте условия и подтвердите отдельное согласие." : "Email подтверждён. Личный кабинет доступен; оформление автоплатежей пока отключено."}</p> : <>
         <button type="button" className={access.toggle} aria-expanded={authOpen} aria-controls="donation-email-access" onClick={() => setAuthOpen(!authOpen)}>{authOpen ? "Закрыть вход" : "Войти по email"}</button>
-        <div id="donation-email-access" hidden={!authOpen}><DonorEmailAccess onVerified={async () => {
+        <div id="donation-email-access" hidden={!authOpen}><DonorEmailAccess embedded onVerified={async () => {
           setConditionsReady(false); setConsentRevision(value => value + 1); setSignedIn(true); setAuthOpen(false);
           try { await refresh(); } catch { setConditionsReady(false); setNotice("Вход подтверждён. Не удалось обновить условия автоплатежа. Повторите загрузку условий."); }
         }} /></div>
       </>} />
     {notice && <p role="status">{notice}</p>}
     {!conditionsReady && <button type="button" className="btn btn-ghost" onClick={() => void refresh().catch(() => setNotice("Условия пока недоступны. Повторите попытку позже."))}>Обновить условия</button>}
-    {hasIntent && <p role="status">Ответ об оформлении пока не подтверждён. Повтор с прежними условиями безопасен. <Link href="/donor">Проверить в личном кабинете</Link></p>}
+    {hasIntent && <p role="status">Ответ об оформлении пока не подтверждён. Повтор с прежними условиями безопасен.</p>}
   </>;
 }

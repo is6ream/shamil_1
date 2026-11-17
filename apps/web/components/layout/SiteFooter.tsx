@@ -7,7 +7,7 @@ import { ORGANIZATION, organizationDisplayName, toTelHref } from "@/lib/organiza
 import { BrandMark } from "./BrandMark";
 import styles from "./SiteFooter.module.css";
 
-const INFO_LINKS = [PAGES.privacy, PAGES.offer, PAGES.cookie, PAGES.reports] as const;
+const INFO_LINKS = [PAGES.privacy, PAGES.offer, PAGES.cookie, PAGES.reports, { href: "/donate/recurring-terms", title: "Условия регулярных пожертвований" }] as const;
 
 /**
  * Футер макета v2: логотип и юрлицо, контакты, информация.

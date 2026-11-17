@@ -3,7 +3,7 @@
   margin: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   min-width: 0;
 }
 
@@ -46,11 +46,14 @@
   cursor: pointer;
 }
 
-.action { background: var(--accent-soft); border-color: var(--accent); }
+.action { background: var(--cta-bg); color: var(--cta-text); border-color: var(--control-border); }
 .resend { background: transparent; border-color: transparent; text-decoration: underline; text-underline-offset: 0.2em; }
 .toggle:hover,
 .action:hover,
 .resend:hover { background: var(--accent-soft); }
+.action:hover:not(:disabled) { background: var(--cta-hover); }
+.hint:empty { display: none; }
+.input[readonly] { color: var(--text-soft); }
 .toggle:focus-visible,
 .action:focus-visible,
 .resend:focus-visible,

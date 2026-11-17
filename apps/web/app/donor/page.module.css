@@ -1,0 +1,13 @@
+.main {
+  width: min(100% - 2 * var(--gutter), 880px);
+  min-height: 50vh;
+  margin-inline: auto;
+  padding-block: var(--sp-10) var(--sp-16);
+}
+.heading { margin-bottom: var(--sp-8); }
+.heading h1 { font-size: var(--fs-h2); }
+.heading p { margin: var(--sp-3) 0 0; color: var(--text-soft); }
+@media (max-width: 480px) {
+  .main { padding-block: var(--sp-8) var(--sp-10); }
+  .heading { margin-bottom: var(--sp-6); }
+}

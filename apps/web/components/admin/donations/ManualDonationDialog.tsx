@@ -192,7 +192,7 @@ function ManualDonationFormBody({ regions, onClose, onCreated }: Omit<Props, "is
             maxLength={DONOR_NAME_MAX}
             onChange={(event) => set("donorName", event.target.value)}
             error={errors.donorName}
-            hint="Видна на сайте в ленте и топе. Только с согласия жертвователя."
+            hint="Видна на сайте в ленте и топе. Только с согласия отправителя."
           />
         )}
         <FormErrors messages={mutation.errors} />
