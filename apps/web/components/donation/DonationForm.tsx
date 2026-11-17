@@ -228,25 +228,26 @@ export function DonationForm({
           />
 
           <div hidden={!isRecurring}><div className={styles.donorAccess}>{donorAccess}</div></div>
-          {isRecurring && capabilities.recurring && <div className={styles.recurringDetails}>
+          {isRecurring && <div className={styles.recurringDetails}>
             <div className={styles.scheduleSummary}>
             <p className={styles.summaryAmount}>Каждое списание: {selectAmountRubles(state) === null ? "—" : kopecksToRubDisplay(rublesToKopecks(selectAmountRubles(state)!))}, {DONATION_FREQUENCIES[state.frequency].cadence}.</p>
             </div>
-            <fieldset className={styles.choices} disabled={!donorReady}>
+            <fieldset className={styles.choices} disabled={!donorReady || !capabilities.recurring}>
             <legend className="sr-only">Согласие на повторные списания</legend>
-            <Checkbox id="recurring-consent" name="recurringConsent" checked={state.recurringConsentAccepted}
+            <Checkbox id="recurring-consent" name="recurringConsent" checked={state.recurringConsentAccepted && state.personalDataConsent}
               isInvalid={errors.recurringConsentAccepted !== undefined} errorId="recurring-consent-error"
               onChange={recurringConsentAccepted => {
                 form.clearError("recurringConsentAccepted");
-                form.patch({ recurringConsentAccepted });
+                form.clearError("personalDataConsent");
+                form.patch({ recurringConsentAccepted, personalDataConsent: recurringConsentAccepted });
               }}>
-              Разрешаю повторные списания выбранной суммы по указанному графику. <Link href={capabilities.recurring.termsUrl ?? "#"} target="_blank" rel="noopener">Условия</Link>
+              Я даю согласие на регулярные списания выбранной суммы по указанному графику, на <Link href={PAGES.consent.href} target="_blank" rel="noopener">обработку персональных данных</Link> и принимаю условия <Link href="/oferta#recurring-payments" target="_blank" rel="noopener">публичной оферты, включая правила рекуррентных платежей</Link>.
             </Checkbox>
             {errors.recurringConsentAccepted && <p className={field.error} id="recurring-consent-error" role="alert">{errors.recurringConsentAccepted}</p>}
             </fieldset>
           </div>}
 
-          <div className={styles.consent}>
+          {!isRecurring && <div className={styles.consent}>
             <Checkbox
               id={CONSENT_ID}
               name="personalDataConsent"
@@ -272,7 +273,7 @@ export function DonationForm({
                 {errors.personalDataConsent}
               </p>
             )}
-          </div>
+          </div>}
 
           </>
         </div>
