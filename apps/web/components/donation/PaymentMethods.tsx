@@ -9,6 +9,7 @@ interface Props {
   readonly value: PaymentOptionId | null;
   readonly available: readonly PaymentOptionId[];
   readonly onChange: (option: PaymentOptionId) => void;
+  readonly availableOnly?: boolean;
 }
 
 /**
@@ -17,14 +18,15 @@ interface Props {
  * Визуально — плитки с квадратной галочкой, по смыслу — одна радиогруппа:
  * выбрать можно ровно один способ, стрелки клавиатуры работают нативно.
  */
-export function PaymentMethods({ value, available, onChange }: Props) {
+export function PaymentMethods({ value, available, onChange, availableOnly = false }: Props) {
+  const options = DONATION_FORM.methods.filter(option => !availableOnly || available.includes(option.id));
   return (
     <fieldset className={styles.fieldset}>
       <legend className={styles.legend}>{DONATION_FORM.methodLegend}</legend>
       <div className={styles.grid}>
-        {DONATION_FORM.methods.map((option) => (
+        {options.map((option) => (
           <label
-            className={option.isWide ? `${styles.tile} ${styles.wide}` : styles.tile}
+            className={option.isWide || options.length === 1 ? `${styles.tile} ${styles.wide}` : styles.tile}
             key={option.id}
           >
             <input

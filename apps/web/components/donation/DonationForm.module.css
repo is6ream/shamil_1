@@ -102,7 +102,8 @@
   cursor: pointer;
 }
 
-.mode:hover {
+.mode:hover,
+.frequency:hover {
   background: var(--accent-soft);
 }
 
@@ -119,12 +120,77 @@
   font-weight: 700;
 }
 
+/* Native radios retain arrow-key navigation inside the compact schedule. */
+.frequencies {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.frequency {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--stroke) solid var(--control-border);
+  border-radius: var(--r-md);
+  background: var(--surface-soft);
+  color: var(--text-strong);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+}
+
+.frequency:has(:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
 .mode:has(:focus-visible),
+.frequency:has(:focus-visible),
 .customAmount:focus-visible,
 .submit:focus-visible {
   outline: var(--focus-width) solid var(--focus);
   outline-offset: var(--focus-offset);
 }
+
+.mode:has(:disabled),
+.frequency:has(:disabled) {
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  cursor: not-allowed;
+}
+
+.donorAccess {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.donorAccess p { margin: 0; }
+
+.recurringDetails,
+.scheduleSummary {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.scheduleSummary {
+  padding-block: var(--sp-1);
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+  line-height: 1.45;
+}
+
+.scheduleSummary p { margin: 0; }
+.summaryAmount { color: var(--text-strong); font-weight: 600; }
 
 /* ── Сумма ────────────────────────────────────────────────────────────── */
 
@@ -216,6 +282,25 @@
   color: var(--text-soft);
 }
 
+.documents {
+  display: grid;
+  gap: var(--sp-1);
+  margin: var(--sp-2) 0 0;
+  color: var(--text-soft);
+  font-size: var(--fs-small);
+}
+
+.documents p {
+  margin: 0;
+}
+
+.documents a {
+  width: fit-content;
+  color: var(--text-strong);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 /* ── Кнопка ─────────────────────────────────────────────────────────────── */
 
 .actions {
@@ -293,3 +378,11 @@
 
 .comingSoon { display: grid; gap: var(--sp-4); padding-block: var(--sp-4); color: var(--text-strong); }
 .comingSoon p { margin: 0; line-height: 1.5; }
+.mode:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 540px) {
+  .card[data-donation-mode="recurring"] .amountBox { flex-wrap: wrap; }
+  .card[data-donation-mode="recurring"] .amountField { flex-basis: 100%; min-height: 42px; }
+  .card[data-donation-mode="recurring"] .amountBox > fieldset { flex: 1 1 100%; }
+  .card[data-donation-mode="recurring"] .amountBox > fieldset > div > label { flex: 1; }
+}

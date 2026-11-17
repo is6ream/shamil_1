@@ -13,7 +13,8 @@ import type { Region } from "@/lib/api/types";
 import { kopecksToRubDisplay, rublesToKopecks } from "@/lib/money";
 import { DONATION_FORM, PAGES } from "@/lib/content";
 import { DONATION_REQUEST_EVENT, readDonationRequest } from "@/lib/donation-request";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { DONATION_FREQUENCIES, selectAmountRubles } from "./donation-form.model";
 
 import { AmountPresets } from "./AmountPresets";
 import styles from "./DonationForm.module.css";
@@ -29,6 +30,9 @@ import { PaymentMethods } from "./PaymentMethods";
 import { useDonationForm } from "./useDonationForm";
 
 interface Props {
+  readonly donorReady?: boolean;
+  readonly consentRevision?: number;
+  readonly donorAccess?: ReactNode;
   readonly regions: readonly Region[];
   /** Регион из региональной ссылки `/{код}/`, если человек пришёл по ней. */
   readonly initialRegionSlug?: string;
@@ -46,8 +50,11 @@ export function DonationForm({
   initialRegionSlug,
   capabilities = PREVIEW_CAPABILITIES,
   submitDonation,
+  donorAccess,
+  donorReady = true,
+  consentRevision = 0,
 }: Props) {
-  const form = useDonationForm(regions, initialRegionSlug, capabilities, submitDonation);
+  const form = useDonationForm(regions, initialRegionSlug, capabilities, submitDonation, consentRevision);
   const { state, errors, isBusy, result } = form;
   const amountInput = useRef<HTMLInputElement>(null);
 
@@ -94,10 +101,7 @@ export function DonationForm({
         />
       </div>
 
-      <form className={styles.form} onSubmit={(event) => {
-        if (isRecurring) event.preventDefault();
-        else void form.submit(event);
-      }} noValidate>
+      <form className={styles.form} onSubmit={event => void form.submit(event)} noValidate>
         <div className={styles.controls} inert={isBusy}>
           {submitDonation === undefined && (
             <p className={styles.preview}>Предпросмотр формы · платежи отключены</p>
@@ -132,15 +136,27 @@ export function DonationForm({
             </div>
           </fieldset>
 
-          {isRecurring ? (
+          {isRecurring && !capabilities.recurring && (
             <div className={styles.comingSoon} role="status">
-              <p>Регулярные пожертвования скоро появятся. Сейчас вы можете сделать разовое пожертвование</p>
+              <p>Подключаем регулярные пожертвования. Можно выбрать сумму и график, ознакомиться с условиями и войти по email. Оформление и списания пока отключены.</p>
+              <p><Link href="/donate/recurring-terms">Условия регулярных пожертвований</Link> · <Link href="/donor">Личный кабинет</Link></p>
               <button className={`btn btn-block ${styles.submit}`} type="button"
                 onClick={() => form.patch({ donationType: "one_time" })}>
                 Сделать разовое пожертвование
               </button>
             </div>
-          ) : (<>
+          )}
+          <>
+          {isRecurring && <>
+            <fieldset className={styles.choices}><legend className={styles.groupLabel}>График автоплатежа</legend>
+              <div className={styles.frequencies}>
+              {Object.entries(DONATION_FREQUENCIES).map(([value, item]) => <label className={styles.frequency} key={value}>
+                <input className="sr-only" type="radio" name="frequency" value={value} checked={state.frequency === value}
+                  onChange={() => form.patch({ frequency: value as keyof typeof DONATION_FREQUENCIES })} />{item.label}
+              </label>)}
+              </div>
+            </fieldset>
+          </>}
           <DonorFields
             state={state}
             errors={errors}
@@ -201,14 +217,34 @@ export function DonationForm({
           </div>
 
           <PaymentMethods
-            value={capabilities.oneTimeMethods.includes(oneTimeMethod)
+            availableOnly={isRecurring}
+            value={isRecurring ? "card" : capabilities.oneTimeMethods.includes(oneTimeMethod)
               ? oneTimeMethod : capabilities.oneTimeMethods[0] ?? null}
-            available={capabilities.oneTimeMethods}
+            available={isRecurring ? ["card"] : capabilities.oneTimeMethods}
             onChange={(option) => {
-              metrika.reachGoal(METRIKA_GOALS.methodSelect, { method: option });
+              if (!isRecurring) metrika.reachGoal(METRIKA_GOALS.methodSelect, { method: option });
               form.patch(paymentOptionChanges(option));
             }}
           />
+
+          <div hidden={!isRecurring}><div className={styles.donorAccess}>{donorAccess}</div></div>
+          {isRecurring && capabilities.recurring && <div className={styles.recurringDetails}>
+            <div className={styles.scheduleSummary}>
+            <p className={styles.summaryAmount}>Каждое списание: {selectAmountRubles(state) === null ? "—" : kopecksToRubDisplay(rublesToKopecks(selectAmountRubles(state)!))}, {DONATION_FREQUENCIES[state.frequency].cadence}.</p>
+            </div>
+            <fieldset className={styles.choices} disabled={!donorReady}>
+            <legend className="sr-only">Согласие на повторные списания</legend>
+            <Checkbox id="recurring-consent" name="recurringConsent" checked={state.recurringConsentAccepted}
+              isInvalid={errors.recurringConsentAccepted !== undefined} errorId="recurring-consent-error"
+              onChange={recurringConsentAccepted => {
+                form.clearError("recurringConsentAccepted");
+                form.patch({ recurringConsentAccepted });
+              }}>
+              Разрешаю повторные списания выбранной суммы по указанному графику. <Link href={capabilities.recurring.termsUrl ?? "#"} target="_blank" rel="noopener">Условия</Link>
+            </Checkbox>
+            {errors.recurringConsentAccepted && <p className={field.error} id="recurring-consent-error" role="alert">{errors.recurringConsentAccepted}</p>}
+            </fieldset>
+          </div>}
 
           <div className={styles.consent}>
             <Checkbox
@@ -238,7 +274,7 @@ export function DonationForm({
             )}
           </div>
 
-          </>)}
+          </>
         </div>
 
         {/* Honeypot: человек этого поля не видит и не заполняет.
@@ -256,7 +292,7 @@ export function DonationForm({
           }}
         />
 
-        {!isRecurring && <div className={styles.actions}>
+        {(!isRecurring || capabilities.recurring) && <div className={styles.actions}>
           {form.formError === null ? null : (
             <p className={styles.formError} role="alert">
               {form.formError}
@@ -275,7 +311,7 @@ export function DonationForm({
                 {DONATION_FORM.submitting}
               </>
             ) : (
-              submitLabel
+              isRecurring ? `Оформить автоплатёж${amount === null ? "" : ` · ${kopecksToRubDisplay(rublesToKopecks(amount))}`}` : submitLabel
             )}
           </button>
 

@@ -61,3 +61,8 @@ skills-lock.json
 
 # привязка Vercel CLI к проектам (docs/deploy-vercel-demo.md)
 .vercel/
+
+# Изолированные локальные стенды и результаты проверок
+/.local/
+/output/
+/_to_delete/

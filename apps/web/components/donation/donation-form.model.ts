@@ -46,6 +46,7 @@ export type DonationType = "one_time" | "recurring";
 export interface DonationCapabilities {
   readonly oneTimeMethods: readonly PaymentOptionId[];
   readonly recurring: {
+    readonly version?: string;
     readonly methods: readonly OnlineMethodId[];
     readonly frequencies: readonly DonationFrequency[];
     readonly termsUrl?: string;

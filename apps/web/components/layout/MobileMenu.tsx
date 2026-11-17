@@ -14,8 +14,6 @@ interface Props {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onNavigate: (event: ReactMouseEvent<HTMLAnchorElement>, id: string) => void;
-  /** Вход для сотрудников — пункт виден только там, где иконке нет места в шапке. */
-  readonly onLoginOpen: () => void;
   readonly phone?: string | null;
 }
 
@@ -36,7 +34,7 @@ function isVisible(element: HTMLElement): boolean {
  * В DOM всегда (скрыто через `hidden`), чтобы ссылки были доступны
  * поисковику и не было вспышки при первом открытии.
  */
-export function MobileMenu({ id, isOpen, onClose, onNavigate, onLoginOpen, phone = ORGANIZATION.phone }: Props) {
+export function MobileMenu({ id, isOpen, onClose, onNavigate, phone = ORGANIZATION.phone }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,10 +122,10 @@ export function MobileMenu({ id, isOpen, onClose, onNavigate, onLoginOpen, phone
           </a>
         )}
 
-        <button className={styles.login} type="button" aria-haspopup="dialog" onClick={onLoginOpen}>
+        <a className={styles.login} href="/donor" onClick={onClose}>
           <UserIcon />
-          Вход для сотрудников
-        </button>
+          Личный кабинет жертвователя
+        </a>
       </div>
     </div>
   );

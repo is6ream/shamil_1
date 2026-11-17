@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
@@ -19,31 +18,18 @@ const MENU_ID = "mobile-menu";
 const NAV_IDS = NAV_ITEMS.map((item) => item.id);
 
 /**
- * Окно входа и admin-клиент не нужны жертвователям: чанк грузится только
- * после первого клика по иконке (D-F11) и в первый бандл главной не входит.
+ * Вход жертвователя. Скрытая версия ссылки выпадает из Tab-порядка.
  */
-const LoginDialog = dynamic(
-  () => import("@/components/auth/LoginDialog").then((module) => module.LoginDialog),
-  { ssr: false },
-);
-
-/**
- * Иконка входа для сотрудников. Тихая: она для нескольких человек, а сайт —
- * для жертвователей. В шапке их две — на десктопе и на телефоне стоят
- * в разных местах, а переставлять одну через CSS `order` нельзя: порядок
- * Tab разошёлся бы с видимым. Скрытая через `display: none` из Tab выпадает.
- */
-function LoginButton({ className, onOpen }: { readonly className: string; readonly onOpen: () => void }) {
+function LoginButton({ className }: { readonly className: string }) {
   return (
-    <button
+    <Link
       className={`${styles.login} ${className}`}
-      type="button"
-      aria-label="Вход для сотрудников"
-      aria-haspopup="dialog"
-      onClick={onOpen}
+      href="/donor"
+      aria-label="Личный кабинет жертвователя"
+      title="Личный кабинет жертвователя"
     >
       <UserIcon />
-    </button>
+    </Link>
   );
 }
 
@@ -63,10 +49,6 @@ interface Props {
 
 export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const [isLoginOpen, setLoginOpen] = useState(false);
-  // Окно смонтировано с первого открытия: так чанк не грузится заранее,
-  // а повторные открытия мгновенные.
-  const [hasLoginOpened, setLoginOpened] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const activeId = useActiveSection(NAV_IDS);
 
@@ -74,27 +56,6 @@ export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
     setMenuOpen(false);
     menuButtonRef.current?.focus();
   }, []);
-
-  const openLogin = useCallback(() => {
-    setLoginOpened(true);
-    setLoginOpen(true);
-  }, []);
-
-  const closeLogin = useCallback(() => {
-    setLoginOpen(false);
-  }, []);
-
-  /**
-   * Вход из выдвижного меню (узкие экраны). Фокус сначала на бургер:
-   * `<dialog>` вернёт его туда, где он был при открытии, а пункт меню
-   * к тому моменту уже скрыт.
-   */
-  const openLoginFromMenu = useCallback(() => {
-    setMenuOpen(false);
-    menuButtonRef.current?.focus();
-    openLogin();
-  }, [openLogin]);
-
   const onNavigate = useCallback((event: ReactMouseEvent<HTMLAnchorElement>, id: string) => {
     setMenuOpen(false);
 
@@ -132,9 +93,9 @@ export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
           </a>
         )}
 
-        <LoginButton className={styles.loginDesktop} onOpen={openLogin} />
+        <LoginButton className={styles.loginDesktop} />
 
-        <LoginButton className={styles.loginMobile} onOpen={openLogin} />
+        <LoginButton className={styles.loginMobile} />
 
         <button
           className={styles.burger}
@@ -156,11 +117,9 @@ export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
         isOpen={isMenuOpen}
         onClose={closeMenu}
         onNavigate={onNavigate}
-        onLoginOpen={openLoginFromMenu}
         phone={phone}
       />
 
-      {hasLoginOpened ? <LoginDialog isOpen={isLoginOpen} onClose={closeLogin} /> : null}
     </header>
   );
 }

@@ -42,6 +42,7 @@ export function useDonationForm(
   initialRegionSlug: string | undefined,
   config: DonationCapabilities,
   submitDonation?: DonationSubmit,
+  consentRevision = 0,
 ) {
   const [state, setState] = useState<DonationFormState>(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -49,6 +50,12 @@ export function useDonationForm(
   const [result, setResult] = useState<Awaited<ReturnType<DonationSubmit>> | null>(null);
   const [isBusy, setBusy] = useState(false);
   const inFlight = useRef(false);
+  const conditions = JSON.stringify([config.recurring, consentRevision]);
+  const [previousConditions, setPreviousConditions] = useState(conditions);
+  if (previousConditions !== conditions) {
+    setPreviousConditions(conditions);
+    setState(current => ({ ...current, recurringConsentAccepted: false }));
+  }
 
   const linkSlugFromUrl = useRegionFromUrl();
 
@@ -137,10 +144,10 @@ export function useDonationForm(
     inFlight.current = true;
     setBusy(true);
     try {
-      metrika.reachGoal(METRIKA_GOALS.submit, { amount: Number(data.amountKopecks) / 100, method: data.paymentMethod });
+      if (data.donationType === "one_time") metrika.reachGoal(METRIKA_GOALS.submit, { amount: Number(data.amountKopecks) / 100, method: data.paymentMethod });
       setResult(await submitDonation(data));
     } catch (error: unknown) {
-      setFormError(error instanceof ApiError ? error.messages.join(". ") : DONATION_FORM.unknownError);
+      setFormError(error instanceof ApiError ? error.messages.join(". ") : error instanceof Error ? error.message : DONATION_FORM.unknownError);
     } finally {
       inFlight.current = false;
       setBusy(false);
