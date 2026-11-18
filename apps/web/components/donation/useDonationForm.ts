@@ -43,6 +43,7 @@ export function useDonationForm(
   config: DonationCapabilities,
   submitDonation?: DonationSubmit,
   consentRevision = 0,
+  donorReady = true,
 ) {
   const [state, setState] = useState<DonationFormState>(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -50,7 +51,7 @@ export function useDonationForm(
   const [result, setResult] = useState<Awaited<ReturnType<DonationSubmit>> | null>(null);
   const [isBusy, setBusy] = useState(false);
   const inFlight = useRef(false);
-  const conditions = JSON.stringify([config.recurring, consentRevision]);
+  const conditions = JSON.stringify([config.recurring, consentRevision, donorReady]);
   const [previousConditions, setPreviousConditions] = useState(conditions);
   if (previousConditions !== conditions) {
     setPreviousConditions(conditions);

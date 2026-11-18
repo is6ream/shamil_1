@@ -63,7 +63,9 @@ export function DonationAdapter({ regions }: { regions: readonly Region[] }) {
       .catch(() => setNotice("Условия автоплатежей временно недоступны"));
     const session = () => void donorRequest("donor/auth/session").then(() => setSignedIn(true)).catch(error => {
       if (error instanceof DonorRequestError && error.status === 401) {
-        setSignedIn(false); setConsentRevision(value => value + 1);
+        // Repeated anonymous session checks must not erase local consent.
+        // A readiness transition resets it in useDonationForm.
+        setSignedIn(false);
       }
     }).finally(() => setSessionBusy(false));
     session();

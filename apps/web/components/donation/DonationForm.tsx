@@ -54,7 +54,7 @@ export function DonationForm({
   donorReady = true,
   consentRevision = 0,
 }: Props) {
-  const form = useDonationForm(regions, initialRegionSlug, capabilities, submitDonation, consentRevision);
+  const form = useDonationForm(regions, initialRegionSlug, capabilities, submitDonation, consentRevision, donorReady);
   const { state, errors, isBusy, result } = form;
   const amountInput = useRef<HTMLInputElement>(null);
 
@@ -232,7 +232,7 @@ export function DonationForm({
             <div className={styles.scheduleSummary}>
             <p className={styles.summaryAmount}>Каждое списание: {selectAmountRubles(state) === null ? "—" : kopecksToRubDisplay(rublesToKopecks(selectAmountRubles(state)!))}, {DONATION_FREQUENCIES[state.frequency].cadence}.</p>
             </div>
-            <fieldset className={styles.choices} disabled={!donorReady || !capabilities.recurring}>
+            <fieldset className={styles.choices} disabled={isBusy}>
             <legend className="sr-only">Согласие на повторные списания</legend>
             <Checkbox id="recurring-consent" name="recurringConsent" checked={state.recurringConsentAccepted && state.personalDataConsent}
               isInvalid={errors.recurringConsentAccepted !== undefined} errorId="recurring-consent-error"
