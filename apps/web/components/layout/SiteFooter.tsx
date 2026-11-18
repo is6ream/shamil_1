@@ -58,6 +58,11 @@ export function SiteFooter({ contacts = ORGANIZATION }: { readonly contacts?: Co
                   <Link href={link.href}>{link.title}</Link>
                 </li>
               ))}
+              <li>
+                <Link className={styles.adminLink} href="/admin/login">
+                  Вход для администратора
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

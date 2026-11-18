@@ -161,4 +161,10 @@
     font-size: 14px;
     overflow-wrap: anywhere;
   }
+
+  .links .adminLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }
