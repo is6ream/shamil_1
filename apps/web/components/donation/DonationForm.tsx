@@ -136,16 +136,6 @@ export function DonationForm({
             </div>
           </fieldset>
 
-          {isRecurring && !capabilities.recurring && (
-            <div className={styles.comingSoon} role="status">
-              <p>Подключаем регулярные пожертвования. Можно выбрать сумму и график, ознакомиться с условиями и войти по email. Оформление и списания пока отключены.</p>
-              <p><Link href="/donate/recurring-terms">Условия регулярных пожертвований</Link> · <Link href="/donor">Личный кабинет</Link></p>
-              <button className={`btn btn-block ${styles.submit}`} type="button"
-                onClick={() => form.patch({ donationType: "one_time" })}>
-                Сделать разовое пожертвование
-              </button>
-            </div>
-          )}
           <>
           {isRecurring && <>
             <fieldset className={styles.choices}><legend className={styles.groupLabel}>График автоплатежа</legend>
