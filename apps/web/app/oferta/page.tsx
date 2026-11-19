@@ -16,7 +16,6 @@ export default function Page() {
     <section id="recurring-payments">
       <h2>{RECURRING_PAYMENTS.title}</h2>
       <p>{RECURRING_PAYMENTS.subtitle}</p>
-      <p role="status">Оформление новых автоплатежей и автоматические списания пока отключены. Условия опубликованы для ознакомления; просмотр страницы не создаёт подписку.</p>
       <LegalDocument document={RECURRING_PAYMENTS} />
     </section>
   </SimplePage>;

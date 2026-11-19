@@ -78,7 +78,9 @@ export async function queryRecurring(payment: PaymentConfig, invoiceNo: number):
     const bindings = [...field(xml, 'UserFields').matchAll(/<Field(?:\s[^>]*)?>([^]*?)<\/Field>/g)]
       .map(match => match[1] ?? '').filter(value => field(value, 'Name') === 'Shp_order_id');
     if (bindings.length !== 1) return { kind: 'unknown' };
-    return { kind: 'paid', netAmountKopecks: amount, currency: field(info, 'OutCurrLabel'),
+    // The live merchant returns BNR for ruble settlement to its bank account.
+    const currency = field(info, 'OutCurrLabel');
+    return { kind: 'paid', netAmountKopecks: amount, currency: currency === 'BNR' ? 'RUB' : currency,
       orderId: field(bindings[0] ?? '', 'Value'), method: field(field(info, 'PaymentMethod'), 'Code'), confirmedAt };
   } catch {
     return { kind: 'unknown' };

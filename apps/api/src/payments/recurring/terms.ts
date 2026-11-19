@@ -1,3 +1,5 @@
+import { EMAIL_TERMS_SECTIONS, EMAIL_TERMS_SUBTITLE, EMAIL_TERMS_TITLE, EMAIL_TERMS_VERSION } from './terms-email';
+
 // Published versions are append-only. Never edit an accepted version in place.
 export const RECURRING_TERMS_VERSION = '2026-11-06';
 export const RECURRING_TERMS = [
@@ -13,4 +15,14 @@ export const RECURRING_TERMS = [
 export const RECURRING_TERMS_SNAPSHOT = RECURRING_TERMS.join('\n\n');
 export const RECURRING_TERMS_ARCHIVE: Readonly<Record<string, readonly string[]>> = {
   '2026-11-06': RECURRING_TERMS,
+  [EMAIL_TERMS_VERSION]: [
+    EMAIL_TERMS_TITLE,
+    EMAIL_TERMS_SUBTITLE,
+    ...EMAIL_TERMS_SECTIONS.flatMap(({ title, blocks }) => [
+      title,
+      ...blocks.flatMap(block => typeof block === 'string'
+        ? [block]
+        : block.map(({ label, href }) => label + ' (' + href + ')')),
+    ]),
+  ],
 };

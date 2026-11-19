@@ -63,6 +63,7 @@ export class RecurringService implements OnModuleInit, OnModuleDestroy {
   checkoutSettings() {
     const settings = this.providerSettings();
     if (!this.options?.checkoutEnabled || !this.providers.onlineAvailable || !settings?.termsVersion
+      || !settings.approvalReference
       || settings.termsVersion === '2026-11-06' // Legacy edition does not authorize email access.
       || !this.archive[settings.termsVersion]
       || !approvedUrl(settings.termsUrl ?? undefined) || !approvedUrl(settings.cancellationUrl ?? undefined)) return null;

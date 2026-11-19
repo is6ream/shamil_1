@@ -35,16 +35,19 @@ describe('Robokassa recurring transport (mock)', () => {
     expect((fetcher.mock.calls[1]?.[0] as URL).searchParams.get('InvoiceID')).toBe('22');
   });
 
-  it('extracts only settlement fields from successful reconciliation', async () => {
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
-      '<OperationStateResponse xmlns="http://merchant.roboxchange.com/WebService/">' +
-      '<Result><Code>0</Code></Result><State><Code>100</Code><StateDate>2026-11-03T23:50:00+03:00</StateDate></State>' +
-      '<Info><PaymentMethod><Code>mock-card</Code></PaymentMethod><OutSum>100.050000</OutSum><OutCurrLabel>RUB</OutCurrLabel></Info><UserFields><Field><Name>Shp_order_id</Name><Value>donation-id</Value></Field></UserFields></OperationStateResponse>',
-    ));
-    await expect(queryRecurring(payment, 22)).resolves.toEqual({
-      kind: 'paid', netAmountKopecks: 10005n, currency: 'RUB', orderId: 'donation-id', method: 'mock-card', confirmedAt: new Date('2026-11-03T20:50:00Z'),
-    });
-  });
+  it.each([['RUB', 'RUB'], ['BNR', 'RUB'], ['USD', 'USD']])(
+    'extracts only settlement fields from a successful %s reconciliation',
+    async (providerCurrency, currency) => {
+      jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+        '<OperationStateResponse xmlns="http://merchant.roboxchange.com/WebService/">' +
+        '<Result><Code>0</Code></Result><State><Code>100</Code><StateDate>2026-11-03T23:50:00+03:00</StateDate></State>' +
+        '<Info><PaymentMethod><Code>mock-card</Code></PaymentMethod><OutSum>100.050000</OutSum><OutCurrLabel>' + providerCurrency + '</OutCurrLabel></Info><UserFields><Field><Name>Shp_order_id</Name><Value>donation-id</Value></Field></UserFields></OperationStateResponse>',
+      ));
+      await expect(queryRecurring(payment, 22)).resolves.toEqual({
+        kind: 'paid', netAmountKopecks: 10005n, currency, orderId: 'donation-id', method: 'mock-card', confirmedAt: new Date('2026-11-03T20:50:00Z'),
+      });
+    },
+  );
 
   it('never sends child or XML queries with test credentials or invalid invoices', async () => {
     const fetcher = jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('must not call'));

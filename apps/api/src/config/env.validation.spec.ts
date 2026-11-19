@@ -30,6 +30,15 @@ describe('валидация окружения', () => {
     expect(() => validateEnv({ ...BASE_ENV, PAYMENT_ONLINE_ORDERS_ENABLED: 'typo' })).toThrow(/PAYMENT_ONLINE_ORDERS_ENABLED/);
   });
 
+  test('recurring maximum is optional and must be a bounded integer in kopecks', () => {
+    expect(validateEnv(BASE_ENV).PAYMENT_RECURRING_MAX_KOPECKS).toBeUndefined();
+    expect(validateEnv({ ...BASE_ENV, PAYMENT_RECURRING_MAX_KOPECKS: '' }).PAYMENT_RECURRING_MAX_KOPECKS).toBeUndefined();
+    expect(validateEnv({ ...BASE_ENV, PAYMENT_RECURRING_MAX_KOPECKS: '100000' }).PAYMENT_RECURRING_MAX_KOPECKS).toBe(100000);
+    for (const value of ['0', '1000.5', '1e3', '1000000001']) {
+      expect(() => validateEnv({ ...BASE_ENV, PAYMENT_RECURRING_MAX_KOPECKS: value })).toThrow(/PAYMENT_RECURRING_MAX_KOPECKS/);
+    }
+  });
+
   test('production stage запрещает эмулятор даже при ошибочном NODE_ENV=test', () => {
     expect(() => validateEnv({ ...ROBOKASSA_TEST_ENV, DEPLOY_STAGE: DeployStage.Production,
       PAYMENT_EMULATOR_ENABLED: 'true' })).toThrow(/PAYMENT_EMULATOR_ENABLED/);

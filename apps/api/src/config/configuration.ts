@@ -3,6 +3,7 @@ import { isIP } from 'node:net';
 import { resolve as resolvePath } from 'node:path';
 import type { TaxationSystem, VatRate } from './constants';
 import type { DonorSmtpOptions } from '../mail/smtp-mail.sender';
+import { EMAIL_TERMS_PATH, EMAIL_TERMS_VERSION, RECURRING_CANCELLATION_PATH } from '../payments/recurring/terms-email';
 import type { RecurringOptions } from '../recurring-contract/contract';
 import { NodeEnv, StorageDriver, validateEnv } from './env.validation';
 import type { DeployStage, EnvVars, PaymentHashAlgorithm, PaymentProviderCode } from './env.validation';
@@ -262,11 +263,14 @@ export function configuration(): AppConfig {
     recurring: {
       checkoutEnabled: env.PAYMENT_RECURRING_CHECKOUT_ENABLED,
       dispatchEnabled: env.PAYMENT_RECURRING_DISPATCH_ENABLED,
-      termsVersion: null, termsUrl: null, cancellationUrl: null,
-      cardLabel: env.PAYMENT_RECURRING_CARD_LABEL ?? null,
-      cardMethodCode: env.PAYMENT_RECURRING_CARD_METHOD_CODE ?? null,
-      approvalReference: env.PAYMENT_RECURRING_APPROVAL_REFERENCE ?? null,
-      maxKopecks: null,
+      termsVersion: EMAIL_TERMS_VERSION,
+      termsUrl: siteUrl + EMAIL_TERMS_PATH,
+      cancellationUrl: siteUrl + RECURRING_CANCELLATION_PATH,
+      cardLabel: env.PAYMENT_RECURRING_CARD_LABEL?.trim() || null,
+      cardMethodCode: env.PAYMENT_RECURRING_CARD_METHOD_CODE?.trim() || null,
+      approvalReference: env.PAYMENT_RECURRING_APPROVAL_REFERENCE?.trim() || null,
+      maxKopecks: env.PAYMENT_RECURRING_MAX_KOPECKS === undefined
+        ? null : BigInt(env.PAYMENT_RECURRING_MAX_KOPECKS),
     },
     isProduction,
     deployStage: env.DEPLOY_STAGE,

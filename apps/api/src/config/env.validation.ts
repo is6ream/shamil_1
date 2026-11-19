@@ -32,6 +32,7 @@ import {
   DEFAULT_API_PORT,
   DEFAULT_MAX_UPLOAD_MB,
   MAX_UPLOAD_MB_CEILING,
+  MAX_DONATION_KOPECKS,
   REVALIDATE_SECRET_MIN_LENGTH,
   DEFAULT_THROTTLE_LIMIT,
   DEFAULT_THROTTLE_TTL_MS,
@@ -138,6 +139,17 @@ export class EnvVars {
   @envBoolean(false)
   @IsBoolean()
   PAYMENT_RECURRING_DISPATCH_ENABLED: boolean = false;
+
+  @Transform(({ obj, key }) => {
+    const raw: unknown = obj[key];
+    if (raw === '') return undefined;
+    return typeof raw === 'string' && /^[1-9]\d*$/.test(raw) ? Number(raw) : raw;
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_DONATION_KOPECKS)
+  PAYMENT_RECURRING_MAX_KOPECKS?: number;
 
   @IsOptional() @IsString()
   DONOR_CODE_HMAC_SECRET?: string;
