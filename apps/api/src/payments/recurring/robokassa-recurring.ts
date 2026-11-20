@@ -45,6 +45,16 @@ function field(xml: string, name: string): string {
   return new RegExp('<' + name + '(?:\\s[^>]*)?>([^]*?)</' + name + '>').exec(xml)?.[1]?.trim() ?? '';
 }
 
+function userFieldText(xml: string, name: 'Name' | 'Value'): string {
+  const value = field(xml, name);
+  const opening = '<![CDATA[';
+  const closing = ']]>';
+  const end = value.indexOf(closing);
+  return value.startsWith(opening) && end === value.length - closing.length
+    ? value.slice(opening.length, end)
+    : value;
+}
+
 export async function queryRecurring(payment: PaymentConfig, invoiceNo: number): Promise<State> {
   if (payment.isTest || !Number.isSafeInteger(invoiceNo) || invoiceNo <= 0) return { kind: 'unknown' };
   const url = new URL(base + '/WebService/Service.asmx/OpStateExt');
@@ -76,12 +86,12 @@ export async function queryRecurring(payment: PaymentConfig, invoiceNo: number):
       return { kind: 'unknown' };
     }
     const bindings = [...field(xml, 'UserFields').matchAll(/<Field(?:\s[^>]*)?>([^]*?)<\/Field>/g)]
-      .map(match => match[1] ?? '').filter(value => field(value, 'Name') === 'Shp_order_id');
+      .map(match => match[1] ?? '').filter(value => userFieldText(value, 'Name') === 'Shp_order_id');
     if (bindings.length !== 1) return { kind: 'unknown' };
     // The live merchant returns BNR for ruble settlement to its bank account.
     const currency = field(info, 'OutCurrLabel');
     return { kind: 'paid', netAmountKopecks: amount, currency: currency === 'BNR' ? 'RUB' : currency,
-      orderId: field(bindings[0] ?? '', 'Value'), method: field(field(info, 'PaymentMethod'), 'Code'), confirmedAt };
+      orderId: userFieldText(bindings[0] ?? '', 'Value'), method: field(field(info, 'PaymentMethod'), 'Code'), confirmedAt };
   } catch {
     return { kind: 'unknown' };
   }

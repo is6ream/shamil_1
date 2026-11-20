@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { PaymentHashAlgorithm } from '../../config/env.validation';
 import { PrismaService } from '../../database/prisma.service';
 import type { Donation, RecurringSubscription } from '../../generated/prisma/client';
 import { RECURRING_OPTIONS, type RecurringOptions } from '../../recurring-contract/contract';
@@ -65,6 +66,7 @@ describe('recurring engine regressions (injected persistence and transport)', ()
     const module = await Test.createTestingModule({ providers: [RecurringService,
       { provide: PrismaService, useValue: { ...tx, $transaction: async (fn: (client: typeof tx) => unknown) => fn(tx) } },
       { provide: ConfigService, useValue: { get: () => ({ provider: 'robokassa', merchantId: 'mock-store',
+        webhookSecret: 'synthetic-password-2', hashAlgorithm: PaymentHashAlgorithm.Md5,
         isTest: false, paymentUrl: 'https://auth.robokassa.ru/Merchant/Index.aspx', receipt: { enabled: false } }) } },
       { provide: PaymentProviderResolver, useValue: { onlineAvailable: false } },
       { provide: PaymentsService, useValue: { applyWebhook } },
@@ -74,7 +76,10 @@ describe('recurring engine regressions (injected persistence and transport)', ()
     engine = worker as unknown as Engine;
   });
 
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.useRealTimers();
+  });
 
   function xml(netAmountKopecks = 10000n) {
     jest.mocked(queryRecurring).mockResolvedValue({ kind: 'paid', netAmountKopecks, currency: 'RUB',
@@ -158,6 +163,60 @@ describe('recurring engine regressions (injected persistence and transport)', ()
       currency: 'RUB', orderId: 'other', method: 'mock-card', confirmedAt: new Date() });
     await expect(engine.reconcileOrder(order)).resolves.toEqual({ kind: 'unknown' });
     expect(applyWebhook).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])('reconciles a paid first invoice from CDATA with dispatch off (matching UUID: %s)', async matches => {
+    const orderId = '11111111-2222-4333-8444-555555555555';
+    const echoedId = matches ? orderId : '66666666-7777-4888-8999-000000000000';
+    Object.assign(options, { cardLabel: 'BankCard', cardMethodCode: 'BankCard', approvalReference: 'mock-approval' });
+    Object.assign(order, { id: orderId, status: 'paid', amountKopecks: 1000n, paidAmountKopecks: 1000n });
+    Object.assign(sub, {
+      firstDonationId: orderId,
+      settlementEvidence: null,
+      providerEvidence: JSON.stringify({
+        recurring: true, mode: 'live', merchantId: sub.merchantId, orderId, invoiceNo: order.invoiceNo,
+        currency: 'RUB', cardLabel: options.cardLabel, cardMethodCode: options.cardMethodCode,
+        approvalReference: options.approvalReference,
+      }),
+      termsSnapshot: JSON.stringify({ version: sub.termsVersion, text: RECURRING_TERMS_SNAPSHOT,
+        amountKopecks: '1000', frequency: sub.frequency, previewDate: sub.previewDate }),
+    });
+    subscriptions.findMany.mockResolvedValue([sub]);
+    subscriptions.updateMany.mockImplementation(async ({ data }) => {
+      Object.assign(sub, data);
+      return { count: 1 };
+    });
+    jest.mocked(queryRecurring).mockImplementation(
+      jest.requireActual<typeof import('./robokassa-recurring')>('./robokassa-recurring').queryRecurring,
+    );
+    const fetcher = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      '<OperationStateResponse xmlns="http://merchant.roboxchange.com/WebService/">' +
+      '<Result><Code>0</Code></Result><State><Code>100</Code><StateDate>2027-01-31T10:50:00+03:00</StateDate></State>' +
+      '<Info><PaymentMethod><Code>BankCard</Code></PaymentMethod><OutSum>10.000000</OutSum><OutCurrLabel>BNR</OutCurrLabel></Info>' +
+      '<UserFields><Field><Name><![CDATA[Shp_order_id]]></Name><Value><![CDATA[' + echoedId + ']]></Value></Field></UserFields>' +
+      '</OperationStateResponse>',
+    ));
+    const warn = jest.spyOn(worker['logger'], 'warn').mockImplementation(() => undefined);
+
+    await worker.tick();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const url = fetcher.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toMatch(/\/OpStateExt$/);
+    expect(url.searchParams.get('InvoiceID')).toBe(String(order.invoiceNo));
+    expect(subscriptions.findMany).toHaveBeenCalledTimes(1);
+    expect(attempts.create).not.toHaveBeenCalled();
+    expect(sendRecurring).not.toHaveBeenCalled();
+    if (matches) {
+      expect(sub).toMatchObject({ state: 'active', anchorDay: 31, nextAt: new Date('2027-02-28T07:00:00Z') });
+      expect(applyWebhook).toHaveBeenCalledWith(expect.objectContaining({ status: 'paid', invoiceNo: order.invoiceNo,
+        providerEventId: String(order.invoiceNo), amountKopecks: 1000n }), { source: 'OpStateExt', Shp_order_id: orderId }, false);
+    } else {
+      expect(sub).toMatchObject({ state: 'pending', nextAt: null, settlementEvidence: null,
+        reconciliationReason: 'provider_outcome_unresolved' });
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('xml_order_or_currency_binding_unverified'));
+      expect(applyWebhook).not.toHaveBeenCalled();
+    }
   });
 
   it('rejects a test Donation without querying the production XML endpoint', async () => {

@@ -49,6 +49,20 @@ describe('Robokassa recurring transport (mock)', () => {
     },
   );
 
+  it.each([false, true])('rejects a duplicate binding (CDATA on the second field: %s)', async useCdata => {
+    const id = '11111111-2222-4333-8444-555555555555';
+    const echo = (value: string) => useCdata ? '<![CDATA[' + value + ']]>' : value;
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      '<OperationStateResponse><Result><Code>0</Code></Result>' +
+      '<State><Code>100</Code><StateDate>2027-01-31T10:50:00+03:00</StateDate></State>' +
+      '<Info><OutSum>10.000000</OutSum><OutCurrLabel>BNR</OutCurrLabel></Info>' +
+      '<UserFields><Field><Name>Shp_order_id</Name><Value>' + id + '</Value></Field>' +
+      '<Field><Name>' + echo('Shp_order_id') + '</Name><Value>' + echo(id) + '</Value></Field></UserFields>' +
+      '</OperationStateResponse>',
+    ));
+    await expect(queryRecurring(payment, 22)).resolves.toEqual({ kind: 'unknown' });
+  });
+
   it('never sends child or XML queries with test credentials or invalid invoices', async () => {
     const fetcher = jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('must not call'));
     await expect(sendRecurring({ ...payment, isTest: true }, order, 17)).resolves.toBe('unknown');
