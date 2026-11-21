@@ -29,6 +29,7 @@ import styles from "./page.module.css";
 // Лента обновляется при открытии страницы, интервалы кеширования остальных данных задаёт API-слой.
 export const revalidate = 0;
 
+const HERO_ID = "home-hero";
 const EMPTY_FEED: FeedPage = { items: [], nextCursor: null };
 
 export default async function HomePage() {
@@ -51,7 +52,7 @@ export default async function HomePage() {
 
       <main className={styles.page}>
         <div className={styles.heroBackdrop} aria-hidden="true" />
-        <div className={styles.hero}>
+        <div className={styles.hero} id={HERO_ID}>
           <div className={`${styles.wrap} ${styles.head} on-dark`}>
             <HeroIntro campaign={campaign} hero={content.hero} goal={activeGoal} />
           </div>
@@ -92,7 +93,7 @@ export default async function HomePage() {
       </main>
 
       <SiteFooter contacts={content.contacts} />
-      {campaign === null ? null : <MobileDonateBar campaign={campaign} />}
+      <MobileDonateBar campaign={campaign} heroId={HERO_ID} />
     </>
   );
 }

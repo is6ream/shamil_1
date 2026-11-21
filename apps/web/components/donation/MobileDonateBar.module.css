@@ -11,6 +11,7 @@
     z-index: var(--z-bar);
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: var(--sp-4);
     padding: var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--border);
@@ -20,8 +21,13 @@
   }
 
   .bar[data-hidden="true"] {
+    visibility: hidden;
     transform: translateY(110%);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar { transition: none; }
 }
 
 .summary {

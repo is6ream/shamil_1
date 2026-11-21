@@ -234,9 +234,35 @@
   .landing .navLink + .navLink::before { display: none; }
 }
 
-@media (max-width: 480px) {
-  .landing .nav { column-gap: 16px; }
-  .landing .navLink { min-height: 44px; }
+@media (max-width: 767px) {
+  .landing .inner { row-gap: 6px; }
+
+  .landing .nav {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .landing .navLink {
+    grid-column: span 2;
+    justify-content: center;
+    padding-inline: 3px;
+    border-top: 1px solid var(--ornament-border);
+    font-size: clamp(12px, 3.35vw, 15px);
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .landing .navLink:nth-child(-n + 2) {
+    grid-column: span 3;
+    border-top: 0;
+  }
+
+  .landing .navLink:focus-visible {
+    outline: 2px solid var(--gold-light);
+    outline-offset: -3px;
+  }
 }
 
 .landing .navLink svg {

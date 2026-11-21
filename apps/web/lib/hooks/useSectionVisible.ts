@@ -2,15 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-/** Доля секции на экране, с которой она считается видимой. */
-const VISIBLE_THRESHOLD = 0.05;
-
 /**
  * Видна ли сейчас секция страницы по её id. Для плавающих элементов —
  * нижней плашки телефона и баннера cookie: они прячутся, пока на экране
  * форма доната, чтобы не загораживать её поля.
  */
-export function useSectionVisible(sectionId: string): boolean {
+export function useSectionVisible(sectionId: string, threshold = 0.05): boolean {
   const [isVisible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -24,7 +21,7 @@ export function useSectionVisible(sectionId: string): boolean {
       (entries) => {
         setVisible(entries.some((entry) => entry.isIntersecting));
       },
-      { threshold: VISIBLE_THRESHOLD },
+      { threshold },
     );
 
     observer.observe(section);
@@ -32,7 +29,7 @@ export function useSectionVisible(sectionId: string): boolean {
     return () => {
       observer.disconnect();
     };
-  }, [sectionId]);
+  }, [sectionId, threshold]);
 
   return isVisible;
 }

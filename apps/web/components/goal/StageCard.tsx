@@ -18,6 +18,7 @@ interface StageCardProps {
   /** Превью в админке: кнопки и ссылка не действуют, анимации нет. */
   readonly isPreview?: boolean;
   readonly className?: string;
+  readonly compactOnMobile?: boolean;
 }
 
 /**
@@ -28,12 +29,17 @@ interface StageCardProps {
  * CSS-анимация лишь проигрывает заполнение от нуля. Чипы не дублируют форму —
  * они просят её открыться с суммой (`requestDonation`), выбирает пресет сама форма.
  */
-export function StageCard({ goal, isPreview = false, className }: StageCardProps) {
+export function StageCard({ goal, isPreview = false, className, compactOnMobile = false }: StageCardProps) {
   const figures = stageFigures(goal);
   const titleId = `stage-${goal.id}-title`;
   const valueText =
     figures.state === "empty" ? ACTIVE_GOAL.emptyValueText : `${figures.headline} ${figures.subline}`;
-  const rootClass = [styles.card, isPreview ? styles.preview : "", className ?? ""].filter(Boolean).join(" ");
+  const rootClass = [
+    styles.card,
+    isPreview && styles.preview,
+    compactOnMobile && styles.compactOnMobile,
+    className,
+  ].filter(Boolean).join(" ");
 
   return (
     <section className={rootClass} aria-labelledby={titleId} data-state={figures.state}>

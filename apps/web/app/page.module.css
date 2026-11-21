@@ -1,5 +1,6 @@
 .page {
-  --wrap-width: min(calc(100% - 2 * clamp(14px, 4vw, 56px)), 1280px);
+  --page-gutter: clamp(14px, 4vw, 56px);
+  --wrap-width: min(calc(100% - 2 * var(--page-gutter)), 1280px);
   --hero-padding: clamp(30px, 5vw, 70px);
   display: grid;
   grid-template-columns: 1fr minmax(0, var(--wrap-width)) 1fr;
@@ -132,7 +133,7 @@
   }
 }
 
-@media (max-width: 850px) {
+@media (767px < width <= 850px) {
   .heroBackdrop::before,
   .heroBackdrop::after {
     height: min(520px, 148vw);
@@ -141,4 +142,10 @@
 
   .heroBackdrop::before { background: url("/landing/hero.webp") 58% top / cover no-repeat; }
   .heroBackdrop::after { background: linear-gradient(90deg, #091e32f2, #091e326b); }
+}
+
+@media (max-width: 767px) {
+  .heroBackdrop::before,
+  .heroBackdrop::after { content: none; }
+  .head { padding-block-start: 0; }
 }

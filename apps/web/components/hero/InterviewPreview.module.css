@@ -85,4 +85,14 @@
 }
 
 .close svg { width: 20px; height: 20px; }
+@media (max-width: 767px) {
+  .preview {
+    width: 100%;
+    grid-template-columns: clamp(78px, 21vw, 108px) minmax(0, 1fr) 16px;
+    margin-block: 0 14px;
+  }
+
+  .subtitle { font-size: 12px; }
+}
+
 .preview:focus-visible, .close:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }

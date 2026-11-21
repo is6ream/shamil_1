@@ -63,7 +63,16 @@
 
 @media (max-width: 767px) {
   .summary {
-    padding-top: var(--sp-6);
+    padding-top: 14px;
+  }
+
+  .amounts { gap: 5px 10px; margin-bottom: 10px; }
+  .collected { font-size: clamp(26px, 7.15vw, 38px); }
+  .goal { font-size: 13px; }
+  .meta { margin-top: 7px; }
+
+  .collected, .goal {
+    overflow-wrap: anywhere;
   }
 
   .desktopOnly {

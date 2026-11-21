@@ -1,4 +1,3 @@
-import { DonateLink } from "@/components/donation/DonateLink";
 import { StageCard } from "@/components/goal/StageCard";
 import type { HeroContent } from "@/lib/api/site-content";
 import type { Campaign } from "@/lib/api/types";
@@ -20,24 +19,25 @@ export function HeroIntro({ campaign, hero = HERO, goal = null }: Props) {
 
   return (
     <div className={styles.hero}>
-      <p className={styles.badge}>
-        <span className={styles.dot} aria-hidden="true" />
-        {hero.badge}
-      </p>
+      <div className={styles.scene}>
+        <p className={styles.badge}>
+          <span className={styles.dot} aria-hidden="true" />
+          {hero.badge}
+        </p>
 
-      <h1 className={styles.title}>
-        {title.length === 2 ? <>{title[0]}<em>«Шамиль»</em>{title[1]}</> : hero.title}
-      </h1>
+        <h1 className={styles.title}>
+          {title.length === 2 ? <>{title[0]}<em>«Шамиль»</em>{title[1]}</> : hero.title}
+        </h1>
 
-      <p className={styles.lede}>
-        <span className={styles.desktopOnly}>{hero.lede}</span>
-        <span className={styles.mobileOnly}>{hero.ledeShort}</span>
-      </p>
+        <p className={styles.lede}>
+          <span className={styles.desktopOnly}>{hero.lede}</span>
+          <span className={styles.mobileOnly}>{hero.ledeShort}</span>
+        </p>
+      </div>
 
       <InterviewPreview />
-      <DonateLink className={styles.mobileDonate}>Поддержать строительство</DonateLink>
       <CollectedSummary campaign={campaign} />
-      {goal === null ? null : <StageCard goal={goal} className={styles.goal} />}
+      {goal === null ? null : <StageCard goal={goal} className={styles.goal} compactOnMobile />}
     </div>
   );
 }

@@ -32,17 +32,49 @@
 
 .title em { color: var(--gold-light); font-style: normal; }
 .lede { max-width: 454px; margin: 18px 0; font-size: clamp(15px, 1.4vw, 17px); line-height: 1.6; color: var(--text-soft); }
-.mobileOnly, .hero .mobileDonate { display: none; }
+.mobileOnly { display: none; }
 .goal { margin-top: 16px; }
 
 @media (max-width: 850px) {
   .hero { padding: 0; }
   .title { max-width: 15ch; }
-  .hero .mobileDonate { display: inline-flex; margin-bottom: 18px; }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 767px) {
+  .hero { max-width: none; }
+
+  .scene {
+    --scene-height: clamp(300px, 83vw, 365px);
+    position: relative;
+    isolation: isolate;
+    min-block-size: var(--scene-height);
+    padding-block: 16px 120px;
+  }
+
+  .scene::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset-inline: calc(-1 * var(--page-gutter));
+    inset-block-end: 0;
+    block-size: calc(var(--scene-height) - 12px);
+    background:
+      linear-gradient(180deg, var(--night), rgb(0 25 51 / 76%) 27%, rgb(0 25 51 / 42%) 47%, transparent 67%),
+      linear-gradient(0deg, var(--night), transparent 14%),
+      url("/landing/hero.webp") right bottom / cover no-repeat;
+  }
+
+  .badge { margin-bottom: 10px; }
+  .title { max-width: 22ch; font-size: clamp(27px, 7.8vw, 42px); }
+  .lede {
+    max-width: 39ch;
+    margin: 10px 0 0;
+    font-size: clamp(14px, 3.7vw, 17px);
+    line-height: 1.45;
+    color: var(--on-dark);
+  }
+
+  .title, .lede { text-shadow: 0 1px 6px var(--night); }
   .desktopOnly { display: none; }
   .mobileOnly { display: inline; }
-  .hero .mobileDonate { width: 100%; font-size: 13px; }
 }

@@ -237,6 +237,39 @@
   }
 }
 
+@media (max-width: 767px) {
+  .compactOnMobile {
+    gap: 10px;
+    padding: 13px 14px;
+    border: 1px solid var(--ornament-border);
+    border-radius: 10px;
+    background: var(--night-soft);
+  }
+
+  .compactOnMobile .top { flex-direction: row; align-items: baseline; }
+  .compactOnMobile .figures { flex: 0 1 auto; text-align: left; }
+  .compactOnMobile .eyebrow { color: var(--gold-light); }
+  .compactOnMobile .title,
+  .compactOnMobile .headline {
+    color: var(--on-dark);
+    font-family: inherit;
+    font-size: 16px;
+    overflow-wrap: anywhere;
+    text-wrap: wrap;
+  }
+
+  .compactOnMobile .subline { color: var(--text-soft); font-size: 12px; }
+  .compactOnMobile .track { height: 4px; background: var(--ornament-border); }
+  .compactOnMobile .fill { background: var(--gold-light); }
+
+  .compactOnMobile .actions,
+  .compactOnMobile .note { display: none; }
+}
+
+@media (max-width: 360px) {
+  .compactOnMobile .top { flex-direction: column; align-items: stretch; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fill {
     animation: none;
