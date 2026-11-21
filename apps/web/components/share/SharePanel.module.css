@@ -48,7 +48,7 @@
   color: var(--text-soft);
 }
 
-@media (max-width: 1023px) {
+@container (width < 850px) {
   .panel {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-8);

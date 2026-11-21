@@ -168,6 +168,12 @@
 .progress li { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 6px; }
 .video { max-width: 620px; margin-top: 16px; }
 
+@container (width < 600px) {
+  .storyboard { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .sketch { grid-area: 1 / 1; }
+  .controls { grid-area: 2 / 1; }
+}
+
 @media (max-width: 850px) {
   .storyboard { grid-template-columns: minmax(0, 1fr); gap: 12px; --art-height: clamp(128px, 27svh, 200px); }
   .sketch { grid-area: 1 / 1; position: sticky; top: 8px; z-index: 2; }

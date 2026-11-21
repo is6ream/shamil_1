@@ -50,41 +50,45 @@ export default async function HomePage() {
       <SiteHeader landing />
 
       <main className={styles.page}>
+        <div className={styles.heroBackdrop} aria-hidden="true" />
         <div className={styles.hero}>
-          <div className={`${styles.wrap} ${styles.heroGrid}`}>
-            <div className={`${styles.head} on-dark`}>
-              <HeroIntro campaign={campaign} hero={content.hero} goal={activeGoal} />
+          <div className={`${styles.wrap} ${styles.head} on-dark`}>
+            <HeroIntro campaign={campaign} hero={content.hero} goal={activeGoal} />
+          </div>
+        </div>
+
+        <aside className={styles.donationRail} id={SECTION_IDS.donate} aria-label="Форма пожертвования">
+          <div className={styles.donationPanel}>
+            <DonationWidget regions={regions} />
+          </div>
+        </aside>
+
+        <div className={styles.sections}>
+          <section className={styles.construction} id={SECTION_IDS.construction}>
+            <div className={styles.wrap}>
+              <ConstructionTimeline timeline={construction} gallery={gallery} video={videos[0] ?? null} />
             </div>
-            <aside id={SECTION_IDS.donate} aria-label="Форма пожертвования">
-              <DonationWidget regions={regions} />
-            </aside>
-          </div>
-        </div>
+          </section>
 
-        <section className={styles.construction} id={SECTION_IDS.construction}>
-          <div className={styles.wrap}>
-            <ConstructionTimeline timeline={construction} gallery={gallery} video={videos[0] ?? null} />
-          </div>
-        </section>
+          <div className={styles.band}><div className={styles.wrap}><HadithBand /></div></div>
 
-        <div className={styles.band}><HadithBand /></div>
-
-        <div className={styles.routeReports}>
-          <div className={styles.wrap}>
-            <ConstructionLocation />
-            <div className={styles.reports} id={SECTION_IDS.reports}>
-              <ReportsSection regions={topRegions} feed={feed} />
+          <div className={styles.routeReports}>
+            <div className={styles.wrap}>
+              <ConstructionLocation />
+              <div className={styles.reports} id={SECTION_IDS.reports}>
+                <ReportsSection regions={topRegions} feed={feed} />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className={`${styles.wrap} ${styles.share}`} id={SECTION_IDS.share}>
-          <SharePanel />
-        </div>
+          <div className={`${styles.wrap} ${styles.share}`} id={SECTION_IDS.share}>
+            <SharePanel />
+          </div>
 
-        <section className={styles.requisites} id={SECTION_IDS.requisites}>
-          <div className={styles.wrap}><RequisitesSection bank={content.bank} /></div>
-        </section>
+          <section className={styles.requisites} id={SECTION_IDS.requisites}>
+            <div className={styles.wrap}><RequisitesSection bank={content.bank} /></div>
+          </section>
+        </div>
       </main>
 
       <SiteFooter contacts={content.contacts} />
