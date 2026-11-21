@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
-import { MenuIcon, UserIcon } from "@/components/icons/Icons";
+import { LocationPin, MenuIcon, UserIcon } from "@/components/icons/Icons";
 import { NAV_ITEMS } from "@/lib/content";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import { ORGANIZATION, toTelHref } from "@/lib/organization";
@@ -45,9 +45,10 @@ function LoginButton({ className }: { readonly className: string }) {
 interface Props {
   /** Телефон из админки; по умолчанию — хардкод. */
   readonly phone?: string | null;
+  readonly landing?: boolean;
 }
 
-export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
+export function SiteHeader({ phone = ORGANIZATION.phone, landing = false }: Props = {}) {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const activeId = useActiveSection(NAV_IDS);
@@ -65,7 +66,7 @@ export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
   }, []);
 
   return (
-    <header className={styles.header}>
+    <header className={landing ? `${styles.header} ${styles.landing} on-dark` : styles.header}>
       <div className={styles.inner}>
         <Link className={styles.brand} href="/" aria-label="Мечеть «Шамиль» — на главную">
           <BrandMark hasTagline />
@@ -82,12 +83,13 @@ export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
                 onNavigate(event, item.id);
               }}
             >
+              {landing && item.id === "route" ? <LocationPin /> : null}
               {item.label}
             </a>
           ))}
         </nav>
 
-        {phone === null ? null : (
+        {phone === null || landing ? null : (
           <a className={styles.phone} href={toTelHref(phone)}>
             {phone}
           </a>
@@ -95,9 +97,9 @@ export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
 
         <LoginButton className={styles.loginDesktop} />
 
-        <LoginButton className={styles.loginMobile} />
+        {landing ? null : <LoginButton className={styles.loginMobile} />}
 
-        <button
+        {landing ? null : <button
           className={styles.burger}
           ref={menuButtonRef}
           type="button"
@@ -109,16 +111,16 @@ export function SiteHeader({ phone = ORGANIZATION.phone }: Props = {}) {
           }}
         >
           <MenuIcon />
-        </button>
+        </button>}
       </div>
 
-      <MobileMenu
+      {landing ? null : <MobileMenu
         id={MENU_ID}
         isOpen={isMenuOpen}
         onClose={closeMenu}
         onNavigate={onNavigate}
         phone={phone}
-      />
+      />}
 
     </header>
   );

@@ -1,209 +1,79 @@
-/*
- * Раскладка главной (макет v2). Одна сетка на всю страницу: колонки
- * `full` для полосы с хадисом во всю ширину окна и `content` для всего
- * остального. На десктопе `content` делится на `main` и `aside`.
- *
- * 1024 и 768 литералами: CSS не умеет переменные в медиазапросах.
- */
+.wrap {
+  width: min(calc(100% - 2 * clamp(14px, 4vw, 56px)), 1280px);
+  margin-inline: auto;
+}
 
-.page {
+.hero {
+  position: relative;
+  isolation: isolate;
+  background: var(--night);
+}
+
+.hero::before,
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero::before {
+  background: url("/landing/hero.webp") calc(50% - clamp(70px, 9vw, 140px)) 56% / cover no-repeat;
+  mask-image: linear-gradient(90deg, #000 71%, transparent 90%);
+}
+
+.hero::after {
+  background: linear-gradient(90deg, #081d31 2%, #081d31db 17%, #081d31ac 29%, #081d3142 42%, transparent 61%),
+    linear-gradient(0deg, #081d317c, transparent 19%);
+}
+
+.heroGrid {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns:
-    [full-start] var(--gutter)
-    [content-start main-start aside-start] minmax(0, 1fr)
-    [content-end main-end aside-end] var(--gutter)
-    [full-end];
-  padding-bottom: var(--section-pad);
+  min-height: clamp(690px, 57vw, 810px);
+  grid-template-columns: minmax(0, 1fr) clamp(355px, 36vw, 444px);
+  gap: clamp(24px, 5.5vw, 84px);
+  align-items: center;
+  padding-block: clamp(30px, 5vw, 70px);
 }
 
-.page > * {
-  grid-column: content;
-  min-width: 0;
-}
+.head, .heroGrid aside { min-width: 0; }
 
-.page > [id] {
-  scroll-margin-top: calc(var(--header-h) + var(--sp-4));
-}
+.page [id] { scroll-margin-top: 12px; }
 
-/*
- * Фон первого экрана: во всю ширину окна, в той же строке сетки, что и
- * `head`, — высота фона всегда равна высоте текста, без магических чисел.
- * Форма на десктопе лежит поверх фона и уходит ниже, как в макете.
- */
-.backdrop {
-  grid-column: full;
-  grid-row: 1;
-  background: var(--hero-bg-fill);
-}
+.construction,
+.routeReports,
+.requisites { padding-block: clamp(30px, 5vw, 75px); }
 
-.head {
-  position: relative;
-  z-index: 1;
-  grid-row: 1;
-  padding-bottom: var(--sp-12);
-}
-
-.aside {
-  position: relative;
-  z-index: 1;
-}
-
-.band {
-  grid-column: full;
-  margin-top: var(--section-pad);
-}
-
-.aside {
-  margin-top: var(--sp-10);
-}
-
-.construction {
-  margin-top: var(--section-pad);
-}
-
-.reports,
-.share,
-.requisites {
-  margin-top: var(--section-pad);
-}
-
-/* ── Десктоп: две колонки, sticky-форма справа ─────────────────────────── */
+.construction { background: var(--paper); }
+.band { padding-block: clamp(20px, 4vw, 48px); }
+.routeReports, .requisites { background: var(--surface-sunken); }
+.reports { margin-top: clamp(30px, 4vw, 54px); }
+.share { padding-block: clamp(26px, 4.5vw, 70px); }
 
 @media (min-width: 1024px) {
-  .page {
-    grid-template-columns:
-      [full-start] minmax(var(--gutter), 1fr)
-      [content-start main-start] minmax(0, var(--col-main))
-      [main-end] var(--col-gap)
-      [aside-start] var(--col-aside)
-      [aside-end content-end] minmax(var(--gutter), 1fr)
-      [full-end];
-    overflow-x: clip;
+  .routeReports > .wrap {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: 28px;
+    align-items: start;
   }
 
-  .head,
-  .stats,
-  .about,
-  .construction {
-    grid-column: main;
-  }
-
-  .head { grid-row: 1; }
-  .stats { grid-row: 2; }
-  .about { grid-row: 3; }
-  .construction { grid-row: 4; }
-
-  /*
-   * `aside` растянут на все четыре строки левой колонки, а липнет его
-   * внутренний блок. Если сделать sticky сам элемент сетки, Chrome
-   * ограничивает его всем контейнером `.page`, а не областью 1 / 5, —
-   * и форма наезжает на полосу с хадисом. Внутри обёртки sticky
-   * упирается в конец «Хода строительства» и дальше уходит со страницей.
-   */
-  .aside {
-    grid-column: aside;
-    grid-row: 1 / 5;
-    margin-top: var(--hero-pad-top);
-  }
-
-  /*
-   * Форма выше короткого окна (ноутбук 13", Dock на маке, панель задач,
-   * масштаб браузера) не должна обрезаться: липкий блок не выходит за
-   * нижний край вьюпорта, а лишнее прокручивается внутри него. `dvh`
-   * учитывает реальную видимую высоту, `vh` — запасной вариант.
-   *
-   * Поля `--shadow-gap` нужны, чтобы `overflow` не срезал тень карточки:
-   * отступ внутри скролл-контейнера компенсируется отрицательным снаружи.
-   */
-  .asideSticky {
-    --shadow-gap: var(--sp-12);   /* размах --shadow-form за краем карточки */
-    --shadow-gap-bottom: var(--sp-4);
-    --aside-top: var(--sticky-top);
-    --sticky-bottom: 0px;          /* нижний воздух даёт сам --shadow-gap   */
-
-    position: sticky;
-    top: var(--aside-top);
-    max-height: calc(100vh - var(--aside-top) - var(--sticky-bottom));
-    max-height: calc(100dvh - var(--aside-top) - var(--sticky-bottom));
-    overflow-y: auto;
-    /* Снизу поле под тень меньше: каждый пиксель здесь отнимается у высоты
-       формы, а нижний край тени почти не виден. */
-    padding: 0 var(--shadow-gap) var(--shadow-gap-bottom);
-    margin: 0 calc(-1 * var(--shadow-gap)) calc(-1 * var(--shadow-gap-bottom));
-
-    /* Полосу прокрутки прячем: колесо, тачпад, клавиатура и переход
-       фокуса по полям продолжают прокручивать форму. */
-    scrollbar-width: none;
-  }
-
-  .asideSticky::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Невысокое окно: карточка начинается сразу под шапкой, а не на уровне
-     заголовка hero, — иначе на первом экране низ формы уходит за край. */
-  @media (max-height: 900px) {
-    .aside {
-      margin-top: calc(var(--aside-top, var(--sticky-top)) - var(--header-h));
-    }
-  }
-
-  /* Очень низкое окно (ноутбук 1366×768 с масштабом 125%): форма
-     прижимается ближе к шапке, чтобы поместиться целиком. */
-  @media (max-height: 580px) {
-    .asideSticky {
-      --aside-top: calc(var(--header-h) + var(--sp-2));
-    }
-  }
-
-  .band { grid-row: 5; }
-  .reports { grid-row: 6; }
-  .share { grid-row: 7; }
-  .requisites { grid-row: 8; }
+  .reports { margin: 0; }
+  .reports > div { display: flex; flex-direction: column-reverse; gap: 24px; }
 }
 
-/* ── Телефон: хадис после формы, ниже — аккордеон ──────────────────────── */
+@media (max-width: 850px) {
+  .heroGrid { min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .heroGrid aside { width: min(100%, 530px); }
 
-@media (max-width: 767px) {
-  .page {
-    padding-bottom: 0;
+  .hero::before,
+  .hero::after {
+    height: min(520px, 148vw);
+    mask-image: linear-gradient(#000 72%, transparent);
   }
 
-  .head {
-    order: 1;
-    padding-bottom: var(--sp-8);
-  }
-
-  .aside {
-    order: 2;
-    margin-top: var(--sp-8);
-    margin-inline: calc(-1 * var(--sp-1));
-  }
-
-  .band {
-    order: 3;
-    margin-top: var(--sp-12);
-  }
-
-  /* Статистики и «О проекте» в мобильном макете нет. */
-  .stats,
-  .about {
-    display: none;
-  }
-
-  /* Строки аккордеона на белом фоне во всю ширину — как в макете. */
-  .construction,
-  .reports,
-  .requisites,
-  .share {
-    grid-column: full;
-    margin-top: 0;
-    padding-inline: var(--gutter);
-    background: var(--surface);
-  }
-
-  .construction { order: 4; padding-top: var(--sp-8); }
-  .reports { order: 5; }
-  .requisites { order: 6; }
-  .share { order: 7; padding-bottom: var(--sp-12); }
+  .hero::before { background: url("/landing/hero.webp") 58% top / cover no-repeat; }
+  .hero::after { background: linear-gradient(90deg, #091e32f2, #091e326b); }
 }

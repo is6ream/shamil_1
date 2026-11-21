@@ -330,7 +330,11 @@ describe("Метрика и UTM", () => {
       // Act
       await page.goto(`${SITE}/`);
       await page.locator("#donate").scrollIntoViewIfNeeded();
-      await page.locator("#donation-consent").check({ force: true });
+      if (viewport.width < 1024) {
+        // Wait for the visibility observer before interacting with the form.
+        await page.getByRole("region", { name: "Согласие на cookie" }).waitFor({ state: "hidden" });
+      }
+      await page.locator("#donation-consent").check();
       await page.locator("#donate").evaluate((node) => node.scrollIntoView({ block: "start" }));
       await page.waitForTimeout(400);
 

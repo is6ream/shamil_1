@@ -1,0 +1,88 @@
+.preview {
+  display: grid;
+  align-items: center;
+  grid-template-columns: clamp(88px, 19vw, 132px) minmax(0, 1fr) 16px;
+  gap: 10px;
+  width: min(100%, 365px);
+  margin-block: 20px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--ornament-border);
+  border-radius: 10px;
+  background: var(--night-soft);
+  color: var(--on-dark);
+  text-align: left;
+  scroll-margin-top: 12px;
+}
+
+.preview:hover,
+.close:hover { background: #193952; }
+
+.thumbnail {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.thumbnail img { object-fit: cover; }
+
+.play {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border: 1px solid var(--gold-light);
+  border-radius: 50%;
+  background: var(--night);
+}
+
+.play svg { width: 16px; height: 16px; }
+.copy { display: grid; gap: 3px; line-height: 1.25; }
+.copy strong { font-size: 14px; }
+.subtitle { font-size: 11px; color: var(--text-soft); }
+.preview > svg { width: 16px; height: 16px; color: var(--gold-light); }
+
+.soon {
+  color: var(--gold-light);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.dialog {
+  position: fixed;
+  inset: 0;
+  width: min(calc(100% - 32px), 425px);
+  margin: auto;
+  padding: 24px;
+  color: var(--on-dark);
+  background: var(--night-soft);
+  border: 1px solid var(--gold);
+  border-radius: 16px;
+}
+
+.dialog::backdrop { background: rgb(0 18 34 / 75%); }
+.dialog h2 { margin: 12px 0 8px; color: inherit; font-size: clamp(21px, 5vw, 29px); }
+.dialog p { margin: 0; }
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: var(--gold-light);
+  background: transparent;
+}
+
+.close svg { width: 20px; height: 20px; }
+.preview:focus-visible, .close:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }

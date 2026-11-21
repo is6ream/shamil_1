@@ -1,231 +1,190 @@
-/* Орнамент заказчика: исходный цвет и пропорции всех четырёх углов. */
-
-.card {
-  position: relative;
-  isolation: isolate;
-  padding: 27% 8% 30%;
-  border-radius: var(--r-card);
-  background: #f0eadf;
-}
-
-/* Две кромки независимо привязаны к краям: высота контента не растягивает узор.
-   Центральное поле исходника однотонное; орнамент целиком помещается в 430 px. */
-.card::before,
-.card::after {
-  position: absolute;
-  z-index: -1;
-  inset-inline: 0;
-  aspect-ratio: 1024 / 430;
-  background-image: url("/construction/donation-ornament.webp");
-  background-repeat: no-repeat;
-  background-size: 100% auto;
-  border-radius: inherit;
-  pointer-events: none;
-  content: "";
-}
-
-.card::before {
-  top: 0;
-  background-position: center top;
-}
-
-.card::after {
-  bottom: 0;
-  background-position: center bottom;
-}
-
-.header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--sp-6);
-  margin-bottom: var(--sp-10);
-}
-
 .title {
-  max-width: 11em;
-  font-size: var(--fs-h2);
+  font-size: clamp(28px, 3.5vw, 49px);
+  line-height: 1.12;
+  letter-spacing: -.035em;
 }
 
-.updated {
-  flex: none;
-  max-width: 7em;
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--text-soft);
-}
+.lede { margin: 12px 0 0; color: var(--text-soft); }
 
-/* ── Таймлайн ──────────────────────────────────────────────────────────── */
-
-.stages {
-  --marker: 28px;
-
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.stage {
-  position: relative;
+.storyboard {
   display: grid;
-  grid-template-columns: var(--marker) minmax(0, 1fr) auto;
-  gap: var(--sp-5);
-  padding-bottom: var(--sp-6);
+  grid-template-columns: minmax(260px, .85fr) minmax(0, 1.55fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 24px;
 }
 
-/* Линия от маркера к следующему: синяя после выполненного этапа. */
-.stage:not(:last-child)::before {
-  position: absolute;
-  top: var(--marker);
-  bottom: 0;
-  left: calc(var(--marker) / 2 - 1px);
-  width: 2px;
-  background: var(--border);
-  content: "";
-}
-
-.stage[data-status="done"]:not(:last-child)::before {
-  background: var(--accent);
-}
-
-.marker {
-  display: grid;
-  place-items: center;
-  width: var(--marker);
-  height: var(--marker);
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.markerDone {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.markerDone svg {
-  width: 14px;
-  height: 14px;
-}
-
-.markerCurrent {
-  border: 2px solid var(--accent);
-  background: radial-gradient(circle, var(--accent) 0 5px, var(--surface) 5.5px);
-}
-
-.markerUpcoming {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-soft);
-}
-
-.stageText p {
+.sketch {
+  grid-area: 1 / 2;
+  min-width: 0;
   margin: 0;
-}
-
-.stageTitle {
-  font-size: 16.5px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.stageText .stageStatus {
-  margin-top: 2px;
-  font-size: 14.5px;
-  color: var(--accent);
-}
-
-.stage[data-status="upcoming"] .stageStatus {
-  color: var(--text-soft);
-}
-
-.stageAmount {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* ── Медиа ─────────────────────────────────────────────────────────────── */
-
-.previews {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-4);
-  margin: var(--sp-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.preview {
-  position: relative;
-  aspect-ratio: 184 / 140;
   overflow: hidden;
-  border-radius: var(--r-photo);
-  background: var(--surface-sunken);
+  border: 1px solid var(--gold-text);
+  border-radius: 16px;
+  background: radial-gradient(ellipse at 52% 50%, #244a64, var(--night) 80%);
+  color: var(--on-dark);
+  box-shadow: var(--shadow-float);
 }
 
-.previewImage {
-  object-fit: cover;
-}
-
-.galleryLink {
-  display: inline-flex;
+.sketchHeading {
+  display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  height: 50px;
-  margin-top: var(--sp-4);
-  padding: 0 var(--sp-6);
-  border: var(--stroke) solid var(--border);
-  border-radius: var(--r-field);
-  color: var(--text-strong);
-  font-size: 15px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: border-color var(--dur-fast), color var(--dur-fast);
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--ornament-border);
 }
 
-.galleryLink:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+.sketchHeading h3 { margin: 0; color: inherit; font-size: clamp(15px, 2vw, 21px); }
+.sketchHeading span { white-space: nowrap; color: var(--gold-light); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.art {
+  position: relative;
+  container-type: size;
+  height: clamp(235px, 27vw, 390px);
+  overflow: hidden;
 }
 
-@media (max-width: 767px) {
-  .card {
-    padding: 32% 8% 34%;
-  }
+.art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgb(240 209 155 / 13%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(240 209 155 / 13%) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse, #000, transparent 78%);
+}
 
-  /* На телефоне заголовок — строка аккордеона; дата остаётся. */
-  .heading {
-    display: none;
-  }
+.scene {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  width: min(92cqw, 150cqh);
+  aspect-ratio: 1672 / 941;
+  transform: translateX(-50%);
+}
 
-  .header {
-    margin-bottom: var(--sp-6);
-  }
+.blueprint { opacity: .56; filter: grayscale(1) sepia(.2) brightness(.88); }
+.sketch:not([data-stage="0"]) .blueprint { opacity: .19; }
 
-  .updated {
-    max-width: none;
-  }
+.layer { opacity: 0; z-index: 2; filter: saturate(.12) brightness(.86); }
+.layer[data-visible="true"] { opacity: 1; }
+.foundation { clip-path: inset(95.55% 0 0 0); }
+.walls { clip-path: inset(51.9% 0 4.45% 30%); }
+.roof { clip-path: inset(0 0 48.1% 30%); }
+.minaret { clip-path: inset(0 70% 4.45% 0); }
+.sketch[data-stage="4"] .layer { filter: saturate(.18) brightness(.72); }
+.sketch:is([data-stage="5"], [data-stage="6"]) .layer { filter: none; }
 
-  .stage {
-    grid-template-columns: var(--marker) minmax(0, 1fr);
-    row-gap: var(--sp-1);
-  }
+.grounds,
+.path { position: absolute; opacity: 0; }
 
-  .stageAmount {
-    grid-column: 2;
-    font-weight: 600;
-    color: var(--text-soft);
-  }
+.grounds { inset: 43.6% 0 auto; width: 100%; height: auto; }
 
-  .previews {
-    gap: var(--sp-2);
-  }
+.path {
+  z-index: 1;
+  left: 49%;
+  top: 97%;
+  width: 22.5%;
+  height: 11%;
+  clip-path: polygon(25% 0, 75% 0, 100% 100%, 0 100%);
+  background: repeating-linear-gradient(0deg, #7e624e 0 1px, transparent 1px 11px), linear-gradient(#c19a74, #9a8069);
+}
 
-  .galleryLink {
-    justify-content: center;
-    width: 100%;
+.sketch[data-stage="6"] :is(.grounds, .path) { opacity: 1; }
+
+.lighting {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  opacity: 0;
+  mask: url("/landing/mosque-model.webp") center / 100% 100%;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(ellipse 8% 12% at 60.4% 87%, #ffbe64, transparent 83%),
+    radial-gradient(ellipse 5% 9% at 44.6% 85%, #ffc778e0, transparent 83%),
+    radial-gradient(ellipse 5% 9% at 75.7% 85%, #ffc778e0, transparent 83%),
+    radial-gradient(ellipse 4% 10% at 22.8% 43%, #ffc578cc, transparent 83%);
+}
+
+.sketch[data-stage="4"] .lighting { opacity: 1; }
+.sketch:is([data-stage="5"], [data-stage="6"]) .lighting { opacity: .34; }
+
+.caption {
+  display: grid;
+  gap: 3px;
+  min-height: 84px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--ornament-border);
+  font-size: 13px;
+  align-content: start;
+}
+
+.caption strong { color: var(--gold-light); }
+
+.controls { grid-area: 1 / 1; }
+.steps, .previews { list-style: none; padding: 0; margin: 0; }
+.steps li { border-bottom: 1px solid var(--border); }
+.steps li:first-child { border-top: 1px solid var(--border); }
+
+.steps button {
+  display: grid;
+  grid-template-columns: 29px 1fr 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 5px 10px;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+}
+
+.steps button:hover { background: var(--surface-soft); }
+.steps button[aria-pressed="true"] { background: var(--night-soft); color: var(--on-dark); }
+.steps button span { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+.steps button[aria-pressed="true"] span { color: var(--gold-light); }
+.steps button svg, .galleryLink svg { width: 16px; height: 16px; }
+.actions { margin-top: 16px; }
+.finalActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions [hidden] { display: none; }
+
+.gallery {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.gallery h3 { margin: 0 0 12px; font-size: 20px; }
+.previews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.preview { position: relative; height: clamp(90px, 18vw, 230px); border-radius: 8px; overflow: hidden; }
+.preview img { object-fit: cover; }
+.galleryLink { display: inline-flex; align-items: center; min-height: 44px; gap: 8px; }
+.progress { margin-top: 16px; padding: 12px 0; border-top: 1px solid var(--border); }
+.progress summary { cursor: pointer; font-weight: 700; }
+.progress ul { padding: 0; list-style: none; }
+.progress li { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 6px; }
+.video { max-width: 620px; margin-top: 16px; }
+
+@media (max-width: 850px) {
+  .storyboard { grid-template-columns: minmax(0, 1fr); gap: 12px; --art-height: clamp(128px, 27svh, 200px); }
+  .sketch { grid-area: 1 / 1; position: sticky; top: 8px; z-index: 2; }
+  .controls { grid-area: 2 / 1; }
+  .art { height: var(--art-height); }
+  .sketchHeading { padding: 7px 11px; }
+  .caption { min-height: 76px; padding: 6px 11px; font-size: 12px; }
+  .controls :is(button, a) { scroll-margin-top: calc(var(--art-height) + 132px); }
+}
+
+@media (max-height: 400px) and (max-width: 850px) {
+  .storyboard { --art-height: 95px; }
+  .caption { min-height: 55px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .art :is(.layer, .blueprint, .grounds, .path, .lighting) {
+    transition: opacity 180ms ease-out, filter 220ms ease-out;
   }
 }

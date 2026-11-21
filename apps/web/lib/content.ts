@@ -17,6 +17,7 @@ export const SECTION_IDS = {
   donate: "donate",
   about: "o-proekte",
   construction: "hod-stroitelstva",
+  route: "route",
   reports: "otchety",
   share: "podelitsya",
   requisites: "rekvizity",
@@ -30,8 +31,8 @@ export interface NavItem {
 
 /** Пункты навигации шапки в порядке макета. */
 export const NAV_ITEMS: readonly NavItem[] = [
-  { id: SECTION_IDS.about, label: "О проекте" },
   { id: SECTION_IDS.construction, label: "Ход строительства" },
+  { id: SECTION_IDS.route, label: "Как добраться" },
   { id: SECTION_IDS.reports, label: "Отчёты" },
   { id: SECTION_IDS.requisites, label: "Реквизиты" },
   { id: SECTION_IDS.contacts, label: "Контакты" },
@@ -43,8 +44,8 @@ export const BRAND = {
 } as const;
 
 export const HERO = {
-  badge: "Идёт сбор · г. Уфа",
-  title: "Построим мечеть «Шамиль» вместе",
+  badge: "Идёт сбор на строительство",
+  title: "В Уфе строится мечеть «Шамиль»",
   lede:
     "Мечеть на 500 молящихся в Уфе. Каждое пожертвование — садака джария: награда за неё " +
     "записывается, пока в стенах мечети совершается поклонение.",
