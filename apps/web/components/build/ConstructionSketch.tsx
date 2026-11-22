@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { DonateLink } from "@/components/donation/DonateLink";
 import { ArrowRightIcon } from "@/components/icons/Icons";
 
+import { ConstructionScene } from "./ConstructionScene";
 import styles from "./ConstructionTimeline.module.css";
 
 const STEPS = [
@@ -15,11 +16,12 @@ const STEPS = [
   { title: "Купол и минарет", description: "Кровля, купол и минарет завершают силуэт мечети." },
   { title: "Инженерные сети", description: "На эскизе включается освещение. На этом этапе прокладывают инженерные сети." },
   { title: "Отделка", description: "Фасад приобретает цвет, фактуру и узоры." },
-  { title: "Благоустройство", description: "Дорожки и озеленение дополняют будущий облик мечети." },
+  { title: "Здание литера", description: "В здании рядом с мечетью предусмотрены помещения. Доход от них будет направляться на содержание мечети." },
+  { title: "Благоустройство", description: "Дорожки и озеленение дополняют территорию вокруг мечети и здания литера." },
 ] as const;
 
 const MODEL = "/landing/mosque-model.webp";
-const LAYERS = [
+const MOSQUE_LAYERS = [
   { stage: 1, className: styles.foundation },
   { stage: 2, className: styles.walls },
   { stage: 3, className: styles.roof },
@@ -29,6 +31,7 @@ const LAYERS = [
 export function ConstructionSketch() {
   const [stage, setStage] = useState(0);
   const final = stage === STEPS.length - 1;
+  const showComplex = stage >= STEPS.length - 2;
   const firstStep = useRef<HTMLButtonElement>(null);
   const donateAction = useRef<HTMLDivElement>(null);
 
@@ -54,31 +57,35 @@ export function ConstructionSketch() {
 
   return (
     <div className={styles.storyboard}>
-      <figure className={styles.sketch} data-stage={stage} aria-labelledby="construction-sketch-title">
+      <figure className={styles.sketch} aria-labelledby="construction-sketch-title">
         <div className={styles.sketchHeading}>
           <h3 id="construction-sketch-title">Эскиз будущей мечети</h3>
-          <span aria-hidden="true">{String(stage + 1).padStart(2, "0")} / 07</span>
+          <span aria-hidden="true">{String(stage + 1).padStart(2, "0")} / {String(STEPS.length).padStart(2, "0")}</span>
         </div>
-        <div className={styles.art} aria-hidden="true">
-          <div className={styles.scene}>
-            <Image className={styles.blueprint} src={MODEL} alt="" fill sizes="(max-width: 730px) 340px, 660px" />
-            <Image className={styles.grounds} src="/landing/grounds.webp" alt="" width={1050} height={350} sizes="(max-width: 730px) 340px, 660px" />
-            <div className={styles.path} />
-            {LAYERS.map((layer) => (
-              <Image
-                key={layer.className}
-                className={`${styles.layer} ${layer.className}`}
-                data-visible={stage >= layer.stage}
-                src={MODEL}
-                alt=""
-                fill
-                sizes="(max-width: 730px) 340px, 660px"
-              />
-            ))}
-            <div className={styles.lighting} />
+        {showComplex ? (
+          <div className={styles.art} aria-hidden="true">
+            <ConstructionScene landscaped={final} />
           </div>
-        </div>
-        <figcaption className={styles.caption} aria-live="polite" aria-atomic="true">
+        ) : (
+          <div className={styles.mosqueArt} data-stage={stage} aria-hidden="true">
+            <div className={styles.mosqueScene}>
+              <Image className={styles.blueprint} src={MODEL} alt="" fill sizes="(max-width: 730px) 340px, 660px" />
+              {MOSQUE_LAYERS.map((layer) => (
+                <Image
+                  key={layer.className}
+                  className={`${styles.layer} ${layer.className}`}
+                  data-visible={stage >= layer.stage}
+                  src={MODEL}
+                  alt=""
+                  fill
+                  sizes="(max-width: 730px) 340px, 660px"
+                />
+              ))}
+              <div className={styles.lighting} />
+            </div>
+          </div>
+        )}
+        <figcaption className={styles.caption} data-complex={showComplex} aria-live="polite" aria-atomic="true">
           <strong>{STEPS[stage].title}</strong>
           <span>{STEPS[stage].description}</span>
         </figcaption>

@@ -40,12 +40,41 @@
 
 .art {
   position: relative;
+  display: grid;
+  align-items: center;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+}
+
+.art::before {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgb(141 186 210 / 13%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(141 186 210 / 13%) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse, #000, transparent 87%);
+  content: "";
+}
+
+.scene {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sceneLayer { opacity: 0; }
+.sceneLayer[data-visible="true"] { opacity: 1; }
+
+.mosqueArt {
+  position: relative;
   container-type: size;
   height: clamp(235px, 27vw, 390px);
   overflow: hidden;
 }
 
-.art::before {
+.mosqueArt::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -55,7 +84,7 @@
   mask-image: radial-gradient(ellipse, #000, transparent 78%);
 }
 
-.scene {
+.mosqueScene {
   position: absolute;
   bottom: 10%;
   left: 50%;
@@ -65,7 +94,7 @@
 }
 
 .blueprint { opacity: .56; filter: grayscale(1) sepia(.2) brightness(.88); }
-.sketch:not([data-stage="0"]) .blueprint { opacity: .19; }
+.mosqueArt:not([data-stage="0"]) .blueprint { opacity: .19; }
 
 .layer { opacity: 0; z-index: 2; filter: saturate(.12) brightness(.86); }
 .layer[data-visible="true"] { opacity: 1; }
@@ -73,25 +102,8 @@
 .walls { clip-path: inset(51.9% 0 4.45% 30%); }
 .roof { clip-path: inset(0 0 48.1% 30%); }
 .minaret { clip-path: inset(0 70% 4.45% 0); }
-.sketch[data-stage="4"] .layer { filter: saturate(.18) brightness(.72); }
-.sketch:is([data-stage="5"], [data-stage="6"]) .layer { filter: none; }
-
-.grounds,
-.path { position: absolute; opacity: 0; }
-
-.grounds { inset: 43.6% 0 auto; width: 100%; height: auto; }
-
-.path {
-  z-index: 1;
-  left: 49%;
-  top: 97%;
-  width: 22.5%;
-  height: 11%;
-  clip-path: polygon(25% 0, 75% 0, 100% 100%, 0 100%);
-  background: repeating-linear-gradient(0deg, #7e624e 0 1px, transparent 1px 11px), linear-gradient(#c19a74, #9a8069);
-}
-
-.sketch[data-stage="6"] :is(.grounds, .path) { opacity: 1; }
+.mosqueArt[data-stage="4"] .layer { filter: saturate(.18) brightness(.72); }
+.mosqueArt[data-stage="5"] .layer { filter: none; }
 
 .lighting {
   position: absolute;
@@ -107,8 +119,8 @@
     radial-gradient(ellipse 4% 10% at 22.8% 43%, #ffc578cc, transparent 83%);
 }
 
-.sketch[data-stage="4"] .lighting { opacity: 1; }
-.sketch:is([data-stage="5"], [data-stage="6"]) .lighting { opacity: .34; }
+.mosqueArt[data-stage="4"] .lighting { opacity: 1; }
+.mosqueArt[data-stage="5"] .lighting { opacity: .34; }
 
 .caption {
   display: grid;
@@ -175,22 +187,28 @@
 }
 
 @media (max-width: 850px) {
-  .storyboard { grid-template-columns: minmax(0, 1fr); gap: 12px; --art-height: clamp(128px, 27svh, 200px); }
+  .storyboard { grid-template-columns: minmax(0, 1fr); gap: 12px; --art-height: clamp(128px, 27svh, 200px); --complex-art-height: min(48vw, 27svh, 210px); }
   .sketch { grid-area: 1 / 1; position: sticky; top: 8px; z-index: 2; }
   .controls { grid-area: 2 / 1; }
-  .art { height: var(--art-height); }
+  .art { aspect-ratio: auto; height: var(--complex-art-height); }
+  .mosqueArt { height: var(--art-height); }
   .sketchHeading { padding: 7px 11px; }
   .caption { min-height: 76px; padding: 6px 11px; font-size: 12px; }
+  .caption[data-complex="true"] { min-height: 88px; }
   .controls :is(button, a) { scroll-margin-top: calc(var(--art-height) + 132px); }
 }
 
 @media (max-height: 400px) and (max-width: 850px) {
-  .storyboard { --art-height: 95px; }
-  .caption { min-height: 55px; }
+  .storyboard { --art-height: 95px; --complex-art-height: 95px; }
+  .caption, .caption[data-complex="true"] { min-height: 55px; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .art :is(.layer, .blueprint, .grounds, .path, .lighting) {
+  .mosqueArt :is(.layer, .blueprint, .lighting) {
     transition: opacity 180ms ease-out, filter 220ms ease-out;
+  }
+
+  .sceneLayer {
+    transition: opacity 150ms ease-out;
   }
 }
