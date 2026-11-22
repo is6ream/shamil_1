@@ -27,6 +27,28 @@
   font-variant-numeric: tabular-nums;
 }
 
+.counter {
+  display: inline-grid;
+}
+
+.counter > span {
+  grid-area: 1 / 1;
+}
+
+.counterTotal {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  .counterTotal {
+    opacity: 1;
+  }
+
+  .counterFrame {
+    visibility: hidden;
+  }
+}
+
 .goal {
   margin: 0;
   font-size: 15px;

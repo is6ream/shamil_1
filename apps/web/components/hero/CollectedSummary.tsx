@@ -2,8 +2,9 @@ import { AnimatedTrack } from "@/components/goal/AnimatedTrack";
 import type { Campaign } from "@/lib/api/types";
 import { COLLECTED } from "@/lib/content";
 import { formatDayMonth } from "@/lib/format";
-import { kopecksToRubDisplay, kopecksToRubNumberDisplay, percentOfGoal } from "@/lib/money";
+import { kopecksToRubNumberDisplay, percentOfGoal } from "@/lib/money";
 
+import { CollectedCounter } from "./CollectedCounter";
 import styles from "./CollectedSummary.module.css";
 
 interface Props {
@@ -46,7 +47,9 @@ export function CollectedSummary({ campaign, className }: Props) {
       <p className={styles.label}>{COLLECTED.label}</p>
 
       <div className={styles.amounts}>
-        <p className={styles.collected}>{kopecksToRubDisplay(campaign.collectedKopecks)}</p>
+        <p className={styles.collected}>
+          <CollectedCounter kopecks={campaign.collectedKopecks} />
+        </p>
         <p className={styles.goal}>
           из <b>{kopecksToRubNumberDisplay(campaign.goalKopecks)}</b> ₽
         </p>
