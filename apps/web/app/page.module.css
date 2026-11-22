@@ -78,18 +78,6 @@
 .band > .wrap,
 .share { container-type: inline-size; }
 
-@media (min-width: 1250px) {
-  .routeReports > .wrap {
-    display: grid;
-    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
-    gap: 28px;
-    align-items: start;
-  }
-
-  .reports { margin: 0; }
-  .reports > div { display: flex; flex-direction: column-reverse; gap: 24px; }
-}
-
 @media (width > 850px) {
   .page {
     --donation-width: clamp(355px, 36vw, 444px);

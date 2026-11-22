@@ -7,7 +7,7 @@ export const SLOGAN = "построй себе дом в раю за 100 ₽";
 
 export const SITE_DESCRIPTION =
   "Сбор на строительство мечети «Шамиль» в Уфе. Принимаем пожертвования от 10 ₽, " +
-  "показываем ход стройки и рейтинг поддерживающих регионов.";
+  "показываем ход стройки и последние поступления.";
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 

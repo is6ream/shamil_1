@@ -40,8 +40,7 @@ export default async function TransferPage({ searchParams }: PageProps<"/donate/
         <h1 className={styles.title}>Перевод по реквизитам</h1>
         <p className={styles.lede}>
           Переведите сумму со своего счёта или через приложение банка. Как только
-          деньги придут, мы отметим пожертвование, и оно попадёт в сумму сбора
-          и в рейтинг регионов.
+          деньги придут, мы отметим пожертвование, и оно попадёт в сумму сбора.
         </p>
 
         {orderId === null ? (

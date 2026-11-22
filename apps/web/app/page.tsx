@@ -16,7 +16,6 @@ import {
   getFeed,
   getGallery,
   getRegions,
-  getTopRegions,
 } from "@/lib/api/showcase";
 import { FALLBACK_CONTENT, getConstruction, getSiteContent, getVideos } from "@/lib/api/site-content";
 import { FIXTURE_CONSTRUCTION } from "@/lib/api/showcase.fixtures";
@@ -43,8 +42,6 @@ export default async function HomePage() {
     withFallback(getVideos(), [], "видео"),
     withFallback(getActiveGoal(), null, "активный этап сбора"),
   ]);
-
-  const topRegions = withFallback(getTopRegions(), null, "рейтинг регионов");
 
   return (
     <>
@@ -77,7 +74,7 @@ export default async function HomePage() {
             <div className={styles.wrap}>
               <ConstructionLocation />
               <div className={styles.reports} id={SECTION_IDS.reports}>
-                <ReportsSection regions={topRegions} feed={feed} />
+                <ReportsSection feed={feed} />
               </div>
             </div>
           </div>
