@@ -21,17 +21,7 @@ const NAME_ID = "donation-donor-name";
 const PHONE_ID = "donation-phone";
 const ANONYMOUS_ID = "donation-anonymous";
 
-/**
- * Имя с переключателем «Анонимно» прямо в поле, телефон — под ним.
- *
- * Анонимность включена по умолчанию (садака — скрытое поклонение): поле
- * имени заблокировано и показывает «Аноним», телефон скрыт. Сняв галочку,
- * человек видит оба поля. Скрытый телефон не отправляется — его очищает
- * `setAnonymous`.
- *
- * Телефон хранится отдельной таблицей и в публичные выборки не попадает
- * (152-ФЗ). Подпись — не «для чека»: чек ККТ не формируем.
- */
+/** Имя и телефон доступны при выборе именного пожертвования. */
 export function DonorFields({
   state,
   errors,
@@ -45,7 +35,24 @@ export function DonorFields({
 
   return (
     <div className={styles.stack}>
-      <div>
+      <label className={styles.anonymous} htmlFor={ANONYMOUS_ID}>
+        <span aria-hidden="true">{DONATION_FORM.anonymous}</span>
+        <span className={styles.check}>
+          <input
+            className={styles.checkInput}
+            id={ANONYMOUS_ID}
+            name="isAnonymous"
+            aria-label="Анонимное пожертвование"
+            type="checkbox"
+            checked={state.isAnonymous}
+            onChange={(event) => {
+              onAnonymousChange(event.target.checked);
+            }}
+          />
+          <CheckMarkIcon className={styles.checkMark} />
+        </span>
+      </label>
+      {!state.isAnonymous && <div>
         <div className={styles.box} data-invalid={errors.donorName === undefined ? undefined : true}>
           <label className="sr-only" htmlFor={NAME_ID}>
             Имя и фамилия
@@ -58,11 +65,8 @@ export function DonorFields({
             type="text"
             autoComplete="name"
             maxLength={NAME_MAX_LENGTH}
-            placeholder={
-              state.isAnonymous ? DONATION_FORM.anonymousPlaceholder : "Имя и фамилия"
-            }
+            placeholder="Имя и фамилия"
             value={state.donorName}
-            disabled={state.isAnonymous}
             aria-invalid={errors.donorName === undefined ? undefined : true}
             aria-describedby={errors.donorName === undefined ? undefined : nameErrorId}
             onChange={(event) => {
@@ -72,31 +76,13 @@ export function DonorFields({
               onBlur("donorName");
             }}
           />
-
-          <label className={styles.anonymous} htmlFor={ANONYMOUS_ID}>
-            <span aria-hidden="true">{DONATION_FORM.anonymous}</span>
-            <span className={styles.check}>
-              <input
-                className={styles.checkInput}
-                id={ANONYMOUS_ID}
-                name="isAnonymous"
-                aria-label="Анонимное пожертвование"
-                type="checkbox"
-                checked={state.isAnonymous}
-                onChange={(event) => {
-                  onAnonymousChange(event.target.checked);
-                }}
-              />
-              <CheckMarkIcon className={styles.checkMark} />
-            </span>
-          </label>
         </div>
         {errors.donorName === undefined ? null : (
           <p className={field.error} id={nameErrorId}>
             {errors.donorName}
           </p>
         )}
-      </div>
+      </div>}
 
       {state.isAnonymous ? null : (
         <div>

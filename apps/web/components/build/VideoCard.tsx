@@ -70,12 +70,12 @@ export function VideoCard({ video = null }: { readonly video?: PublicVideo | nul
       )}
 
       {src === null ? (
-        <span className={styles.play} aria-hidden="true">
+        <span className={`action-gold ${styles.play}`} aria-hidden="true">
           <PlayIcon />
         </span>
       ) : (
         <button
-          className={styles.play}
+          className={`action-gold ${styles.play}`}
           type="button"
           aria-label={CONSTRUCTION.videoPlayLabel}
           onClick={() => {

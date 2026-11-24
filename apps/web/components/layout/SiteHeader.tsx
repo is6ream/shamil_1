@@ -23,7 +23,7 @@ const NAV_IDS = NAV_ITEMS.map((item) => item.id);
 function LoginButton({ className }: { readonly className: string }) {
   return (
     <Link
-      className={`${styles.login} ${className}`}
+      className={`action-gold ${styles.login} ${className}`}
       href="/donor"
       aria-label="Личный кабинет жертвователя"
       title="Личный кабинет жертвователя"
@@ -100,7 +100,7 @@ export function SiteHeader({ phone = ORGANIZATION.phone, landing = false }: Prop
         {landing ? null : <LoginButton className={styles.loginMobile} />}
 
         {landing ? null : <button
-          className={styles.burger}
+          className={`action-gold ${styles.burger}`}
           ref={menuButtonRef}
           type="button"
           aria-label="Открыть меню"

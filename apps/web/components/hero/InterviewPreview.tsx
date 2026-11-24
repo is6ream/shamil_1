@@ -24,7 +24,7 @@ export function InterviewPreview() {
       >
         <span className={styles.thumbnail} aria-hidden="true">
           <Image src="/landing/interview.webp" alt="" fill sizes="132px" />
-          <span className={styles.play}><PlayIcon /></span>
+          <span className={`action-gold ${styles.play}`}><PlayIcon /></span>
         </span>
         <span className={styles.copy}>
           <span className={styles.soon}>Скоро</span>
@@ -43,7 +43,7 @@ export function InterviewPreview() {
         onClose={() => trigger.current?.focus({ preventScroll: true })}
       >
         <form method="dialog">
-          <button type="submit" className={styles.close} aria-label="Закрыть анонс">
+          <button type="submit" className={`action-gold ${styles.close}`} aria-label="Закрыть анонс">
             <CloseIcon />
           </button>
         </form>

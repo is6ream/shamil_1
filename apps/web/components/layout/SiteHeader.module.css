@@ -101,6 +101,7 @@
   width: var(--control-h-sm);
   height: var(--control-h-sm);
   margin-right: calc(-1 * var(--sp-2));
+  border-radius: var(--r-field);
   border: 0;
   background: transparent;
   color: var(--text-strong);

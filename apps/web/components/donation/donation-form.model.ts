@@ -14,10 +14,10 @@ import { parseRublesInput, rublesToKopecks } from "@/lib/money";
 import { MAX_DONATION_RUBLES, MIN_DONATION_RUBLES, SLOGAN_DONATION_RUBLES } from "@/lib/site";
 
 /**
- * Пресеты сумм — три пилюли справа от поля суммы. 100 ₽ обязателен:
- * он совпадает со слоганом.
+ * Пресеты фильтруются по лимитам выбранного режима. 100 ₽ совпадает со слоганом.
  */
-export const AMOUNT_PRESETS_RUBLES = [100, 500, 1000] as const;
+export const AMOUNT_PRESETS_RUBLES: readonly number[] = [100, 500, 1000];
+export const ONE_TIME_AMOUNT_PRESETS_RUBLES: readonly number[] = [...AMOUNT_PRESETS_RUBLES, 3000, 5000];
 
 /**
  * Способ онлайн-оплаты. Бэкенду НЕ передаётся: в `CreateDonationDto` поля
@@ -51,6 +51,7 @@ export interface DonationCapabilities {
     readonly frequencies: readonly DonationFrequency[];
     readonly termsUrl?: string;
     readonly dates?: Readonly<Record<DonationFrequency, string>>;
+    readonly minRubles?: number;
     readonly maxRubles?: number;
     readonly cancellationUrl?: string;
   } | null;
@@ -205,13 +206,15 @@ export function selectAmountRubles(state: DonationFormState): number | null {
 export function validate(state: DonationFormState, config = PREVIEW_CAPABILITIES): FieldErrors {
   const errors: FieldErrors = {};
   const amount = selectAmountRubles(state);
+  const recurring = state.donationType === "recurring" ? config.recurring : null;
+  const min = recurring?.minRubles ?? config.minRubles;
 
   if (amount === null) {
     errors.amount = "Введите сумму пожертвования цифрами";
   } else if (amount <= 0) {
     errors.amount = "Сумма должна быть больше нуля";
-  } else if (amount < config.minRubles) {
-    errors.amount = `Минимальная сумма — ${groupDigits(String(config.minRubles))} ₽`;
+  } else if (amount < min) {
+    errors.amount = `Минимальная сумма — ${groupDigits(String(min))} ₽`;
   } else if (config.maxRubles !== undefined && amount > config.maxRubles) {
     errors.amount = `Максимальная сумма — ${groupDigits(String(config.maxRubles))} ₽`;
   } else if (!Number.isSafeInteger(Math.round(amount * 100))) {

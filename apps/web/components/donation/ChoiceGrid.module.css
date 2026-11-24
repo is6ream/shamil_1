@@ -1,10 +1,4 @@
-/*
- * Пилюли пресетов суммы. Кнопка — `<label>` с настоящим
- * `input[type=radio]` внутри: клавиатура и скринридер работают без JS.
- */
-
 .fieldset {
-  flex: 0 1 auto;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -12,47 +6,65 @@
 }
 
 .chips {
-  display: flex;
-  gap: var(--sp-1);
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 7px;
 }
 
 .chip {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 0 clamp(6px, 2cqi, 16px);
-  border-radius: var(--r-pill);
-  background: var(--surface-soft);
+  gap: 4px;
+  min-height: 45px;
+  padding: 3px 1px;
+  border: 1px solid var(--donation-border);
+  border-radius: 12px;
+  background: var(--donation-tile);
   color: var(--text-strong);
-  font-size: var(--fs-small);
+  box-shadow: 0 1px 2px rgb(154 119 72 / 10%);
+  font-size: clamp(11px, 3cqi, 13px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
 }
 
-.chip:hover {
-  background: var(--surface-sunken);
-}
-
+.chip:hover { border-color: var(--accent); }
 .chip:has(:checked) {
+  border-color: var(--cta-border);
   background: var(--grad-cta);
   color: var(--cta-text);
-  box-shadow: inset 0 0 0 1px var(--gold-text), var(--shadow-cta);
+  box-shadow: var(--shadow-cta);
 }
+.chip:has(:checked):hover { background: var(--cta-hover); }
 
 .chip:has(:focus-visible) {
   outline: var(--focus-width) solid var(--focus);
-  outline-offset: var(--focus-offset);
+  outline-offset: 2px;
 }
 
-.chip:has(:checked):hover { background: var(--cta-hover); }
-.chip:has(:disabled) { background: var(--cta-disabled); color: var(--cta-disabled-text); box-shadow: none; cursor: not-allowed; }
+.check {
+  display: none;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--text-strong);
+}
 
-@container (max-width: 275px) {
-  .fieldset { flex-basis: 100%; }
-  .chip { flex: 1; }
+.chip:has(:checked) .check { display: block; }
+
+@container (max-width: 365px) {
+  .chips { gap: 4px; }
+  .chip { gap: 2px; }
+  .check { width: 11px; height: 11px; padding: 1px; }
+}
+
+@container (max-width: 315px) {
+  .check { position: absolute; top: 2px; right: 2px; }
 }

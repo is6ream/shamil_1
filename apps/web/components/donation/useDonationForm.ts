@@ -12,6 +12,7 @@ import { useRegionFromUrl } from "@/lib/hooks/useRegionFromUrl";
 
 import {
   AMOUNT_PRESETS_RUBLES,
+  ONE_TIME_AMOUNT_PRESETS_RUBLES,
   patchDonationState,
   INITIAL_FORM_STATE,
   applyPhoneEdit,
@@ -28,13 +29,15 @@ import type {
   DonationField,
   DonationFormState,
   DonationSubmit,
+  DonationType,
   FieldErrors,
 } from "./donation-form.model";
 
-function presetFor(amountInput: string): number | null {
+function presetFor(amountInput: string, donationType: DonationType): number | null {
   const amount = selectAmountRubles({ ...INITIAL_FORM_STATE, amountInput });
 
-  return AMOUNT_PRESETS_RUBLES.find((preset) => preset === amount) ?? null;
+  const presets = donationType === "recurring" ? AMOUNT_PRESETS_RUBLES : ONE_TIME_AMOUNT_PRESETS_RUBLES;
+  return presets.find((preset) => preset === amount) ?? null;
 }
 
 export function useDonationForm(
@@ -87,7 +90,7 @@ export function useDonationForm(
     const amountInput = formatAmountInput(raw);
 
     clearError("amount");
-    patch({ amountInput, selectedPreset: presetFor(amountInput) });
+    patch({ amountInput, selectedPreset: presetFor(amountInput, state.donationType) });
   };
 
   const commitCustomAmount = () => {
@@ -120,7 +123,11 @@ export function useDonationForm(
     event.preventDefault();
 
     if (inFlight.current) return;
-    const found = validate(state, config);
+    // В автоплатеже отдельное согласие включает обработку ПДн.
+    const submittedState = state.donationType === "recurring"
+      ? { ...state, personalDataConsent: state.recurringConsentAccepted }
+      : state;
+    const found = validate(submittedState, config);
     setErrors(found);
     setFormError(null);
     setResult(null);
@@ -136,7 +143,7 @@ export function useDonationForm(
       return;
     }
 
-    const data = buildDonationSubmission(state, config, region);
+    const data = buildDonationSubmission(submittedState, config, region);
     if (data === null) {
       setFormError("Этот вариант пожертвования пока недоступен.");
       return;

@@ -46,12 +46,8 @@
   cursor: pointer;
 }
 
-.action { background: var(--cta-bg); color: var(--cta-text); border-color: var(--control-border); }
 .resend { background: transparent; border-color: transparent; text-decoration: underline; text-underline-offset: 0.2em; }
-.toggle:hover,
-.action:hover,
 .resend:hover { background: var(--accent-soft); }
-.action:hover:not(:disabled) { background: var(--cta-hover); }
 .hint:empty { display: none; }
 .input[readonly] { color: var(--text-soft); }
 .toggle:focus-visible,

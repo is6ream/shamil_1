@@ -59,7 +59,7 @@ export function DonorEmailAccess({ onVerified, embedded = false }: { onVerified:
       onChange={e => { setCode(e.target.value.replace(/\D/g, "")); setError(""); }} /></label>}
     {error && <p className={field.error} id={`${id}-error`} role="alert">{error}</p>}
     {challenge && <p className={styles.hint} id={`${id}-status`} role="status">Код отправлен на указанный email и действует 10 минут. Если письма нет, проверьте папку «Спам».</p>}
-    <button type={embedded ? "button" : "submit"} onClick={embedded ? submit : undefined} className={styles.action} disabled={busy || !email || (!challenge && secondsLeft > 0) || (!!challenge && code.length !== 6)}>{busy ? challenge ? "Проверяем…" : "Отправляем…" : challenge ? "Войти" : "Получить код"}</button>
+    <button type={embedded ? "button" : "submit"} onClick={embedded ? submit : undefined} aria-busy={busy} className={`action-gold ${styles.action}`} disabled={busy || !email || (!challenge && secondsLeft > 0) || (!!challenge && code.length !== 6)}>{busy ? challenge ? "Проверяем…" : "Отправляем…" : challenge ? "Войти" : "Получить код"}</button>
     <p className={styles.hint} role="status">{busy ? challenge ? "Проверяем код…" : "Запрашиваем код…" : ""}</p>
     {challenge && <>
       <button type="button" className={styles.resend} disabled={busy || secondsLeft > 0} onClick={() => void send()}>{secondsLeft > 0 ? `Отправить повторно через ${secondsLeft} с` : "Отправить код ещё раз"}</button>

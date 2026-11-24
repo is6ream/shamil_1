@@ -57,11 +57,11 @@ export function DonorSubscriptions() {
     {(session === "ready") && <div className={styles.list}>
       {!busy && !error && !page.items.length && <p className={styles.empty} role="status">Автоплатежей пока нет.</p>}
       {page.items.map(sub => <SubscriptionCard key={sub.id} sub={sub} onExpired={expire} onCancelled={updated => { setPage(old => ({ ...old, items: old.items.map(item => item.id === updated.id ? updated : item) })); }} refresh={() => load()} />)}
-      {page.nextCursor && <button type="button" className={styles.secondary} disabled={busy || loggingOut} onClick={() => void load(page.nextCursor!)}>Показать ещё</button>}
+      {page.nextCursor && <button type="button" className={`action-gold ${styles.secondary}`} disabled={busy || loggingOut} onClick={() => void load(page.nextCursor!)}>Показать ещё</button>}
     </div>}
     <div role="status" className={styles.message}>{session === "loading" ? "Проверяем вход…" : busy ? "Загружаем автоплатежи…" : ""}</div>
     {notice && <p role="status" className={styles.message}>{notice}</p>}
-    {error && <div><p className={styles.error} role="alert">{error}</p><button type="button" className={styles.secondary} disabled={busy} onClick={() => void (session === "error" ? checkSession() : load())}>Повторить загрузку</button></div>}
+    {error && <div><p className={styles.error} role="alert">{error}</p><button type="button" className={`action-gold ${styles.secondary}`} disabled={busy} onClick={() => void (session === "error" ? checkSession() : load())}>Повторить загрузку</button></div>}
   </section>;
 }
 
@@ -98,7 +98,7 @@ function SubscriptionCard({ sub, refresh, onExpired, onCancelled }: { sub: Subsc
       {sub.latestAttempt && <div><dt>Последняя операция</dt><dd>{donorState(sub.latestAttempt.state)}</dd></div>}
     </dl>
     <div className={styles.actions}>
-      <button ref={historyButton} type="button" className={styles.secondary} aria-expanded={historyOpen} aria-controls={`${id}-history`} onClick={() => {
+      <button ref={historyButton} type="button" className={`action-gold ${styles.secondary}`} aria-expanded={historyOpen} aria-controls={`${id}-history`} onClick={() => {
         setHistoryOpen(!historyOpen); if (!historyOpen && !history && !historyBusy) void historyPage();
       }}>{historyOpen ? "Скрыть историю" : "История платежей"}</button>
       {!cancelled && <button ref={cancelButton} type="button" className={styles.dangerLink} disabled={busy || historyBusy} aria-expanded={confirm} aria-controls={`${id}-confirm`} onClick={() => setConfirm(true)}>Отключить автосписания</button>}
@@ -112,13 +112,13 @@ function SubscriptionCard({ sub, refresh, onExpired, onCancelled }: { sub: Subsc
         <div><span>{donorState(item.status)}{item.operationState && item.operationState !== item.status ? " · " + donorState(item.operationState) : ""}</span><span className={styles.note}>{item.paidAt ? <time dateTime={item.paidAt}>{donorDate(item.paidAt)}</time> : "Дата оплаты не подтверждена"}</span></div>
       </li>)}</ul>}
       {historyError && <p role="alert" className={styles.error}>{historyError}</p>}
-      {historyError ? <button type="button" className={styles.secondary} disabled={historyBusy} onClick={() => void historyPage(history?.nextCursor ?? undefined)}>Повторить загрузку</button> : history?.nextCursor && <button type="button" className={styles.secondary} disabled={historyBusy} onClick={() => void historyPage(history.nextCursor!)}>Ещё платежи</button>}
+      {historyError ? <button type="button" className={`action-gold ${styles.secondary}`} disabled={historyBusy} onClick={() => void historyPage(history?.nextCursor ?? undefined)}>Повторить загрузку</button> : history?.nextCursor && <button type="button" className={`action-gold ${styles.secondary}`} disabled={historyBusy} onClick={() => void historyPage(history.nextCursor!)}>Ещё платежи</button>}
     </div>
     {confirm && !cancelled && <div id={`${id}-confirm`} className={styles.confirm} role="group" aria-labelledby={`${id}-question`} onKeyDown={event => { if (event.key === "Escape" && !busy) closeConfirm(); }}>
       <h4 id={`${id}-question`}>Отключить автосписания?</h4>
       <p>Новые списания по {donorMoney(sub.amountKopecks)} прекратятся. Уже отправленная операция может завершиться.</p>
       <div className={styles.actions}>
-        <button ref={keepButton} type="button" className={styles.secondary} disabled={busy || historyBusy} onClick={closeConfirm}>Оставить автоплатёж</button>
+        <button ref={keepButton} type="button" className={`action-gold ${styles.secondary}`} disabled={busy || historyBusy} onClick={closeConfirm}>Оставить автоплатёж</button>
         <button type="button" className={styles.dangerButton} disabled={busy || historyBusy} onClick={async () => {
           if (lock.current) return;
           lock.current = true; setBusy(true); setError("");

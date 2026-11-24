@@ -84,7 +84,7 @@ export function StageCard({ goal, isPreview = false, className, compactOnMobile 
           </button>
         ))}
 
-        <button type="button" className={styles.other} disabled={isPreview} onClick={() => requestDonation(null)}>
+        <button type="button" className={`action-gold ${styles.other}`} disabled={isPreview} onClick={() => requestDonation(null)}>
           {ACTIVE_GOAL.otherAmount}
           <ArrowRightIcon className={styles.otherIcon} aria-hidden="true" />
         </button>

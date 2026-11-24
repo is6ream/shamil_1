@@ -201,6 +201,40 @@ section { padding: var(--section-pad) 0; }
 
 /* Кнопка в состоянии отправки: текст остаётся на месте, меняется только
    индикатор — платёжная форма не должна «прыгать» в момент сабмита. */
+/* Public actions follow one palette, including links and shaped icon buttons. */
+:root:not(:has([data-admin-theme])) :is(.btn, .action-gold:where(:not([data-copied])), .share a) {
+  border: 1px solid var(--cta-border);
+  background: var(--grad-cta);
+  color: var(--cta-text);
+  box-shadow: var(--shadow-cta);
+}
+:root:not(:has([data-admin-theme])) :is(.btn, .action-gold:where(:not([data-copied])), .share a):hover {
+  background: var(--cta-hover);
+}
+:root:not(:has([data-admin-theme])) :is(.btn, .action-gold:where(:not([data-copied])), .share a):active {
+  background: var(--cta-active);
+  transform: none;
+}
+:root:not(:has([data-admin-theme])) :is(.btn, .action-gold:where(:not([data-copied])), .share a):focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: 3px;
+}
+:root:not(:has([data-admin-theme])) :is(.btn, .action-gold):is(:disabled, [aria-disabled="true"]) {
+  background: var(--cta-disabled);
+  color: var(--cta-disabled-text);
+  box-shadow: none;
+  opacity: 1;
+  filter: none;
+  transform: none;
+  cursor: not-allowed;
+}
+:root:not(:has([data-admin-theme])) :is(.btn, .action-gold)[aria-busy="true"] {
+  background: var(--grad-cta);
+  color: var(--cta-text);
+  box-shadow: var(--shadow-cta);
+  cursor: progress;
+}
+
 .btn[aria-busy="true"] { pointer-events: none; }
 .btn[aria-busy="true"] .spinner {
   width: 17px; height: 17px;

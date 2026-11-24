@@ -40,12 +40,13 @@
   --accent-hover: var(--night);
   --on-accent: var(--paper);
   --focus: var(--gold-text);
-  --cta-bg: #BB925B;
-  --cta-hover: color-mix(in srgb, var(--cta-bg) 68%, var(--paper));
-  --cta-active: color-mix(in srgb, var(--cta-bg) 88%, var(--paper));
-  --cta-text: var(--night);
-  --cta-disabled: #DED4C3;
-  --cta-disabled-text: #526171;
+  --cta-bg: linear-gradient(180deg, #d9ac70 0%, #a36a2d 100%);
+  --cta-border: #b98048;
+  --cta-hover: linear-gradient(180deg, #e0b77e 0%, #a87339 100%);
+  --cta-active: linear-gradient(180deg, #ca9b60 0%, #a36a2d 100%);
+  --cta-text: #080402;
+  --cta-disabled: linear-gradient(180deg, #e1caa8 0%, #c8ad88 100%);
+  --cta-disabled-text: #51412f;
   --band-bg: var(--night-soft);
   --panel-bg: var(--night);
   --girih-line: var(--gold);
@@ -56,7 +57,7 @@
   --grad-cta: var(--cta-bg);
   --accent-soft: rgb(215 170 100 / 12%);
   --accent-ring: rgb(128 90 39 / 22%);
-  --shadow-cta: 0 16px 32px -16px rgb(128 90 39 / 35%);
+  --shadow-cta: inset 0 1px 0 rgb(255 237 211 / 64%), 0 3px 7px rgb(110 71 29 / 22%);
   --shadow-float: 0 24px 60px -24px rgb(0 25 51 / 22%);
   --shadow-form: 0 30px 80px -30px rgb(0 25 51 / 28%);
   --shadow-play: 0 10px 30px -8px rgb(0 25 51 / 35%);
@@ -96,17 +97,6 @@
   --focus: var(--gold-light);
   --grad-bar: var(--gold);
 }
-:root:not(:has([data-admin-theme])) .btn-primary {
-  background: var(--cta-bg);
-  color: var(--cta-text);
-  box-shadow: inset 0 0 0 1px var(--gold-text);
-}
-:root:not(:has([data-admin-theme])) .btn-primary:hover { background: var(--cta-hover); }
-:root:not(:has([data-admin-theme])) .btn-primary:active { background: var(--cta-active); transform: none; }
-:root:not(:has([data-admin-theme])) .btn-primary:disabled,
-:root:not(:has([data-admin-theme])) .btn-primary[aria-disabled="true"] {
-  background: var(--cta-disabled); color: var(--cta-disabled-text); opacity: 1; filter: none;
-}
 :root:not(:has([data-admin-theme])) footer a { color: var(--gold-light); }
 
 /* Legacy inner-page sharing uses the same actions as the landing page. */
@@ -118,17 +108,10 @@
   height: auto;
   padding: var(--sp-4) var(--sp-5);
   border-radius: var(--r-field);
-  border-color: var(--control-border);
-  background: var(--surface);
   font-size: var(--fs-button);
   line-height: 1.4;
 }
-:root:not(:has([data-admin-theme])) .share a:hover { background: var(--accent-soft); border-color: var(--accent); }
-:root:not(:has([data-admin-theme])) .share a.lead { background: var(--cta-bg); color: var(--cta-text); border-color: var(--gold-text); }
-:root:not(:has([data-admin-theme])) .share a.lead:hover { background: var(--cta-hover); color: var(--cta-text); }
-:root:not(:has([data-admin-theme])) .share a.lead:active { background: var(--cta-active); }
-:root:not(:has([data-admin-theme])) :is(.btn-ghost, .input, .pay, .check .bx) { border-color: var(--control-border); }
-:root:not(:has([data-admin-theme])) :is(.btn-ghost, .input, .pay):hover { border-color: var(--accent); }
+:root:not(:has([data-admin-theme])) :is(.input, .pay, .check .bx) { border-color: var(--control-border); }
+:root:not(:has([data-admin-theme])) :is(.input, .pay):hover { border-color: var(--accent); }
 :root:not(:has([data-admin-theme])) .input[aria-invalid="true"] { border-color: var(--danger); }
 :root:not(:has([data-admin-theme])) .vcard { border-radius: var(--r-card); }
-

@@ -57,7 +57,6 @@
   transition: background var(--dur-fast), color var(--dur-fast);
 }
 
-.copy:hover,
 .copy[data-copied] {
   background: var(--surface-sunken);
   color: var(--accent);

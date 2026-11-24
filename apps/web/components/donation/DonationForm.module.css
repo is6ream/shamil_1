@@ -1,70 +1,52 @@
-/*
- * Карточка формы «Поддержать строительство»: белая, радиус 28, мягкая тень.
- * Карточка — контейнер для container queries: пресеты и плитки
- * перестраиваются по ширине формы, а не окна (форма живёт в узкой колонке).
- */
-
 .card {
+  --donation-alpha: calc(86% + 8% * var(--donation-scroll, 0));
+  --donation-tile: rgb(255 244 230 / 31%);
+  --donation-border: #c4ae8f;
   container-type: inline-size;
-  padding: var(--sp-4) var(--sp-5);
-  border-radius: var(--r-card);
-  background: var(--surface);
-  box-shadow: var(--shadow-form);
-}
-
-@media (max-width: 767px) {
-  .card {
-    padding: var(--sp-4);
-  }
+  padding: 23px clamp(16px, 1.8vw, 26px) 18px;
+  border: 1px solid #fff4df;
+  border-radius: 34px;
+  background: linear-gradient(135deg, rgb(255 246 229 / var(--donation-alpha)), rgb(248 233 211 / var(--donation-alpha)));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 15px 36px rgb(3 20 36 / 24%), inset 0 1px 0 #fff;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sp-2);
+  gap: 8px;
 }
 
 .title {
-  font-size: clamp(20px, 5.7cqi, 30px);
-  line-height: 1.15;
+  font-size: clamp(19px, 5.1cqi, 24px);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
 }
 
 .subtitle {
-  margin: var(--sp-1) 0 0;
-  font-size: var(--fs-small);
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
   color: var(--text-soft);
 }
 
-/* Круглый знак справа от заголовка. На телефоне его нет. */
 .mark {
-  display: block;
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: 61px;
+  height: 61px;
   border-radius: 50%;
+  box-shadow: 0 0 0 4px rgb(255 245 229 / 82%);
 }
 
-@media (max-width: 767px) {
-  .mark {
-    display: none;
-  }
-}
-
-.form {
-  display: grid;
-  /* minmax(0, …): иначе колонка растягивается по min-content плиток
-     и форма вылезает за карточку на узком телефоне. */
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-}
-
+.form,
 .controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-2);
+  gap: 13px;
 }
+
+.form { margin-top: 19px; }
 
 .preview {
   margin: 0;
@@ -81,26 +63,29 @@
 
 .modes {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--sp-1);
-  padding: var(--sp-1);
-  border-radius: var(--r-md);
-  background: var(--surface-soft);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  border-radius: 17px;
+  background: #edddc4;
 }
 
 .mode {
   position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 44px;
-  padding: var(--sp-1);
-  border-radius: var(--r-check);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 52px;
+  padding: 5px;
+  border-radius: 17px;
   color: var(--text-strong);
   text-align: center;
-  font-size: var(--fs-small);
+  font-size: 13px;
+  line-height: 1.25;
   font-weight: 700;
   cursor: pointer;
 }
+
+.mode svg { flex: none; width: 21px; height: 21px; }
 
 .mode:hover,
 .frequency:hover {
@@ -108,15 +93,16 @@
 }
 
 .mode:has(:checked) {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: linear-gradient(150deg, #061b30, #0b345b);
+  color: var(--paper);
+  box-shadow: var(--shadow-segment);
 }
 
 .groupLabel {
   display: block;
-  margin: 0 0 var(--sp-2);
+  margin: 0 0 6px;
   color: var(--text-strong);
-  font-size: var(--fs-small);
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -176,64 +162,48 @@
 
 .donorAccess p { margin: 0; }
 
-.recurringDetails,
-.scheduleSummary {
+.recurringDetails {
   display: grid;
   gap: var(--sp-2);
 }
 
-.scheduleSummary {
-  padding-block: var(--sp-1);
-  color: var(--text-soft);
+.summaryAmount,
+.notice {
+  margin: 0;
+  color: var(--text-strong);
   font-size: var(--fs-small);
-  line-height: 1.45;
 }
 
-.scheduleSummary p { margin: 0; }
-.summaryAmount { color: var(--text-strong); font-weight: 600; }
-
-/* ── Сумма ────────────────────────────────────────────────────────────── */
+.summaryAmount { font-weight: 600; }
 
 .amountBox {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-2);
-  border: var(--stroke) solid var(--control-border);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
-}
-
-.amountBox:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-.amountBox[data-invalid="true"] {
-  border-color: var(--danger);
-}
-
-.amountField {
-  display: flex;
-  flex: 1 1 72px;
   align-items: baseline;
   gap: 6px;
-  min-width: 0;
-  font-size: clamp(22px, 6cqi, 30px);
-  font-weight: 500;
-  line-height: 1;
+  margin-top: 7px;
+  padding: 4px 12px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--r-md);
+  background: var(--surface);
   color: var(--text-strong);
+  font-size: 22px;
   font-variant-numeric: tabular-nums;
-  cursor: text;
 }
 
-/* Фокус показывает рамка всего блока (`.amountBox:focus-within`). */
+.amountBox[hidden] { display: none; }
+
+.amountBox:focus-within {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amountBox[data-invalid="true"] { border-color: var(--danger); }
+
 .amountInput {
-  min-width: 1ch;
-  max-width: calc(100% - 1.25em);
-  field-sizing: content;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -246,7 +216,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sp-2);
+  gap: 5px;
+  margin-bottom: 4px;
 }
 
 .amountHeading .groupLabel {
@@ -255,7 +226,7 @@
 
 .customAmount {
   min-height: 28px;
-  padding: 0 var(--sp-2);
+  padding: 0 2px;
   border: 0;
   border-radius: var(--r-field);
   background: transparent;
@@ -275,60 +246,30 @@
   color: var(--text-soft);
 }
 
-/* ── Согласие: мелко и приглушённо, как сноска ──────────────────────────── */
-
-.consent label {
-  font-size: var(--fs-small);
-  color: var(--text-soft);
-}
-
-.documents {
-  display: grid;
-  gap: var(--sp-1);
-  margin: var(--sp-2) 0 0;
-  color: var(--text-soft);
-  font-size: var(--fs-small);
-}
-
-.documents p {
-  margin: 0;
-}
-
-.documents a {
-  width: fit-content;
+.consent label,
+.recurringDetails label {
+  font-size: 12px;
   color: var(--text-strong);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
 }
-
-/* ── Кнопка ─────────────────────────────────────────────────────────────── */
 
 .actions {
   display: grid;
 }
 
 .submit {
-  min-height: var(--control-h);
-  padding: var(--sp-2) var(--sp-4);
-  border-radius: var(--r-field);
-  background: var(--grad-cta);
-  color: var(--cta-text);
-  font-size: var(--fs-button);
+  min-height: 54px;
+  height: auto;
+  padding: 9px 12px;
+  border-radius: var(--r-pill);
+  font-size: clamp(15px, 4.5cqi, 17px);
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px var(--gold-text), var(--shadow-cta);
-  transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-fast);
+  line-height: 1.25;
+  white-space: normal;
+  text-align: center;
 }
 
-.submit:hover {
-  background: var(--cta-hover);
-  transform: translateY(-1px);
-}
-
-/* Во время отправки кнопка заблокирована, но не бледнеет: блеклая кнопка
-   читается как «что-то не так» ровно в момент, когда всё хорошо. */
-.submit[aria-busy="true"] {
-  opacity: 1;
-}
+.submit svg { flex: none; }
+.heart { width: 23px; height: 23px; }
 
 /*
  * Honeypot: убран и от глаза, и от скринридера, и из табстопа.
@@ -347,7 +288,7 @@
 
 /* Ошибка бэкенда — над кнопкой, чтобы на телефоне не уехать за край. */
 .formError {
-  margin: 0;
+  margin: 0 0 var(--sp-2);
   padding: var(--sp-3) var(--sp-4);
   border: 1px solid var(--danger);
   border-radius: var(--r-field);
@@ -357,7 +298,7 @@
 }
 
 .success {
-  margin: 0;
+  margin: var(--sp-2) 0 0;
   padding: var(--sp-4);
   border-radius: var(--r-field);
   background: var(--surface-sunken);
@@ -369,20 +310,33 @@
 .note {
   margin: 0;
   text-align: center;
-  font-size: var(--fs-small);
+  font-size: 12px;
   color: var(--text-soft);
 }
 
-.submit:active { background: var(--cta-active); transform: none; }
-.submit:disabled { opacity: 1; background: var(--cta-disabled); color: var(--cta-disabled-text); filter: none; transform: none; }
+@container (max-width: 365px) {
+  .mode { font-size: 11px; gap: 4px; }
+  .mode svg { width: 16px; height: 16px; }
+  .groupLabel { font-size: 13px; }
+  .customAmount { font-size: 12px; }
+}
 
-.comingSoon { display: grid; gap: var(--sp-4); padding-block: var(--sp-4); color: var(--text-strong); }
-.comingSoon p { margin: 0; line-height: 1.5; }
-.mode:has(:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (width <= 850px) {
+  .card {
+    --donation-alpha: calc(92% + 3% * var(--donation-scroll, 0));
+    padding: 16px 13px 13px;
+    border-radius: 24px;
+  }
 
-@media (max-width: 540px) {
-  .card[data-donation-mode="recurring"] .amountBox { flex-wrap: wrap; }
-  .card[data-donation-mode="recurring"] .amountField { flex-basis: 100%; min-height: 42px; }
-  .card[data-donation-mode="recurring"] .amountBox > fieldset { flex: 1 1 100%; }
-  .card[data-donation-mode="recurring"] .amountBox > fieldset > div > label { flex: 1; }
+  .mark { width: 43px; height: 43px; }
+  .subtitle { font-size: 12px; }
+  .form { margin-top: 14px; }
+  .mode { min-height: 44px; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .card {
+    background: #fcf0dd;
+    backdrop-filter: none;
+  }
 }

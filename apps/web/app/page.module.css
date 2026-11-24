@@ -80,7 +80,7 @@
 
 @media (width > 850px) {
   .page {
-    --donation-width: clamp(355px, 36vw, 444px);
+    --donation-width: clamp(355px, 36.5vw, 525px);
     --column-gap: clamp(24px, 5.5vw, 84px);
     --content-width: calc(var(--wrap-width) - var(--donation-width) - var(--column-gap));
   }
@@ -116,8 +116,7 @@
     max-block-size: calc(100dvh - 2 * var(--sp-5));
     overflow-y: auto;
     scrollbar-width: thin;
-    border-radius: var(--r-card);
-    box-shadow: var(--shadow-form);
+    border-radius: 34px;
   }
 }
 

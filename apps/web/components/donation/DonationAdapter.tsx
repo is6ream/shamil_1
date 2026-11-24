@@ -16,12 +16,13 @@ import { PREVIEW_CAPABILITIES } from "./donation-form.model";
 import type { DonationCapabilities, DonationSubmission } from "./donation-form.model";
 
 // Recurring starts closed and is advertised only by verified server capabilities.
-const initialCapabilities: DonationCapabilities = { ...PREVIEW_CAPABILITIES, recurring: null };
+const initialCapabilities: DonationCapabilities = { ...PREVIEW_CAPABILITIES, oneTimeMethods: ["transfer"], recurring: null };
 type Capabilities = { online: boolean; recurring: null | { version: string; termsUrl: string; cancellationUrl: string;
   dates: Record<"daily" | "every_friday" | "monthly", string>; minKopecks: string; maxKopecks: string } };
 function formCapabilities(result: Capabilities): DonationCapabilities {
-  return { ...PREVIEW_CAPABILITIES, recurring: result.recurring ? {
+  return { ...PREVIEW_CAPABILITIES, oneTimeMethods: result.online ? PREVIEW_CAPABILITIES.oneTimeMethods : ["transfer"], recurring: result.recurring ? {
     methods: ["card"], frequencies: ["monthly", "every_friday", "daily"], ...result.recurring,
+    minRubles: Number(result.recurring.minKopecks) / 100,
     maxRubles: Number(result.recurring.maxKopecks) / 100,
   } : null };
 }
@@ -106,7 +107,7 @@ export function DonationAdapter({ regions }: { regions: readonly Region[] }) {
   return <>
     <DonationForm regions={regions} capabilities={capabilities} submitDonation={submit} donorReady={signedIn && conditionsReady} consentRevision={consentRevision}
       donorAccess={sessionBusy ? <p role="status">Проверяем вход…</p> : signedIn ? <p role="status">{capabilities.recurring ? "Email подтверждён. Проверьте условия и подтвердите отдельное согласие." : "Email подтверждён. Личный кабинет доступен; оформление автоплатежей пока отключено."}</p> : <>
-        <button type="button" className={access.toggle} aria-expanded={authOpen} aria-controls="donation-email-access" onClick={() => setAuthOpen(!authOpen)}>{authOpen ? "Закрыть вход" : "Войти по email"}</button>
+        <button type="button" className={`action-gold ${access.toggle}`} aria-expanded={authOpen} aria-controls="donation-email-access" onClick={() => setAuthOpen(!authOpen)}>{authOpen ? "Закрыть вход" : "Войти по email"}</button>
         <div id="donation-email-access" hidden={!authOpen}><DonorEmailAccess embedded onVerified={async () => {
           setConditionsReady(false); setConsentRevision(value => value + 1); setSignedIn(true); setAuthOpen(false);
           try { await refresh(); } catch { setConditionsReady(false); setNotice("Вход подтверждён. Не удалось обновить условия автоплатежа. Повторите загрузку условий."); }

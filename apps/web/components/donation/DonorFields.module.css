@@ -1,9 +1,7 @@
-/* Мягкие поля имени и телефона; «Анонимно» живёт внутри поля имени. */
-
 .stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--sp-3);
+  gap: var(--sp-1);
 }
 
 .box {
@@ -47,16 +45,13 @@
   opacity: 1;
 }
 
-.input:disabled {
-  color: var(--text-soft);
-  cursor: not-allowed;
-}
-
 .anonymous {
+  justify-self: start;
   display: inline-flex;
+  flex-direction: row-reverse;
   flex: none;
   align-items: center;
-  min-height: 44px;
+  min-height: 36px;
   gap: var(--sp-2);
   font-size: var(--fs-small);
   color: var(--text-soft);
@@ -66,8 +61,8 @@
 
 .check {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
 }
 
 .checkInput {
@@ -96,9 +91,9 @@
 
 .checkMark {
   position: absolute;
-  inset: 3px;
-  width: 16px;
-  height: 16px;
+  inset: 2px;
+  width: 14px;
+  height: 14px;
   color: var(--on-accent);
   opacity: 0;
   pointer-events: none;

@@ -48,7 +48,7 @@ export function ConstructionTimeline({ timeline, gallery, video = null }: Props)
             </li>
           ))}
         </ul>
-        <Link className={styles.galleryLink} href={PAGES.gallery.href}>
+        <Link className={`btn btn-ghost ${styles.galleryLink}`} href={PAGES.gallery.href}>
           {CONSTRUCTION.galleryLink} <ArrowRightIcon />
         </Link>
       </div>

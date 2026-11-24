@@ -162,13 +162,13 @@ export const DONATION_FORM = {
   // СБП первым: нулевая комиссия для плательщика и оплата в два тапа.
   methods: [
     { id: "sbp", label: "СБП", hint: null, isWide: false },
-    { id: "card", label: "Картой", hint: null, isWide: false },
+    { id: "card", label: "Банковская карта", hint: null, isWide: false },
     { id: "sberpay", label: "SberPay", hint: null, isWide: false },
     { id: "tpay", label: "T-Pay", hint: null, isWide: false },
     {
       id: "transfer",
-      label: "Расчётный счёт",
-      hint: "Перевод по реквизитам, в т.ч. для юр. лиц",
+      label: "Перевод по реквизитам",
+      hint: null,
       isWide: true,
     },
   ],

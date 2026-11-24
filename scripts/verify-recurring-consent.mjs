@@ -39,7 +39,10 @@ try {
     page.setDefaultTimeout(15000);
     console.log('opening', width);
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await Promise.all([
+      page.waitForResponse(response => response.url().endsWith('/api/donations/capabilities')),
+      page.goto(base, { waitUntil: 'domcontentloaded', timeout: 30000 }),
+    ]);
     console.log('loaded', width);
     await page.getByText('Автоплатёж', { exact: true }).click();
     await page.getByRole('button', { name: 'Войти по email', exact: true }).waitFor();
@@ -57,6 +60,7 @@ try {
       await page.getByRole('button', { name: 'Войти по email', exact: true }).waitFor({ state: signedIn ? 'hidden' : 'visible' });
     };
     await checkSession(); await checked(true);
+    await page.locator('#donate').getByRole('button', { name: 'Другая сумма' }).click();
     await page.locator('#donation-amount').fill('700'); await checked(false);
     await checkbox.check(); await page.locator('label').filter({ has: page.locator('input[name="frequency"][value="daily"]') }).click(); await checked(false);
     await checkbox.check();

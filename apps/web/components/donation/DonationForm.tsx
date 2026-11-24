@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { ArrowRightIcon, HeartIcon, CoinsIcon, RepeatIcon } from "@/components/icons/Icons";
 import { Checkbox } from "@/components/ui/Checkbox";
 import field from "@/components/ui/field.module.css";
 import { METRIKA_GOALS } from "@/lib/analytics/goals";
@@ -13,13 +14,18 @@ import type { Region } from "@/lib/api/types";
 import { kopecksToRubDisplay, rublesToKopecks } from "@/lib/money";
 import { DONATION_FORM, PAGES } from "@/lib/content";
 import { DONATION_REQUEST_EVENT, readDonationRequest } from "@/lib/donation-request";
-import { useEffect, useRef, type ReactNode } from "react";
-import { DONATION_FREQUENCIES, selectAmountRubles } from "./donation-form.model";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { AmountPresets } from "./AmountPresets";
 import styles from "./DonationForm.module.css";
 import {
+  AMOUNT_PRESETS_RUBLES,
+  DONATION_FREQUENCIES,
+  ONE_TIME_AMOUNT_PRESETS_RUBLES,
   PREVIEW_CAPABILITIES,
+  selectAmountRubles,
+  selectRecurringOptions,
+  validate,
   paymentOptionChanges,
   selectPaymentOption,
   selectValidAmount,
@@ -57,31 +63,82 @@ export function DonationForm({
   const form = useDonationForm(regions, initialRegionSlug, capabilities, submitDonation, consentRevision, donorReady);
   const { state, errors, isBusy, result } = form;
   const amountInput = useRef<HTMLInputElement>(null);
+  const [customOpen, setCustomOpen] = useState(false);
+
+  const isRecurring = state.donationType === "recurring";
+  const recurring = capabilities.recurring;
+  const { method: recurringMethod, frequency: availableFrequency } = selectRecurringOptions(state, capabilities);
+  const frequency = availableFrequency ?? state.frequency;
+  const frequencies = recurring?.frequencies ?? PREVIEW_CAPABILITIES.recurring?.frequencies ?? [];
+  const showCheckout = !isRecurring || recurring !== null;
+  const min = isRecurring ? recurring?.minRubles ?? capabilities.minRubles : capabilities.minRubles;
+  const max = Math.min(capabilities.maxRubles ?? Infinity, isRecurring ? recurring?.maxRubles ?? Infinity : Infinity);
+  const modePresets = isRecurring ? AMOUNT_PRESETS_RUBLES : ONE_TIME_AMOUNT_PRESETS_RUBLES;
+  const presets = modePresets.filter(preset => preset >= min && preset <= max);
+  const amount = selectValidAmount(state, capabilities);
+  const enteredAmount = selectAmountRubles(state);
+  const outsideRecurringLimits = isRecurring && enteredAmount !== null && (enteredAmount < min || enteredAmount > max);
+  const amountError = errors.amount ?? (outsideRecurringLimits ? validate(state, capabilities).amount : undefined);
+  const showAmountInput = customOpen || amountError !== undefined || !presets.includes(state.selectedPreset ?? 0);
+
+  const focusAmount = () => {
+    requestAnimationFrame(() => {
+      amountInput.current?.focus({ preventScroll: true });
+      amountInput.current?.select();
+    });
+  };
 
   const [cardRef, inView] = useInViewOnce<HTMLDivElement>(0.5, true);
   useEffect(() => {
     if (inView) metrika.reachGoalOncePerVisit(METRIKA_GOALS.formView, claimOncePerVisit);
   }, [inView]);
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const stacked = window.matchMedia("(max-width: 850px)");
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const distance = stacked.matches ? -card.getBoundingClientRect().top : window.scrollY;
+      card.style.setProperty("--donation-scroll", String(Math.min(1, Math.max(0, distance / 360))));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, [cardRef]);
+
   const formRef = useRef(form);
   useEffect(() => { formRef.current = form; });
   useEffect(() => {
     const onRequest = (event: Event) => {
       const request = readDonationRequest(event);
       if (!request) return;
+      formRef.current.clearError("recurringConsentAccepted");
+      formRef.current.clearError("amount");
       formRef.current.patch({ donationType: "one_time" });
       if (request.amountRubles !== null) formRef.current.selectPreset(request.amountRubles);
+      const preset = request.amountRubles !== null && ONE_TIME_AMOUNT_PRESETS_RUBLES.includes(request.amountRubles);
+      setCustomOpen(!preset);
       requestAnimationFrame(() => {
-        amountInput.current?.focus({ preventScroll: true });
-        if (request.amountRubles === null) amountInput.current?.select();
+        const checked = cardRef.current?.querySelector<HTMLInputElement>('input[name="amount-preset"]:checked');
+        const target = preset ? checked ?? amountInput.current : amountInput.current;
+        target?.focus({ preventScroll: true });
+        if (!preset) amountInput.current?.select();
       });
     };
     document.addEventListener(DONATION_REQUEST_EVENT, onRequest);
     return () => document.removeEventListener(DONATION_REQUEST_EVENT, onRequest);
-  }, []);
+  }, [cardRef]);
 
-  const isRecurring = state.donationType === "recurring";
   const oneTimeMethod = selectPaymentOption(state);
-  const amount = selectValidAmount(state, capabilities);
   const submitLabel = amount === null ? DONATION_FORM.submit : `Пожертвовать ${kopecksToRubDisplay(rublesToKopecks(amount))}`;
   const unavailable = capabilities.oneTimeMethods.length === 0;
 
@@ -90,13 +147,14 @@ export function DonationForm({
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>{DONATION_FORM.title}</h2>
+          <p className={styles.subtitle}>Ваш вклад — это шаг к доброму делу</p>
         </div>
         <Image
           className={styles.mark}
           src="/brand/logo-gold.webp"
           alt=""
-          width={52}
-          height={52}
+          width={61}
+          height={61}
           unoptimized
         />
       </div>
@@ -118,10 +176,12 @@ export function DonationForm({
                   checked={!isRecurring}
                   onChange={() => {
                     form.clearError("recurringConsentAccepted");
+                    form.clearError("amount");
                     form.patch({ donationType: "one_time" });
                   }}
                 />
-                Разовое пожертвование
+                <CoinsIcon />
+                <span>Разовое пожертвование</span>
               </label>
               <label className={styles.mode}>
                 <input
@@ -129,29 +189,96 @@ export function DonationForm({
                   type="radio"
                   name="donation-type"
                   checked={isRecurring}
-                  onChange={() => form.patch({ donationType: "recurring" })}
+                  onChange={() => {
+                    form.clearError("amount");
+                    form.patch({ donationType: "recurring" });
+                  }}
                 />
-                Автоплатёж
+                <RepeatIcon />
+                <span>Автоплатёж</span>
               </label>
             </div>
           </fieldset>
 
-          <>
-          {isRecurring && <>
-            <fieldset className={styles.choices}><legend className={styles.groupLabel}>График автоплатежа</legend>
-              <div className={styles.frequencies}>
-              {Object.entries(DONATION_FREQUENCIES).map(([value, item]) => <label className={styles.frequency} key={value}>
-                <input className="sr-only" type="radio" name="frequency" value={value} checked={state.frequency === value}
-                  onChange={() => form.patch({ frequency: value as keyof typeof DONATION_FREQUENCIES })} />{item.label}
+          {!showCheckout && <p className={styles.notice}>Оформление автоплатежей пока недоступно.</p>}
+
+          <div>
+            <div className={styles.amountHeading}>
+              <label className={styles.groupLabel} htmlFor={showAmountInput ? AMOUNT_ID : undefined}>Сумма пожертвования</label>
+              <button
+                className={styles.customAmount}
+                type="button"
+                aria-controls={AMOUNT_ID}
+                onClick={() => {
+                  setCustomOpen(true);
+                  focusAmount();
+                }}
+              >
+                Другая сумма
+              </button>
+            </div>
+            <AmountPresets
+              presets={presets}
+              selectedPreset={state.selectedPreset}
+              onSelect={preset => {
+                setCustomOpen(false);
+                form.selectPreset(preset);
+              }}
+            />
+            <div className={styles.amountBox} hidden={!showAmountInput} data-invalid={amountError === undefined ? undefined : true}>
+              <input
+                className={styles.amountInput}
+                id={AMOUNT_ID}
+                name="amount"
+                type="text"
+                ref={amountInput}
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="0"
+                value={state.amountInput}
+                aria-invalid={amountError === undefined ? undefined : true}
+                aria-describedby={amountError === undefined ? undefined : AMOUNT_ERROR_ID}
+                onChange={event => form.setAmountInput(event.target.value)}
+                onBlur={() => {
+                  form.validateField("amount");
+                  form.commitCustomAmount();
+                }}
+              />
+              <span aria-hidden="true">₽</span>
+            </div>
+            {amountError && <p className={field.error} id={AMOUNT_ERROR_ID} role="alert">{amountError}</p>}
+          </div>
+
+          {isRecurring && <fieldset className={styles.choices}>
+            <legend className={styles.groupLabel}>График автоплатежа</legend>
+            <div className={styles.frequencies}>
+              {frequencies.map(value => <label className={styles.frequency} key={value}>
+                <input className="sr-only" type="radio" name="frequency" value={value} checked={frequency === value}
+                  onChange={() => form.patch({ frequency: value })} />
+                {DONATION_FREQUENCIES[value].label}
               </label>)}
-              </div>
-            </fieldset>
-          </>}
+            </div>
+          </fieldset>}
+
+          <PaymentMethods
+            value={isRecurring ? recurringMethod : capabilities.oneTimeMethods.includes(oneTimeMethod)
+              ? oneTimeMethod : capabilities.oneTimeMethods[0] ?? null}
+            available={isRecurring ? recurring?.methods ?? [] : capabilities.oneTimeMethods}
+            onChange={option => {
+              if (isRecurring) {
+                if (option !== "transfer") form.patch({ recurringMethod: option });
+                return;
+              }
+              metrika.reachGoal(METRIKA_GOALS.methodSelect, { method: option });
+              form.patch(paymentOptionChanges(option));
+            }}
+          />
+
           <DonorFields
             state={state}
             errors={errors}
             onAnonymousChange={form.setAnonymous}
-            onNameChange={(donorName) => {
+            onNameChange={donorName => {
               form.clearError("donorName");
               form.patch({ donorName });
             }}
@@ -159,81 +286,20 @@ export function DonationForm({
             onBlur={form.validateField}
           />
 
-          <div>
-            <div className={styles.amountHeading}>
-              <label className={styles.groupLabel} htmlFor={AMOUNT_ID}>Сумма пожертвования</label>
-                <button className={styles.customAmount} type="button" onClick={() => {
-                  amountInput.current?.focus();
-                  amountInput.current?.select();
-                }}>
-                  Другая сумма
-                </button>
-            </div>
-            <div
-              className={styles.amountBox}
-              data-invalid={errors.amount === undefined ? undefined : true}
-            >
-              <label className={styles.amountField} htmlFor={AMOUNT_ID}>
-                <input
-                  className={styles.amountInput}
-                  id={AMOUNT_ID}
-                  name="amount"
-                  type="text"
-                  ref={amountInput}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  placeholder="0"
-                  value={state.amountInput}
-                  aria-invalid={errors.amount === undefined ? undefined : true}
-                  aria-describedby={errors.amount === undefined ? undefined : AMOUNT_ERROR_ID}
-                  onChange={(event) => {
-                    form.setAmountInput(event.target.value);
-                  }}
-                  onBlur={() => {
-                    form.validateField("amount");
-                    form.commitCustomAmount();
-                  }}
-                />
-                <span aria-hidden="true">₽</span>
-              </label>
-
-              <AmountPresets selectedPreset={state.selectedPreset} onSelect={form.selectPreset} />
-            </div>
-            {errors.amount === undefined ? null : (
-              <p className={field.error} id={AMOUNT_ERROR_ID}>
-                {errors.amount}
-              </p>
-            )}
-          </div>
-
-          <PaymentMethods
-            availableOnly={isRecurring}
-            value={isRecurring ? "card" : capabilities.oneTimeMethods.includes(oneTimeMethod)
-              ? oneTimeMethod : capabilities.oneTimeMethods[0] ?? null}
-            available={isRecurring ? ["card"] : capabilities.oneTimeMethods}
-            onChange={(option) => {
-              if (!isRecurring) metrika.reachGoal(METRIKA_GOALS.methodSelect, { method: option });
-              form.patch(paymentOptionChanges(option));
-            }}
-          />
-
-          <div hidden={!isRecurring}><div className={styles.donorAccess}>{donorAccess}</div></div>
+          <div hidden={!isRecurring || !donorAccess}><div className={styles.donorAccess}>{donorAccess}</div></div>
           {isRecurring && <div className={styles.recurringDetails}>
-            <div className={styles.scheduleSummary}>
-            <p className={styles.summaryAmount}>Каждое списание: {selectAmountRubles(state) === null ? "—" : kopecksToRubDisplay(rublesToKopecks(selectAmountRubles(state)!))}, {DONATION_FREQUENCIES[state.frequency].cadence}.</p>
-            </div>
+            {amount !== null && <p className={styles.summaryAmount}>Каждое списание: {kopecksToRubDisplay(rublesToKopecks(amount))}, {DONATION_FREQUENCIES[frequency].cadence}.</p>}
             <fieldset className={styles.choices} disabled={isBusy}>
-            <legend className="sr-only">Согласие на повторные списания</legend>
-            <Checkbox id="recurring-consent" name="recurringConsent" checked={state.recurringConsentAccepted && state.personalDataConsent}
-              isInvalid={errors.recurringConsentAccepted !== undefined} errorId="recurring-consent-error"
-              onChange={recurringConsentAccepted => {
-                form.clearError("recurringConsentAccepted");
-                form.clearError("personalDataConsent");
-                form.patch({ recurringConsentAccepted, personalDataConsent: recurringConsentAccepted });
-              }}>
-              Я даю согласие на регулярные списания выбранной суммы по указанному графику, на <Link href={PAGES.consent.href} target="_blank" rel="noopener">обработку персональных данных</Link> и принимаю условия <Link href="/oferta#recurring-payments" target="_blank" rel="noopener">публичной оферты, включая правила рекуррентных платежей</Link>.
-            </Checkbox>
-            {errors.recurringConsentAccepted && <p className={field.error} id="recurring-consent-error" role="alert">{errors.recurringConsentAccepted}</p>}
+              <legend className="sr-only">Согласие на повторные списания</legend>
+              <Checkbox id="recurring-consent" name="recurringConsent" checked={state.recurringConsentAccepted}
+                isInvalid={errors.recurringConsentAccepted !== undefined} errorId="recurring-consent-error"
+                onChange={recurringConsentAccepted => {
+                  form.clearError("recurringConsentAccepted");
+                  form.patch({ recurringConsentAccepted });
+                }}>
+                Я даю согласие на регулярные списания выбранной суммы по указанному графику, на <Link href={PAGES.consent.href} target="_blank" rel="noopener">обработку персональных данных</Link> и принимаю условия <Link href="/oferta#recurring-payments" target="_blank" rel="noopener">публичной оферты, включая правила рекуррентных платежей</Link>.
+              </Checkbox>
+              {errors.recurringConsentAccepted && <p className={field.error} id="recurring-consent-error" role="alert">{errors.recurringConsentAccepted}</p>}
             </fieldset>
           </div>}
 
@@ -264,8 +330,6 @@ export function DonationForm({
               </p>
             )}
           </div>}
-
-          </>
         </div>
 
         {/* Honeypot: человек этого поля не видит и не заполняет.
@@ -283,7 +347,7 @@ export function DonationForm({
           }}
         />
 
-        {(!isRecurring || capabilities.recurring) && <div className={styles.actions}>
+        {showCheckout && <div className={styles.actions}>
           {form.formError === null ? null : (
             <p className={styles.formError} role="alert">
               {form.formError}
@@ -291,7 +355,7 @@ export function DonationForm({
           )}
 
           <button
-            className={`btn btn-block ${styles.submit}`}
+            className={`btn btn-primary btn-block ${styles.submit}`}
             type="submit"
             aria-busy={isBusy}
             disabled={isBusy || unavailable}
@@ -302,7 +366,11 @@ export function DonationForm({
                 {DONATION_FORM.submitting}
               </>
             ) : (
-              isRecurring ? `Оформить автоплатёж${amount === null ? "" : ` · ${kopecksToRubDisplay(rublesToKopecks(amount))}`}` : submitLabel
+              <>
+                <HeartIcon className={styles.heart} />
+                <span>{isRecurring ? `Оформить автоплатёж${amount === null ? "" : ` · ${kopecksToRubDisplay(rublesToKopecks(amount))}`}` : submitLabel}</span>
+                <ArrowRightIcon />
+              </>
             )}
           </button>
 

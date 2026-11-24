@@ -24,7 +24,7 @@ export function AboutSection({ about = ABOUT }: { readonly about?: AboutContent 
         <p className={styles.text}>
           {about.text ?? "Сегодня вы видите образ будущей мечети. Помогите воплотить его в жизнь — чтобы здесь собирались люди и звучала общая молитва."}
         </p>
-        <a className={styles.cta} href={`#${SECTION_IDS.donate}`}>Помочь построить мечеть <span aria-hidden="true">↗</span></a>
+        <a className={`action-gold ${styles.cta}`} href={`#${SECTION_IDS.donate}`}>Помочь построить мечеть <span aria-hidden="true">↗</span></a>
         <dl className={styles.facts}>
           {facts.map((fact) => (
             <div className={styles.fact} key={fact.value}>

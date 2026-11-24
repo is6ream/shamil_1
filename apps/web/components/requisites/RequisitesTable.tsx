@@ -55,7 +55,7 @@ export function RequisitesTable({ bank = BANK_DETAILS }: { readonly bank?: BankD
                 <>
                   <span className={styles.text}>{row.value}</span>
                   <button
-                    className={styles.copy}
+                    className={`action-gold ${styles.copy}`}
                     type="button"
                     aria-label={`Скопировать ${row.label.toLowerCase()}`}
                     data-copied={copiedKey === row.key ? "true" : undefined}

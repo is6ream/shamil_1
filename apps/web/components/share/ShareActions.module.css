@@ -3,21 +3,7 @@
   gap: var(--sp-3);
 }
 
-.primary {
-  width: 100%;
-  background: var(--cta-bg);
-  color: var(--cta-text);
-  box-shadow: inset 0 0 0 1px var(--gold-text);
-}
-
-.primary:hover {
-  background: var(--cta-hover);
-  color: var(--cta-text);
-}
-
-.primary:active {
-  background: var(--cta-active);
-}
+.primary { width: 100%; }
 
 .primary,
 .secondary {
@@ -36,17 +22,6 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-3);
-}
-
-.secondary {
-  border: var(--stroke) solid var(--control-border);
-  background: var(--surface);
-  color: var(--text-strong);
-}
-
-.secondary:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
 }
 
 .links {

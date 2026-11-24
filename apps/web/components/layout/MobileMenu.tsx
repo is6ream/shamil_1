@@ -94,7 +94,7 @@ export function MobileMenu({ id, isOpen, onClose, onNavigate, phone = ORGANIZATI
         aria-modal="true"
         aria-label="Меню"
       >
-        <button className={styles.close} type="button" onClick={onClose} aria-label="Закрыть меню">
+        <button className={`action-gold ${styles.close}`} type="button" onClick={onClose} aria-label="Закрыть меню">
           <CloseIcon />
         </button>
 

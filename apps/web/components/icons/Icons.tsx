@@ -134,3 +134,28 @@ export function LocationPin(props: IconProps) {
     </Svg>
   );
 }
+
+export function HeartIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M20.8 8.7c0 4.2-5.2 7.9-8.8 10.8-3.6-2.9-8.8-6.6-8.8-10.8a4.6 4.6 0 0 1 8.8-1.9 4.6 4.6 0 0 1 8.8 1.9Z" />
+    </Svg>
+  );
+}
+
+export function CoinsIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <ellipse cx="12" cy="6" rx="8" ry="3" />
+      <path d="M4 6v5c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 11v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5" />
+    </Svg>
+  );
+}
+
+export function RepeatIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M20 9a8 8 0 0 0-13.7-4L3 8m0-5v5h5M4 15a8 8 0 0 0 13.7 4L21 16m0 5v-5h-5" />
+    </Svg>
+  );
+}

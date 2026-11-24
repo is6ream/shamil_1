@@ -1,4 +1,4 @@
-import { CheckMarkIcon } from "@/components/icons/Icons";
+import { ArrowRightIcon, CheckMarkIcon } from "@/components/icons/Icons";
 import { DONATION_FORM } from "@/lib/content";
 
 import type { PaymentOptionId } from "./donation-form.model";
@@ -9,21 +9,16 @@ interface Props {
   readonly value: PaymentOptionId | null;
   readonly available: readonly PaymentOptionId[];
   readonly onChange: (option: PaymentOptionId) => void;
-  readonly availableOnly?: boolean;
 }
 
-/**
- * Способы оплаты: сетка 2×2 и «Расчётный счёт» во всю ширину.
- *
- * Визуально — плитки с квадратной галочкой, по смыслу — одна радиогруппа:
- * выбрать можно ровно один способ, стрелки клавиатуры работают нативно.
- */
-export function PaymentMethods({ value, available, onChange, availableOnly = false }: Props) {
-  const options = DONATION_FORM.methods.filter(option => !availableOnly || available.includes(option.id));
+export function PaymentMethods({ value, available, onChange }: Props) {
+  const options = DONATION_FORM.methods.filter(option => available.includes(option.id));
+  if (options.length === 0) return null;
+  const columns = Math.max(1, options.filter(option => !option.isWide).length);
   return (
     <fieldset className={styles.fieldset}>
       <legend className={styles.legend}>{DONATION_FORM.methodLegend}</legend>
-      <div className={styles.grid}>
+      <div className={styles.grid} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
         {options.map((option) => (
           <label
             className={option.isWide || options.length === 1 ? `${styles.tile} ${styles.wide}` : styles.tile}
@@ -35,7 +30,6 @@ export function PaymentMethods({ value, available, onChange, availableOnly = fal
               name="payment-option"
               value={option.id}
               checked={value === option.id}
-              disabled={!available.includes(option.id)}
               onChange={() => {
                 onChange(option.id);
               }}
@@ -45,12 +39,11 @@ export function PaymentMethods({ value, available, onChange, availableOnly = fal
             </span>
             <span className={styles.text}>
               <span className={styles.label}>{option.label}</span>
-              {!available.includes(option.id) ? (
-                <span className={styles.hint}>Недоступно в этом режиме</span>
-              ) : option.hint === null ? null : (
+              {option.hint === null ? null : (
                 <span className={styles.hint}>{option.hint}</span>
               )}
             </span>
+            {option.isWide && <ArrowRightIcon className={styles.arrow} />}
             <span className={styles.check} aria-hidden="true">
               <CheckMarkIcon className={styles.checkMark} />
             </span>
