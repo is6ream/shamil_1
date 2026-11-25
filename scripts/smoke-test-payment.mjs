@@ -69,7 +69,7 @@ async function donate(page, shot) {
 
   await page.getByRole("link", { name: "Оплатить: СБП" }).click();
   await page.waitForURL(/\/spasibo/, { timeout: 15_000 });
-  await page.getByText("Ваше пожертвование дошло").waitFor({ timeout: 35_000 });
+  await page.getByRole("heading", { name: "Спасибо за пожертвование!", exact: true }).waitFor({ timeout: 35_000 });
   await shot("04-thanks-paid");
 }
 

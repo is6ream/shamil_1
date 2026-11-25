@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
-import { HandsScene } from "@/components/hero/HandsScene";
 import { ShareLinks } from "@/components/share/ShareLinks";
 import { METRIKA_GOALS } from "@/lib/analytics/goals";
 import { metrika } from "@/lib/analytics/metrika";
 import { kopecksToRubDisplay } from "@/lib/money";
 
-import { PollingPhrases } from "./PollingPhrases";
 import styles from "./ThanksScreen.module.css";
 import { useDonationStatus } from "./useDonationStatus";
 
@@ -26,21 +24,17 @@ function ShareBox({ title }: { readonly title: string }) {
           анонимности включён по умолчанию. Репостится сбор, не поступок. */}
       <h2>{title}</h2>
       <p className={styles.lede}>
-        Один репост в земляческий чат приводит больше, чем десять просмотров рекламы
+        Поделитесь ссылкой на сбор с близкими.
       </p>
       <ShareLinks highlightFirst />
     </div>
   );
 }
 
-function OrderLine({ orderId, hint }: { readonly orderId: string; readonly hint: string }) {
+function OrderLine({ orderId }: { readonly orderId: string }) {
   return (
     <p className={styles.order}>
-      Номер платежа <b>{orderId}</b> — {hint}
-      <br />
-      <Link className={styles.back} href="/">
-        Вернуться к сбору
-      </Link>
+      Номер платежа для обращения <b>{orderId}</b>
     </p>
   );
 }
@@ -69,8 +63,8 @@ export function ThanksScreen({ orderId }: Props) {
       <div className={styles.screen}>
         <h1 className={styles.title}>Здесь показывается статус платежа</h1>
         <p className={styles.lede}>
-          Ссылка пришла без номера заказа. Если вы только что жертвовали и платёж
-          прошёл, он уже учтён в сборе — ничего делать не нужно.
+          В ссылке нет номера платежа. Если деньги списались, сохраните подтверждение банка
+          и обратитесь к организаторам сбора.
         </p>
         <div className={styles.row}>
           <Link className="btn btn-primary" href="/">
@@ -85,59 +79,40 @@ export function ThanksScreen({ orderId }: Props) {
 
   return (
     <div className={styles.screen}>
-      <div className={styles.scene}>
-        <HandsScene />
-      </div>
-
       {phase === "checking" ? (
         <>
-          <div className="eyebrow">
-            <span className="dot" /> Платёж принят в обработку
-          </div>
-          <h1 className={styles.title}>Спасибо. Проверяем перевод</h1>
-          <PollingPhrases />
-          <p className={styles.hint}>
-            Не закрывайте страницу — обычно это занимает несколько секунд
+          <h1 className={styles.title}>Проверяем платёж</h1>
+          <p className={styles.lede} role="status">
+            Ждём подтверждения от платёжной системы.
           </p>
         </>
       ) : null}
 
       {phase === "paid" ? (
         <>
-          <div className="eyebrow">
-            <span className="dot" /> Платёж подтверждён
-          </div>
-          <h1 className={styles.title}>Ваше пожертвование дошло</h1>
+          <h1 className={styles.title}>Спасибо за пожертвование!</h1>
           {paidAmount === null ? null : (
             <p className={styles.sum}>{kopecksToRubDisplay(paidAmount)}</p>
           )}
           <p className={styles.lede}>
-            Пожертвование уже учтено в общей сумме сбора. Ничего больше делать не нужно.
+            Ваше пожертвование на строительство мечети «Шамиль» учтено в сборе.
           </p>
 
+          <Link className={styles.back} href="/">
+            Вернуться к сбору
+          </Link>
           <ShareBox title="Расскажите о сборе" />
-          <OrderLine
-            orderId={orderId}
-            hint="сохраните, если понадобится к нам обратиться"
-          />
+          <OrderLine orderId={orderId} />
         </>
       ) : null}
 
       {phase === "timeout" ? (
         <>
-          <div className="eyebrow">
-            <span className="dot" /> Ещё проверяем
-          </div>
-          <h1 className={styles.title}>Деньги не потеряны</h1>
+          <h1 className={styles.title}>Платёж ещё не подтверждён</h1>
           <p className={styles.lede}>
-            {error ?? "Платёжная система иногда подтверждает перевод дольше обычного"} —
-            от минуты до нескольких. Если списание прошло, пожертвование появится
-            в сборе само собой.
+            {error ? "Не удалось проверить статус платежа." : "Подтверждение занимает больше времени, чем обычно."}
           </p>
-          {/* Отдельной строкой и жирным. Без неё человек, увидевший
-              неопределённость, идёт платить повторно — худший исход:
-              двойное списание и возврат руками. */}
-          <p className={`${styles.lede} ${styles.strong}`}>Платить второй раз не нужно.</p>
+          <p className={`${styles.lede} ${styles.strong}`}>Если деньги списались, не оплачивайте повторно.</p>
 
           <div className={styles.row}>
             <button className="btn btn-ghost" type="button" onClick={retry}>
@@ -149,28 +124,27 @@ export function ThanksScreen({ orderId }: Props) {
           </div>
 
           <ShareBox title="А пока — расскажите о сборе" />
-          <OrderLine orderId={orderId} hint="назовите его, если будете писать нам" />
+          <OrderLine orderId={orderId} />
         </>
       ) : null}
 
       {phase === "failed" ? (
         <>
-          <div className="eyebrow">
-            <span className="dot" /> Платёж не прошёл
-          </div>
-          <h1 className={styles.title}>Банк отклонил перевод</h1>
+          <h1 className={styles.title}>Платёж не прошёл</h1>
           <p className={styles.lede}>
-            Деньги остались у вас — списания не было. Так бывает из-за лимита карты
-            или интернет-платежей; попробуйте другой способ оплаты.
+            Если банк показывает списание, сохраните подтверждение и обратитесь к организаторам сбора.
           </p>
 
           <div className={styles.row}>
-            <Link className="btn btn-primary" href="/#donate">
-              Попробовать ещё раз
+            <button className="btn btn-primary" type="button" onClick={retry}>
+              Проверить ещё раз
+            </button>
+            <Link className={styles.back} href="/">
+              Вернуться к сбору
             </Link>
           </div>
 
-          <OrderLine orderId={orderId} hint="назовите его, если будете писать нам" />
+          <OrderLine orderId={orderId} />
         </>
       ) : null}
     </div>
