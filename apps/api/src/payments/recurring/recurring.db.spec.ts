@@ -15,7 +15,7 @@ import { PaymentCallbacksController } from '../payment-callbacks.controller';
 import { PaymentProviderResolver } from '../payment-provider.resolver';
 import { PaymentsService } from '../payments.service';
 import { RobokassaProvider } from '../providers/robokassa.provider';
-import { hashSignature } from '../robokassa/signature';
+import { formatOutSum, hashSignature } from '../robokassa/signature';
 import { chargeAt, localDate, nextDate, type Frequency } from './calendar';
 import { RECURRING_TERMS_VERSION, RECURRING_TERMS_SNAPSHOT } from './terms';
 import { keyHash, RecurringService } from './recurring.service';
@@ -76,11 +76,12 @@ describeDatabase('recurring persistence with mocked Robokassa', () => {
     return [stats.paidTotalKopecks, stats.paidCount];
   }
 
-  function resultBody(order: { invoiceNo: number; id: string }, signature?: string) {
+  function resultBody(order: { invoiceNo: number; id: string; amountKopecks: bigint }, signature?: string) {
+    const outSum = formatOutSum(order.amountKopecks);
     return {
-      OutSum: '100.00', InvId: String(order.invoiceNo), Shp_order_id: order.id,
+      OutSum: outSum, InvId: String(order.invoiceNo), Shp_order_id: order.id,
       SignatureValue: signature ?? hashSignature(
-        `100.00:${order.invoiceNo}:synthetic-result:Shp_order_id=${order.id}`, PaymentHashAlgorithm.Md5,
+        `${outSum}:${order.invoiceNo}:synthetic-result:Shp_order_id=${order.id}`, PaymentHashAlgorithm.Md5,
       ),
     };
   }
@@ -108,18 +109,18 @@ describeDatabase('recurring persistence with mocked Robokassa', () => {
 
   afterEach(() => jest.useRealTimers());
 
-  async function subscription(state: 'pending' | 'active', frequency: Frequency = 'daily', due = new Date(), anchorDay = 1) {
+  async function subscription(state: 'pending' | 'active', frequency: Frequency = 'daily', due = new Date(), anchorDay = 1, amountKopecks = 10000n) {
     const owner = await prisma.donorIdentity.create({ data: { emailNormalized: 'fixture@example.test', emailVerifiedAt: new Date() } });
     const sub = await prisma.recurringSubscription.create({
       data: {
         owner: { connect: { id: owner.id } }, consentedAt: new Date(), consentVerifiedAt: new Date(),
         termsSnapshot: JSON.stringify({ version: RECURRING_TERMS_VERSION, text: RECURRING_TERMS_SNAPSHOT,
-          amountKopecks: '10000', frequency, previewDate: localDate(new Date()) }),
+          amountKopecks: amountKopecks.toString(), frequency, previewDate: localDate(new Date()) }),
         keyHash: keyHash(key), merchantId: 'mock-store', frequency, termsVersion: RECURRING_TERMS_VERSION, state,
         previewDate: localDate(new Date()), anchorDay: state === 'active' ? anchorDay : null,
         nextAt: state === 'active' ? due : null, nextCheckAt: new Date(),
         firstDonation: { create: {
-          campaignId, amountKopecks: 10000n, provider: 'robokassa', regionId, regionSource: 'form', isTestPayment: false,
+          campaignId, amountKopecks, provider: 'robokassa', regionId, regionSource: 'form', isTestPayment: false,
         } },
       },
       include: { firstDonation: true },
@@ -130,20 +131,64 @@ describeDatabase('recurring persistence with mocked Robokassa', () => {
     return sub;
   }
 
-  it('activates only after settlement with the expected card method', async () => {
-    const sub = await subscription('pending');
-    const callback = new PaymentCallbacksController(payments, providers);
-    await callback.handleRobokassaResult(resultBody(sub.firstDonation));
-    expect(await worker.manage(key, false)).toMatchObject({ state: 'pending', firstPayment: 'paid' });
-    expect(await totals()).toEqual([10000n, 1]);
-    jest.mocked(queryRecurring).mockResolvedValue({
-      kind: 'paid', netAmountKopecks: 10000n, currency: 'RUB', orderId: sub.firstDonationId, method: 'mock-card', confirmedAt: new Date(),
-    });
-    await worker.tick();
-    expect(await worker.manage(key, false)).toMatchObject({ state: 'active', firstPayment: 'paid' });
-    expect(sendRecurring).not.toHaveBeenCalled();
-    expect(await prisma.paymentEvent.count({ where: { donationId: sub.firstDonationId } })).toBe(1);
-  });
+  it.each([
+    ['matching', 'active', chargeAt('2026-11-27'), null],
+    ['incorrect', 'pending', null, 'provider_outcome_unresolved'],
+    ['duplicate', 'pending', null, 'provider_outcome_unresolved'],
+    ['cancelled', 'cancelled', null, null],
+  ] as const)('reconciles a paid daily donation with %s CDATA binding and dispatch off',
+    async (scenario, state, nextAt, reconciliationReason) => {
+      setClock('2026-11-25T03:27:00Z');
+      Object.assign(options, { dispatchEnabled: false, approvalReference: 'mock-approval' });
+      worker = new RecurringService(prisma, config, providers, payments, options);
+      const sub = await subscription('pending', 'daily', new Date(), 1, 1000n);
+      const first = sub.firstDonation;
+      await prisma.recurringSubscription.update({ where: { id: sub.id }, data: {
+        providerEvidence: JSON.stringify({
+          recurring: true, mode: 'live', merchantId: sub.merchantId, orderId: first.id, invoiceNo: first.invoiceNo,
+          currency: 'RUB', cardLabel: options.cardLabel, cardMethodCode: options.cardMethodCode,
+          approvalReference: options.approvalReference,
+        }),
+      } });
+      const callback = new PaymentCallbacksController(payments, providers);
+      await callback.handleRobokassaResult(resultBody(first));
+      expect(await worker.manage(key, false)).toMatchObject({ state: 'pending', firstPayment: 'paid', nextAt: null });
+      if (scenario === 'cancelled') await worker.manage(key, true);
+
+      const echoedId = scenario === 'incorrect' ? randomUUID() : first.id;
+      const binding = '<Field><Name><![CDATA[Shp_order_id]]></Name><Value><![CDATA[' + echoedId + ']]></Value></Field>';
+      const duplicate = scenario === 'duplicate'
+        ? '<Field><Name>Shp_order_id</Name><Value>' + first.id + '</Value></Field>'
+        : '';
+      const xml = '<OperationStateResponse><Result><Code>0</Code></Result><State><Code>100</Code>' +
+        '<StateDate>2026-11-25T06:27:00+03:00</StateDate></State><Info><PaymentMethod><Code>mock-card</Code></PaymentMethod>' +
+        '<OutSum>10.000000</OutSum><OutCurrLabel>BNR</OutCurrLabel></Info><UserFields>' +
+        binding + duplicate + '</UserFields></OperationStateResponse>';
+      jest.mocked(queryRecurring).mockImplementation(
+        jest.requireActual<{ queryRecurring: typeof queryRecurring }>('./robokassa-recurring').queryRecurring,
+      );
+      const fetcher = jest.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(xml));
+
+      // Reconciliation on the following day must skip the already missed slot.
+      jest.setSystemTime(new Date('2026-11-26T08:00:00Z'));
+      await worker.tick();
+      expect(await prisma.recurringHeartbeat.findUniqueOrThrow({ where: { id: sub.merchantId } }))
+        .toMatchObject({ lastCompletedAt: new Date() });
+      expect(await worker.reconcileInvoice(first.id)).toMatchObject({ status: 'paid' });
+
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      for (const [request] of fetcher.mock.calls) {
+        expect((request as URL).searchParams.get('InvoiceID')).toBe(String(first.invoiceNo));
+      }
+      expect(await prisma.recurringSubscription.findUniqueOrThrow({ where: { id: sub.id } })).toMatchObject({
+        state, nextAt, lastReconciledAt: new Date(), reconciliationReason,
+      });
+      expect(await totals()).toEqual([1000n, 1]);
+      expect(await prisma.paymentEvent.count({ where: { donationId: first.id } })).toBe(1);
+      expect(await prisma.recurringAttempt.count({ where: { subscriptionId: sub.id } })).toBe(0);
+      expect(sendRecurring).not.toHaveBeenCalled();
+    },
+  );
 
   it('records a declined first invoice without activating', async () => {
     await subscription('pending');
@@ -229,7 +274,6 @@ describeDatabase('recurring persistence with mocked Robokassa', () => {
   });
 
   it.each([
-    ['daily', '2027-01-31', 1, '2027-01-31', '2027-02-01'],
     ['every_friday', '2026-11-06', 1, '2026-11-06', '2026-11-13'],
     ['monthly', '2027-02-28', 31, '2027-02', '2027-03-31'],
   ] as const)('dispatches %s on its scheduled day', async (frequency, date, anchor, period, next) => {
@@ -243,6 +287,47 @@ describeDatabase('recurring persistence with mocked Robokassa', () => {
     expect(sendRecurring).toHaveBeenCalledWith(expect.anything(), attempt.donation, sub.firstDonation.invoiceNo);
     expect(await worker.manage(key, false)).toMatchObject({ nextAt: chargeAt(next) });
     expect(await totals()).toEqual([10000n, 1]);
+  });
+
+  it('sends exactly one daily child with the first invoice and waits for a signed payment result', async () => {
+    const due = chargeAt('2026-11-27');
+    setClock(new Date(+due - 60000).toISOString());
+    const sub = await subscription('active', 'daily', due, 1, 1000n);
+    jest.mocked(sendRecurring).mockImplementation(
+      jest.requireActual<{ sendRecurring: typeof sendRecurring }>('./robokassa-recurring').sendRecurring,
+    );
+    const fetcher = jest.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      const body = init?.body as URLSearchParams;
+      return new Response('OK+' + body.get('InvoiceID'));
+    });
+
+    await worker.tick();
+    expect(fetcher).not.toHaveBeenCalled();
+    jest.setSystemTime(due);
+    await worker.tick();
+    await worker.tick();
+
+    const where = { subscriptionId: sub.id };
+    expect(await prisma.recurringAttempt.count({ where })).toBe(1);
+    const attempt = await prisma.recurringAttempt.findFirstOrThrow({ where, include: { donation: true } });
+    expect(attempt).toMatchObject({ scheduledAt: due, state: 'accepted', donation: { status: 'pending' } });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const [url, request] = fetcher.mock.calls[0] ?? [];
+    expect(url).toBe('https://auth.robokassa.ru/Merchant/Recurring');
+    const body = request?.body as URLSearchParams;
+    expect(body.get('PreviousInvoiceID')).toBe(String(sub.firstDonation.invoiceNo));
+    expect(body.get('InvoiceID')).toBe(String(attempt.donation.invoiceNo));
+    expect(await totals()).toEqual([1000n, 1]);
+
+    const callback = new PaymentCallbacksController(payments, providers);
+    await callback.handleRobokassaResult(resultBody(attempt.donation));
+    jest.setSystemTime(new Date(+due + 5 * 60000));
+    await worker.tick();
+    expect(await prisma.recurringAttempt.findUniqueOrThrow({ where: { donationId: attempt.donationId }, include: { donation: true } }))
+      .toMatchObject({ state: 'paid', donation: { status: 'paid' } });
+    expect(await totals()).toEqual([2000n, 2]);
+    expect(await worker.manage(key, false)).toMatchObject({ nextAt: chargeAt('2026-11-28') });
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a duplicate invoice number and duplicate subscription period', async () => {
